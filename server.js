@@ -21,7 +21,8 @@ app.get('/api/health', (req, res) => {
 
 // TODO: Add your route files here as you build them
 app.use('/api/exercises', require('./src/routes/exerciseRoutes'));
-// app.use('/api/days', require('./src/routes/dayRoutes'));
+app.use('/api/days', require('./src/routes/dayRoutes'));
+app.use('/api/users', require('./src/routes/userRoutes'));
 // app.use('/api/sessions', require('./src/routes/sessionRoutes'));
 
 // 404 handler for unknown routes
