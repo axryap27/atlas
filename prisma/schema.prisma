@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int         @id @default(autoincrement())
+  email     String      @unique
+  name      String
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  
+  // Relationships
+  workoutDays WorkoutDay[]
+  sessions    Session[]
+  
+  @@map("users")
+}
+
+model Exercise {
+  id          Int    @id @default(autoincrement())
+  name        String @unique
+  description String?
+  category    String // "strength", "cardio", "flexibility", "core"
+  muscleGroup String? // "chest", "back", "legs", "shoulders", etc.
+  equipment   String? // "barbell", "dumbbell", "bodyweight", "machine"
+  createdAt   DateTime @default(now())
+  
+  // Relationships
+  dayExercises DayExercise[]
+  setLogs      SetLog[]
+  
+  @@map("exercises")
+}
+
+model WorkoutDay {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  userId      Int
+  isTemplate  Boolean  @default(true) // true = template, false = actual workout
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relationships
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dayExercises DayExercise[]
+  sessions     Session[]
+  
+  @@map("workout_days")
+}
+
+model DayExercise {
+  id           Int @id @default(autoincrement())
+  workoutDayId Int
+  exerciseId   Int
+  targetSets   Int
+  targetReps   Int?
+  targetWeight Float?
+  targetTime   Int? // for time-based exercises (seconds)
+  restTime     Int? // recommended rest between sets (seconds)
+  order        Int  // order in the workout
+  notes        String?
+  
+  // Relationships
+  workoutDay WorkoutDay @relation(fields: [workoutDayId], references: [id], onDelete: Cascade)
+  exercise   Exercise   @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  
+  @@unique([workoutDayId, exerciseId]) // prevent duplicate exercises in same day
+  @@map("day_exercises")
+}
+
+model Session {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  workoutDayId Int?     // optional: can log freestyle workouts
+  startTime    DateTime @default(now())
+  endTime      DateTime?
+  duration     Int?     // calculated duration in minutes
+  notes        String?
+  location     String?  // gym name, home, etc.
+  bodyWeight   Float?   // user's weight on this day
+  
+  // Relationships
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workoutDay WorkoutDay?  @relation(fields: [workoutDayId], references: [id])
+  setLogs    SetLog[]
+  
+  @@map("sessions")
+}
+
+model SetLog {
+  id         Int   @id @default(autoincrement())
+  sessionId  Int
+  exerciseId Int
+  setNumber  Int   // 1, 2, 3, etc.
+  reps       Int?  // for rep-based exercises
+  weight     Float? // in pounds or kg
+  duration   Int?  // for time-based exercises (seconds)
+  distance   Float? // for cardio (miles/km)
+  restTime   Int?  // actual rest taken (seconds)
+  rpe        Int?  // Rate of Perceived Exertion (1-10)
+  notes      String?
+  createdAt  DateTime @default(now())
+  
+  // Relationships
+  session  Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  exercise Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  
+  @@map("set_logs")
+}
