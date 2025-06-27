@@ -23,7 +23,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/exercises', require('./src/routes/exerciseRoutes'));
 app.use('/api/days', require('./src/routes/dayRoutes'));
 app.use('/api/users', require('./src/routes/userRoutes'));
-// app.use('/api/sessions', require('./src/routes/sessionRoutes'));
+app.use('/api/sessions', require('./src/routes/sessionRoutes'));
 
 // 404 handler for unknown routes
 app.use('*', (req, res) => {
