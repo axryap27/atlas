@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
+import { useRef } from "react";
+
 import {
   View,
   Text,
@@ -8,7 +10,7 @@ import {
   StyleSheet,
   Alert,
   SafeAreaView,
-} from 'react-native';
+} from "react-native";
 
 interface Set {
   id: string;
@@ -75,21 +77,21 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
   ];
 
   const [exercises, setExercises] = useState<Exercise[]>(
-    initialExercises || defaultExercises,
+    initialExercises || defaultExercises
   );
   const [expandedExercise, setExpandedExercise] = useState<string | null>(
-    exercises[0]?.id || null,
+    exercises[0]?.id || null
   );
 
   // Calculate progress percentage
   const totalSets = exercises.reduce(
     (acc, exercise) => acc + exercise.sets.length,
-    0,
+    0
   );
   const completedSets = exercises.reduce(
     (acc, exercise) =>
       acc + exercise.sets.filter((set) => set.completed).length,
-    0,
+    0
   );
   const progressPercentage =
     totalSets > 0 ? (completedSets / totalSets) * 100 : 0;
@@ -114,55 +116,45 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
           };
         }
         return exercise;
-      }),
+      })
     );
   };
 
   const handleWeightChange = (
     exerciseId: string,
     setId: string,
-    value: string,
+    value: string
   ) => {
-    // Allow empty string for clearing input
-    const sanitizedValue = value.replace(/[^0-9.]/g, '');
-    
-    setExercises((prevExercises) =>
-      prevExercises.map((exercise) => {
-        if (exercise.id === exerciseId) {
-          const updatedSets = exercise.sets.map((set) => {
-            if (set.id === setId) {
-              return { ...set, weight: sanitizedValue };
+    setExercises((exercises) =>
+      exercises.map((exercise) =>
+        exercise.id === exerciseId
+          ? {
+              ...exercise,
+              sets: exercise.sets.map((set) =>
+                set.id === setId ? { ...set, weight: value } : set
+              ),
             }
-            return set;
-          });
-          return { ...exercise, sets: updatedSets };
-        }
-        return exercise;
-      }),
+          : exercise
+      )
     );
   };
 
   const handleRepsChange = (
     exerciseId: string,
     setId: string,
-    value: string,
+    value: string
   ) => {
-    // Allow empty string and only numbers
-    const sanitizedValue = value.replace(/[^0-9]/g, '');
-    
-    setExercises((prevExercises) =>
-      prevExercises.map((exercise) => {
-        if (exercise.id === exerciseId) {
-          const updatedSets = exercise.sets.map((set) => {
-            if (set.id === setId) {
-              return { ...set, reps: sanitizedValue };
+    setExercises((exercises) =>
+      exercises.map((exercise) =>
+        exercise.id === exerciseId
+          ? {
+              ...exercise,
+              sets: exercise.sets.map((set) =>
+                set.id === setId ? { ...set, reps: value } : set
+              ),
             }
-            return set;
-          });
-          return { ...exercise, sets: updatedSets };
-        }
-        return exercise;
-      }),
+          : exercise
+      )
     );
   };
 
@@ -180,7 +172,7 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
           return { ...exercise, sets: [...exercise.sets, newSet] };
         }
         return exercise;
-      }),
+      })
     );
   };
 
@@ -193,7 +185,7 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
           return { ...exercise, sets: updatedSets };
         }
         return exercise;
-      }),
+      })
     );
   };
 
@@ -204,7 +196,7 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
           return { ...exercise, notes };
         }
         return exercise;
-      }),
+      })
     );
   };
 
@@ -233,40 +225,86 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
     </View>
   );
 
-  const SetRow = ({ set, index, exercise }: { set: Set; index: number; exercise: Exercise }) => (
+  const WeightInput = ({ set, exercise }: { set: Set; exercise: Exercise }) => {
+    const [localValue, setLocalValue] = useState(set.weight);
+
+    const handleChange = (value: string) => {
+      setLocalValue(value);
+    };
+
+    const handleBlur = () => {
+      handleWeightChange(exercise.id, set.id, localValue);
+    };
+
+    return (
+      <TextInput
+        style={styles.input}
+        value={localValue}
+        onChangeText={handleChange}
+        onBlur={handleBlur}
+        placeholder=""
+        keyboardType="decimal-pad"
+        selectTextOnFocus={true}
+      />
+    );
+  };
+
+  const RepsInput = ({ set, exercise }: { set: Set; exercise: Exercise }) => {
+    const [localValue, setLocalValue] = useState(set.reps);
+
+    const handleChange = (value: string) => {
+      setLocalValue(value);
+    };
+
+    const handleBlur = () => {
+      handleRepsChange(exercise.id, set.id, localValue);
+    };
+
+    return (
+      <TextInput
+        style={styles.input}
+        value={localValue}
+        onChangeText={handleChange}
+        onBlur={handleBlur}
+        placeholder=""
+        keyboardType="number-pad"
+        selectTextOnFocus={true}
+      />
+    );
+  };
+
+  // Existing SetRow component starts here
+  const SetRow = ({
+    set,
+    index,
+    exercise,
+  }: {
+    set: Set;
+    index: number;
+    exercise: Exercise;
+  }) => (
     <View style={[styles.setRow, set.completed && styles.completedSet]}>
       <Text style={styles.setNumber}>{index + 1}</Text>
-      
-      <TextInput
-        style={styles.input}
-        value={set.weight}
-        onChangeText={(value) => handleWeightChange(exercise.id, set.id, value)}
-        placeholder="0"
-        keyboardType="decimal-pad"
-        returnKeyType="done"
-        selectTextOnFocus={true}
-      />
-      
-      <TextInput
-        style={styles.input}
-        value={set.reps}
-        onChangeText={(value) => handleRepsChange(exercise.id, set.id, value)}
-        placeholder="0"
-        keyboardType="number-pad"
-        returnKeyType="done"
-        selectTextOnFocus={true}
-      />
-      
+      <WeightInput set={set} exercise={exercise} />
+      <RepsInput set={set} exercise={exercise} />
       <View style={styles.setActions}>
         <TouchableOpacity
-          style={[styles.doneButton, set.completed && styles.doneButtonCompleted]}
+          style={[
+            styles.doneButton,
+            set.completed && styles.doneButtonCompleted,
+          ]}
           onPress={() => handleSetComplete(exercise.id, set.id)}
         >
-          <Text style={[styles.doneButtonText, set.completed && styles.doneButtonTextCompleted]}>
+          <Text
+            style={[
+              styles.doneButtonText,
+              set.completed && styles.doneButtonTextCompleted,
+            ]}
+          >
             {set.completed ? "✓" : "Done"}
           </Text>
         </TouchableOpacity>
-        
+
         <TouchableOpacity
           style={styles.removeButton}
           onPress={() => handleRemoveSet(exercise.id, set.id)}
@@ -301,7 +339,10 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
           {exercises.map((exercise) => (
             <View
               key={exercise.id}
-              style={[styles.exerciseCard, exercise.completed && styles.completedExercise]}
+              style={[
+                styles.exerciseCard,
+                exercise.completed && styles.completedExercise,
+              ]}
             >
               {/* Exercise Header */}
               <TouchableOpacity
@@ -313,7 +354,9 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                 }
               >
                 <View style={styles.exerciseTitle}>
-                  {exercise.completed && <Text style={styles.checkmark}>✓ </Text>}
+                  {exercise.completed && (
+                    <Text style={styles.checkmark}>✓ </Text>
+                  )}
                   <Text style={styles.exerciseName}>{exercise.name}</Text>
                 </View>
                 <Text style={styles.expandIcon}>
@@ -331,7 +374,12 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
 
               {/* Sets */}
               {exercise.sets.map((set, index) => (
-                <SetRow key={set.id} set={set} index={index} exercise={exercise} />
+                <SetRow
+                  key={set.id}
+                  set={set}
+                  index={index}
+                  exercise={exercise}
+                />
               ))}
 
               {/* Add Set Button */}
@@ -349,7 +397,9 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                   <TextInput
                     style={styles.notesInput}
                     value={exercise.notes}
-                    onChangeText={(notes) => handleNotesChange(exercise.id, notes)}
+                    onChangeText={(notes) =>
+                      handleNotesChange(exercise.id, notes)
+                    }
                     placeholder="Add notes about this exercise..."
                     multiline
                     numberOfLines={3}
@@ -361,7 +411,10 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
         </View>
 
         {/* Complete Workout Button */}
-        <TouchableOpacity style={styles.completeButton} onPress={handleCompleteWorkout}>
+        <TouchableOpacity
+          style={styles.completeButton}
+          onPress={handleCompleteWorkout}
+        >
           <Text style={styles.completeButtonText}>Complete Workout</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -372,221 +425,221 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: "#f8f9fa",
   },
   scrollView: {
     flex: 1,
     padding: 16,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 20,
-    flexWrap: 'wrap',
+    flexWrap: "wrap",
   },
   workoutTitle: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#2c3e50',
+    fontWeight: "bold",
+    color: "#2c3e50",
   },
   headerRight: {
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
   },
   progressText: {
     fontSize: 14,
-    color: '#7f8c8d',
+    color: "#7f8c8d",
     marginBottom: 8,
   },
   saveButton: {
-    backgroundColor: '#ecf0f1',
+    backgroundColor: "#ecf0f1",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 6,
   },
   saveButtonText: {
     fontSize: 14,
-    color: '#2c3e50',
+    color: "#2c3e50",
   },
   progressContainer: {
     marginBottom: 24,
   },
   progressBackground: {
     height: 8,
-    backgroundColor: '#ecf0f1',
+    backgroundColor: "#ecf0f1",
     borderRadius: 4,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   progressFill: {
-    height: '100%',
-    backgroundColor: '#3498db',
+    height: "100%",
+    backgroundColor: "#3498db",
     borderRadius: 4,
   },
   exerciseList: {
     gap: 16,
   },
   exerciseCard: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 12,
     padding: 16,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
   completedExercise: {
-    borderColor: '#27ae60',
+    borderColor: "#27ae60",
     borderWidth: 2,
-    backgroundColor: '#f8fff8',
+    backgroundColor: "#f8fff8",
   },
   exerciseHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 16,
   },
   exerciseTitle: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   checkmark: {
-    color: '#27ae60',
+    color: "#27ae60",
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   exerciseName: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#2c3e50',
+    fontWeight: "bold",
+    color: "#2c3e50",
   },
   expandIcon: {
     fontSize: 16,
-    color: '#7f8c8d',
+    color: "#7f8c8d",
   },
   tableHeader: {
-    flexDirection: 'row',
+    flexDirection: "row",
     paddingBottom: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#ecf0f1',
+    borderBottomColor: "#ecf0f1",
     marginBottom: 8,
   },
   tableHeaderText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#7f8c8d',
+    fontWeight: "600",
+    color: "#7f8c8d",
     flex: 1,
-    textAlign: 'center',
+    textAlign: "center",
   },
   setRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#f8f9fa',
+    borderBottomColor: "#f8f9fa",
   },
   completedSet: {
-    backgroundColor: '#f8fff8',
+    backgroundColor: "#f8fff8",
   },
   setNumber: {
     flex: 1,
-    textAlign: 'center',
+    textAlign: "center",
     fontSize: 16,
-    color: '#2c3e50',
+    color: "#2c3e50",
   },
   input: {
     flex: 1,
     height: 40,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: "#ddd",
     borderRadius: 6,
     paddingHorizontal: 8,
     marginHorizontal: 4,
-    textAlign: 'center',
+    textAlign: "center",
     fontSize: 16,
-    backgroundColor: 'white',
+    backgroundColor: "white",
   },
   setActions: {
     flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     gap: 8,
   },
   doneButton: {
-    backgroundColor: '#ecf0f1',
+    backgroundColor: "#ecf0f1",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 6,
   },
   doneButtonCompleted: {
-    backgroundColor: '#27ae60',
+    backgroundColor: "#27ae60",
   },
   doneButtonText: {
     fontSize: 14,
-    color: '#2c3e50',
-    fontWeight: '600',
+    color: "#2c3e50",
+    fontWeight: "600",
   },
   doneButtonTextCompleted: {
-    color: 'white',
+    color: "white",
   },
   removeButton: {
-    backgroundColor: '#e74c3c',
+    backgroundColor: "#e74c3c",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 6,
   },
   removeButtonText: {
     fontSize: 16,
-    color: 'white',
-    fontWeight: 'bold',
+    color: "white",
+    fontWeight: "bold",
   },
   addSetButton: {
     borderWidth: 2,
-    borderColor: '#ddd',
-    borderStyle: 'dashed',
+    borderColor: "#ddd",
+    borderStyle: "dashed",
     borderRadius: 8,
     paddingVertical: 12,
     marginTop: 12,
-    alignItems: 'center',
+    alignItems: "center",
   },
   addSetButtonText: {
     fontSize: 16,
-    color: '#3498db',
-    fontWeight: '600',
+    color: "#3498db",
+    fontWeight: "600",
   },
   notesSection: {
     marginTop: 16,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: '#ecf0f1',
+    borderTopColor: "#ecf0f1",
   },
   notesLabel: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#2c3e50',
+    fontWeight: "600",
+    color: "#2c3e50",
     marginBottom: 8,
   },
   notesInput: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: "#ddd",
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    backgroundColor: 'white',
-    textAlignVertical: 'top',
+    backgroundColor: "white",
+    textAlignVertical: "top",
   },
   completeButton: {
-    backgroundColor: '#27ae60',
+    backgroundColor: "#27ae60",
     paddingVertical: 16,
     borderRadius: 12,
     marginTop: 24,
     marginBottom: 32,
-    alignItems: 'center',
+    alignItems: "center",
   },
   completeButtonText: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: 'white',
+    fontWeight: "bold",
+    color: "white",
   },
 });
 
