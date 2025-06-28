@@ -123,12 +123,15 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
     setId: string,
     value: string,
   ) => {
+    // Allow empty string for clearing input
+    const sanitizedValue = value.replace(/[^0-9.]/g, '');
+    
     setExercises((prevExercises) =>
       prevExercises.map((exercise) => {
         if (exercise.id === exerciseId) {
           const updatedSets = exercise.sets.map((set) => {
             if (set.id === setId) {
-              return { ...set, weight: value };
+              return { ...set, weight: sanitizedValue };
             }
             return set;
           });
@@ -144,12 +147,15 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
     setId: string,
     value: string,
   ) => {
+    // Allow empty string and only numbers
+    const sanitizedValue = value.replace(/[^0-9]/g, '');
+    
     setExercises((prevExercises) =>
       prevExercises.map((exercise) => {
         if (exercise.id === exerciseId) {
           const updatedSets = exercise.sets.map((set) => {
             if (set.id === setId) {
-              return { ...set, reps: value };
+              return { ...set, reps: sanitizedValue };
             }
             return set;
           });
@@ -236,7 +242,9 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
         value={set.weight}
         onChangeText={(value) => handleWeightChange(exercise.id, set.id, value)}
         placeholder="0"
-        keyboardType="numeric"
+        keyboardType="decimal-pad"
+        returnKeyType="done"
+        selectTextOnFocus={true}
       />
       
       <TextInput
@@ -244,7 +252,9 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
         value={set.reps}
         onChangeText={(value) => handleRepsChange(exercise.id, set.id, value)}
         placeholder="0"
-        keyboardType="numeric"
+        keyboardType="number-pad"
+        returnKeyType="done"
+        selectTextOnFocus={true}
       />
       
       <View style={styles.setActions}>
