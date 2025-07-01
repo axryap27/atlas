@@ -1,5 +1,59 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRef } from "react";
+
+const API_BASE_URL =
+  "https://workout-tracker-production-9537.up.railway.app/api";
+
+// API Service Functions
+const apiService = {
+  // Get all exercises
+  getExercises: async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/exercises`);
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error fetching exercises:", error);
+      throw error;
+    }
+  },
+
+  // Create new exercise
+  createExercise: async (exercise: {
+    name: string;
+    description: string;
+    category: string;
+    muscleGroup: string;
+    equipment: string;
+  }) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/exercises`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(exercise),
+      });
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error creating exercise:", error);
+      throw error;
+    }
+  },
+
+  // Get workout days
+  getWorkoutDays: async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/days`);
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error fetching workout days:", error);
+      throw error;
+    }
+  },
+};
 
 import {
   View,
@@ -82,6 +136,60 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
   const [expandedExercise, setExpandedExercise] = useState<string | null>(
     exercises[0]?.id || null
   );
+
+  const [loading, setLoading] = useState(true);
+
+  // Load real exercises from API
+  useEffect(() => {
+    const loadExercises = async () => {
+      try {
+        setLoading(true);
+        const realExercises = await apiService.getExercises();
+        console.log("Loaded exercises from API:", realExercises);
+
+        if (realExercises.length > 0) {
+          // Convert API exercises to your app format
+          const formattedExercises = realExercises
+            .slice(0, 3)
+            .map((exercise: any, index: number) => ({
+              id: exercise.id.toString(),
+              name: exercise.name,
+              sets: [
+                {
+                  id: `${exercise.id}-1`,
+                  weight: "135",
+                  reps: "10",
+                  completed: false,
+                },
+                {
+                  id: `${exercise.id}-2`,
+                  weight: "155",
+                  reps: "8",
+                  completed: false,
+                },
+                {
+                  id: `${exercise.id}-3`,
+                  weight: "175",
+                  reps: "6",
+                  completed: false,
+                },
+              ],
+              completed: false,
+              notes: "",
+            }));
+
+          setExercises(formattedExercises);
+        }
+      } catch (error) {
+        console.error("Failed to load exercises, using defaults");
+        // Keep default exercises on error
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadExercises();
+  }, []);
 
   // Calculate progress percentage
   const totalSets = exercises.reduce(
@@ -364,31 +472,36 @@ const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                 </Text>
               </TouchableOpacity>
 
-              {/* Sets Table Header */}
-              <View style={styles.tableHeader}>
-                <Text style={styles.tableHeaderText}>Set</Text>
-                <Text style={styles.tableHeaderText}>Weight (lbs)</Text>
-                <Text style={styles.tableHeaderText}>Reps</Text>
-                <Text style={styles.tableHeaderText}>Actions</Text>
-              </View>
+              {/* Only show sets when expanded */}
+              {expandedExercise === exercise.id && (
+                <>
+                  {/* Sets Table Header */}
+                  <View style={styles.tableHeader}>
+                    <Text style={styles.tableHeaderText}>Set</Text>
+                    <Text style={styles.tableHeaderText}>Weight (lbs)</Text>
+                    <Text style={styles.tableHeaderText}>Reps</Text>
+                    <Text style={styles.tableHeaderText}>Actions</Text>
+                  </View>
 
-              {/* Sets */}
-              {exercise.sets.map((set, index) => (
-                <SetRow
-                  key={set.id}
-                  set={set}
-                  index={index}
-                  exercise={exercise}
-                />
-              ))}
+                  {/* Sets */}
+                  {exercise.sets.map((set, index) => (
+                    <SetRow
+                      key={set.id}
+                      set={set}
+                      index={index}
+                      exercise={exercise}
+                    />
+                  ))}
 
-              {/* Add Set Button */}
-              <TouchableOpacity
-                style={styles.addSetButton}
-                onPress={() => handleAddSet(exercise.id)}
-              >
-                <Text style={styles.addSetButtonText}>+ Add Set</Text>
-              </TouchableOpacity>
+                  {/* Add Set Button */}
+                  <TouchableOpacity
+                    style={styles.addSetButton}
+                    onPress={() => handleAddSet(exercise.id)}
+                  >
+                    <Text style={styles.addSetButtonText}>+ Add Set</Text>
+                  </TouchableOpacity>
+                </>
+              )}
 
               {/* Notes (when expanded) */}
               {expandedExercise === exercise.id && (
