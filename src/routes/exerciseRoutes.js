@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getAllExercises, createExercise } = require('../controllers/exerciseController');
+const { getAllExercises, createExercise, deleteExercise } = require('../controllers/exerciseController');
 
 // GET /api/exercises - Get all exercises
 router.get('/', getAllExercises);
@@ -9,3 +9,6 @@ router.get('/', getAllExercises);
 router.post('/', createExercise);
 
 module.exports = router;
+
+// exercise deletion
+router.delete('/:id', deleteExercise);

@@ -43,3 +43,25 @@ module.exports = {
   getAllExercises,
   createExercise
 };
+
+// Delete exercise
+const deleteExercise = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const deletedExercise = await prisma.exercise.delete({
+      where: { id: parseInt(id) }
+    });
+    
+    res.json({ message: 'Exercise deleted successfully', exercise: deletedExercise });
+  } catch (error) {
+    console.error('Error deleting exercise:', error);
+    res.status(500).json({ error: 'Failed to delete exercise' });
+  }
+};
+
+module.exports = {
+  getAllExercises,
+  createExercise,
+  deleteExercise  // Add this export
+};
