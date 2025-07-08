@@ -64,14 +64,14 @@ export default function WorkoutScreen() {
       setLoading(true);
       const exercisesData: ExerciseData[] = await apiService.getExercises();
       
-      // Convert to workout format
-      const workoutExercises: Exercise[] = exercisesData.map((exercise) => ({
+      // Convert to workout format with unique IDs
+      const workoutExercises: Exercise[] = exercisesData.map((exercise, exerciseIndex) => ({
         id: exercise.id.toString(),
         name: exercise.name,
         sets: [
-          { id: `${exercise.id}-1`, weight: "", reps: "", completed: false },
-          { id: `${exercise.id}-2`, weight: "", reps: "", completed: false },
-          { id: `${exercise.id}-3`, weight: "", reps: "", completed: false },
+          { id: `ex${exercise.id}-set1`, weight: "", reps: "", completed: false },
+          { id: `ex${exercise.id}-set2`, weight: "", reps: "", completed: false },
+          { id: `ex${exercise.id}-set3`, weight: "", reps: "", completed: false },
         ],
         completed: false,
         notes: "",
@@ -157,7 +157,7 @@ export default function WorkoutScreen() {
         if (exercise.id === exerciseId) {
           const lastSet = exercise.sets[exercise.sets.length - 1];
           const newSet: Set = {
-            id: `${exerciseId}-${exercise.sets.length + 1}`,
+            id: `ex${exerciseId}-set${exercise.sets.length + 1}-${Date.now()}`,
             weight: lastSet ? lastSet.weight : "",
             reps: lastSet ? lastSet.reps : "",
             completed: false,
