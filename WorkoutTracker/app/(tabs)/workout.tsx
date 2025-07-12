@@ -599,12 +599,17 @@ export default function WorkoutScreen() {
               </View>
             )}
           </ScrollView>
+          
         </SafeAreaView>
       </Modal>
     </SafeAreaView>
   );
 }
 
+
+// styles for all components/ui pieces 
+// colors, shapes, sizes, etc
+// to be changed/modified
 const getStyles = (isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
@@ -1006,5 +1011,66 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     fontSize: 14,
     color: isDark ? "#8E8E93" : "#6D6D70",
     textAlign: "center",
+  },
+  // template styles for pre-made/saved workouts
+  templatesScrollView: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  templateCard: {
+    backgroundColor: "#2D3748",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#4A5568",
+  },
+  templateHeader: {
+    marginBottom: 12,
+  },
+  templateName: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#F5F5F5",
+    marginBottom: 4,
+  },
+  templateDescription: {
+    fontSize: 14,
+    color: "#A0AEC0",
+  },
+  templateExercises: {
+    marginBottom: 12,
+  },
+  templateExerciseText: {
+    fontSize: 14,
+    color: "#F5F5F5",
+    marginBottom: 2,
+  },
+  templateFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  templateStats: {
+    fontSize: 12,
+    color: "#A0AEC0",
+  },
+  createTemplateButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#2D3748",
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: "#68D391",
+    borderStyle: "dashed",
+  },
+  createTemplateText: {
+    fontSize: 16,
+    color: "#68D391",
+    fontWeight: "600",
+    marginLeft: 8,
   },
 });
