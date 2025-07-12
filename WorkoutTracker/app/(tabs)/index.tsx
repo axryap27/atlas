@@ -1,4 +1,3 @@
-
 // app/(tabs)/index.tsx - Fixed Home Dashboard
 import React, { useState, useEffect } from "react";
 import {
@@ -15,7 +14,8 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
 // Updated imports to match your file structure
-const API_BASE_URL = "https://workout-tracker-production-9537.up.railway.app/api";
+const API_BASE_URL =
+  "https://workout-tracker-production-9537.up.railway.app/api";
 
 // Simplified API service (inline)
 const apiService = {
@@ -73,20 +73,20 @@ export default function HomeScreen() {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      console.log('Starting to load dashboard data...');
-      
+      console.log("Starting to load dashboard data...");
+
       const [sessionsData, exercisesData] = await Promise.all([
         apiService.getUserSessions(),
         apiService.getExercises(),
       ]);
-      
-      console.log('Sessions data:', sessionsData);
-      console.log('Exercises data:', exercisesData);
-      
+
+      console.log("Sessions data:", sessionsData);
+      console.log("Exercises data:", exercisesData);
+
       setRecentSessions(sessionsData.slice(0, 3));
       setExercises(exercisesData);
     } catch (error) {
-      console.error('Failed to load dashboard data:', error);
+      console.error("Failed to load dashboard data:", error);
       // Set empty data on error
       setRecentSessions([]);
       setExercises([]);
