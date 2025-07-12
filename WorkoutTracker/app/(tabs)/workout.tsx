@@ -60,6 +60,42 @@ export default function WorkoutScreen() {
   const [expandedExercise, setExpandedExercise] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [workoutStartTime] = useState(new Date());
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [templates, setTemplates] = useState([
+  // Sample templates - later we'll load from API
+    {
+      id: 1,
+      name: "Push Day",
+      description: "Chest, shoulders, triceps",
+      exercises: [
+        { id: 1, name: "Bench Press", sets: 3, reps: "8-10" },
+        { id: 5, name: "Overhead Press", sets: 3, reps: "8-10" },
+        { id: 45, name: "Tricep Pushdown", sets: 3, reps: "10-12" }
+      ]
+    },
+    {
+      id: 2,
+      name: "Pull Day", 
+      description: "Back, biceps",
+      exercises: [
+        { id: 9, name: "Pull-ups", sets: 3, reps: "5-8" },
+        { id: 13, name: "Bent-over Row", sets: 3, reps: "8-10" },
+        { id: 41, name: "Barbell Curls", sets: 3, reps: "10-12" }
+      ]
+    },
+    {
+      id: 3,
+      name: "Leg Day",
+      description: "Quads, hamstrings, glutes",
+      exercises: [
+        { id: 21, name: "Squat", sets: 4, reps: "6-8" },
+        { id: 23, name: "Romanian Deadlift", sets: 3, reps: "8-10" },
+        { id: 24, name: "Lunges", sets: 3, reps: "12 each leg" }
+      ]
+    }
+      ]);
+  const [showCreateTemplate, setShowCreateTemplate] = useState(false);
+
 
   useEffect(() => {
     loadAvailableExercises();
@@ -226,6 +262,29 @@ export default function WorkoutScreen() {
     );
   };
 
+  const startFromTemplate = (template) => {
+      // Convert template to workout format
+      const templateExercises = template.exercises.map(exercise => ({
+        id: exercise.id.toString(),
+        name: exercise.name,
+        sets: Array.from({ length: exercise.sets }, (_, i) => ({
+          id: `ex${exercise.id}-set${i + 1}`,
+          weight: "",
+          reps: "",
+          completed: false,
+        })),
+        completed: false,
+        notes: "",
+      }));
+    
+      setSelectedExercises(templateExercises);
+      setWorkoutStarted(true);
+      setShowTemplates(false);
+      if (templateExercises.length > 0) {
+        setExpandedExercise(templateExercises[0].id);
+      }
+  };
+
   const styles = getStyles(isDark);
 
   // Pre-workout start screen
@@ -252,15 +311,15 @@ export default function WorkoutScreen() {
             </TouchableOpacity>
 
             {/* Workout Templates (Coming Soon) */}
-            <TouchableOpacity style={[styles.startOption, styles.disabledOption]}>
+            <TouchableOpacity style={styles.startOption} onPress={() => setShowTemplates(true)}>
               <View style={styles.startOptionContent}>
-                <Ionicons name="library" size={24} color="#8E8E93" />
+                <Ionicons name="library" size={24} color="#68D391" />
                 <View style={styles.startOptionText}>
-                  <Text style={[styles.startOptionTitle, styles.disabledText]}>
+                  <Text style={[styles.startOptionTitle]}>
                     Workout Templates
                   </Text>
-                  <Text style={[styles.startOptionDescription, styles.disabledText]}>
-                    Coming soon - saved workout routines
+                  <Text style={[styles.startOptionDescription]}>
+                    Use saved workout routines
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color="#8E8E93" />
