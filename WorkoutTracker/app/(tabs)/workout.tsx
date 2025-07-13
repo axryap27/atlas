@@ -599,13 +599,73 @@ export default function WorkoutScreen() {
               </View>
             )}
           </ScrollView>
-          
         </SafeAreaView>
       </Modal>
-    </SafeAreaView>
-  );
-}
-
+  
+        {/* Workout Templates Modal */}
+        <Modal
+          visible={showTemplates}
+          animationType="slide"
+          presentationStyle="pageSheet"
+        >
+          <SafeAreaView style={styles.modalContainer}>
+            {/* Header */}
+            <View style={styles.modalHeader}>
+              <TouchableOpacity onPress={() => setShowTemplates(false)}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <Text style={styles.modalTitle}>Workout Templates</Text>
+              <TouchableOpacity onPress={() => setShowCreateTemplate(true)}>
+                <Text style={styles.modalCancelText}>Create</Text>
+              </TouchableOpacity>
+            </View>
+  
+            {/* Templates List */}
+            <ScrollView style={styles.templatesScrollView}>
+              {templates.map((template) => (
+                <TouchableOpacity
+                  key={template.id}
+                  style={styles.templateCard}
+                  onPress={() => startFromTemplate(template)}
+                >
+                  <View style={styles.templateHeader}>
+                    <Text style={styles.templateName}>{template.name}</Text>
+                    <Text style={styles.templateDescription}>{template.description}</Text>
+                  </View>
+                  
+                  <View style={styles.templateExercises}>
+                    {template.exercises.map((exercise, index) => (
+                      <Text key={exercise.id} style={styles.templateExerciseText}>
+                        {index + 1}. {exercise.name} - {exercise.sets} sets × {exercise.reps}
+                      </Text>
+                    ))}
+                  </View>
+                  
+                  <View style={styles.templateFooter}>
+                    <Text style={styles.templateStats}>
+                      {template.exercises.length} exercises • {template.exercises.reduce((acc, ex) => acc + ex.sets, 0)} sets
+                    </Text>
+                    <Ionicons name="chevron-forward" size={20} color="#A0AEC0" />
+                  </View>
+                </TouchableOpacity>
+              ))}
+  
+              {/* Create Template Button */}
+              <TouchableOpacity 
+                style={styles.createTemplateButton}
+                onPress={() => setShowCreateTemplate(true)}
+              >
+                <Ionicons name="add" size={24} color="#68D391" />
+                <Text style={styles.createTemplateText}>Create New Template</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </SafeAreaView>
+        </Modal>
+  
+      </SafeAreaView>
+      
+    );
+  }
 
 // styles for all components/ui pieces 
 // colors, shapes, sizes, etc
