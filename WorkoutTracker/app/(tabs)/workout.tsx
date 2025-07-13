@@ -14,7 +14,8 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-const API_BASE_URL = "https://workout-tracker-production-9537.up.railway.app/api";
+const API_BASE_URL =
+  "https://workout-tracker-production-9537.up.railway.app/api";
 
 interface Set {
   id: string;
@@ -64,10 +65,12 @@ const apiService = {
 export default function WorkoutScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
-  
+
   const [workoutStarted, setWorkoutStarted] = useState(false);
   const [selectedExercises, setSelectedExercises] = useState<Exercise[]>([]);
-  const [availableExercises, setAvailableExercises] = useState<ExerciseData[]>([]);
+  const [availableExercises, setAvailableExercises] = useState<ExerciseData[]>(
+    []
+  );
   const [showExercisePicker, setShowExercisePicker] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState("all");
@@ -76,7 +79,7 @@ export default function WorkoutScreen() {
   const [workoutStartTime] = useState(new Date());
   const [showTemplates, setShowTemplates] = useState(false);
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([
-  // Sample templates - later we'll load from API
+    // Sample templates - later we'll load from API
     {
       id: 1,
       name: "Push Day",
@@ -84,18 +87,18 @@ export default function WorkoutScreen() {
       exercises: [
         { id: 1, name: "Bench Press", sets: 3, reps: "8-10" },
         { id: 5, name: "Overhead Press", sets: 3, reps: "8-10" },
-        { id: 45, name: "Tricep Pushdown", sets: 3, reps: "10-12" }
-      ]
+        { id: 45, name: "Tricep Pushdown", sets: 3, reps: "10-12" },
+      ],
     },
     {
       id: 2,
-      name: "Pull Day", 
+      name: "Pull Day",
       description: "Back, biceps",
       exercises: [
         { id: 9, name: "Pull-ups", sets: 3, reps: "5-8" },
         { id: 13, name: "Bent-over Row", sets: 3, reps: "8-10" },
-        { id: 41, name: "Barbell Curls", sets: 3, reps: "10-12" }
-      ]
+        { id: 41, name: "Barbell Curls", sets: 3, reps: "10-12" },
+      ],
     },
     {
       id: 3,
@@ -104,12 +107,11 @@ export default function WorkoutScreen() {
       exercises: [
         { id: 21, name: "Squat", sets: 4, reps: "6-8" },
         { id: 23, name: "Romanian Deadlift", sets: 3, reps: "8-10" },
-        { id: 24, name: "Lunges", sets: 3, reps: "12 each leg" }
-      ]
-    }
-      ]);
+        { id: 24, name: "Lunges", sets: 3, reps: "12 each leg" },
+      ],
+    },
+  ]);
   const [showCreateTemplate, setShowCreateTemplate] = useState(false);
-
 
   useEffect(() => {
     loadAvailableExercises();
@@ -128,11 +130,25 @@ export default function WorkoutScreen() {
     }
   };
 
-  const muscleGroups = ["all", "chest", "back", "legs", "shoulders", "biceps", "triceps", "abs", "calves"];
+  const muscleGroups = [
+    "all",
+    "chest",
+    "back",
+    "legs",
+    "shoulders",
+    "biceps",
+    "triceps",
+    "abs",
+    "calves",
+  ];
 
-  const filteredExercises = availableExercises.filter(exercise => {
-    const matchesSearch = exercise.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesMuscleGroup = selectedMuscleGroup === "all" || exercise.muscleGroup === selectedMuscleGroup;
+  const filteredExercises = availableExercises.filter((exercise) => {
+    const matchesSearch = exercise.name
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    const matchesMuscleGroup =
+      selectedMuscleGroup === "all" ||
+      exercise.muscleGroup === selectedMuscleGroup;
     return matchesSearch && matchesMuscleGroup;
   });
 
@@ -149,13 +165,13 @@ export default function WorkoutScreen() {
       notes: "",
     };
 
-    setSelectedExercises(prev => [...prev, newExercise]);
+    setSelectedExercises((prev) => [...prev, newExercise]);
     setShowExercisePicker(false);
     setExpandedExercise(newExercise.id);
   };
 
   const removeExerciseFromWorkout = (exerciseId: string) => {
-    setSelectedExercises(prev => prev.filter(ex => ex.id !== exerciseId));
+    setSelectedExercises((prev) => prev.filter((ex) => ex.id !== exerciseId));
   };
 
   const startQuickWorkout = () => {
@@ -164,12 +180,17 @@ export default function WorkoutScreen() {
   };
 
   // Calculate progress
-  const totalSets = selectedExercises.reduce((acc, exercise) => acc + exercise.sets.length, 0);
-  const completedSets = selectedExercises.reduce(
-    (acc, exercise) => acc + exercise.sets.filter((set) => set.completed).length,
+  const totalSets = selectedExercises.reduce(
+    (acc, exercise) => acc + exercise.sets.length,
     0
   );
-  const progressPercentage = totalSets > 0 ? (completedSets / totalSets) * 100 : 0;
+  const completedSets = selectedExercises.reduce(
+    (acc, exercise) =>
+      acc + exercise.sets.filter((set) => set.completed).length,
+    0
+  );
+  const progressPercentage =
+    totalSets > 0 ? (completedSets / totalSets) * 100 : 0;
 
   const handleSetComplete = (exerciseId: string, setId: string) => {
     setSelectedExercises((prevExercises) =>
@@ -195,7 +216,11 @@ export default function WorkoutScreen() {
     );
   };
 
-  const handleWeightChange = (exerciseId: string, setId: string, value: string) => {
+  const handleWeightChange = (
+    exerciseId: string,
+    setId: string,
+    value: string
+  ) => {
     setSelectedExercises((exercises) =>
       exercises.map((exercise) =>
         exercise.id === exerciseId
@@ -210,7 +235,11 @@ export default function WorkoutScreen() {
     );
   };
 
-  const handleRepsChange = (exerciseId: string, setId: string, value: string) => {
+  const handleRepsChange = (
+    exerciseId: string,
+    setId: string,
+    value: string
+  ) => {
     setSelectedExercises((exercises) =>
       exercises.map((exercise) =>
         exercise.id === exerciseId
@@ -257,46 +286,50 @@ export default function WorkoutScreen() {
   };
 
   const handleCompleteWorkout = () => {
-    const completedExercises = selectedExercises.filter((ex) => ex.completed).length;
-    const duration = Math.round((new Date().getTime() - workoutStartTime.getTime()) / (1000 * 60));
-    
+    const completedExercises = selectedExercises.filter(
+      (ex) => ex.completed
+    ).length;
+    const duration = Math.round(
+      (new Date().getTime() - workoutStartTime.getTime()) / (1000 * 60)
+    );
+
     Alert.alert(
       "Workout Complete!",
       `Great job! You completed ${completedExercises}/${selectedExercises.length} exercises in ${duration} minutes.`,
       [
-        { 
-          text: "Finish", 
+        {
+          text: "Finish",
           onPress: () => {
             setWorkoutStarted(false);
             setSelectedExercises([]);
             setExpandedExercise(null);
-          }
-        }
+          },
+        },
       ]
     );
   };
 
   const startFromTemplate = (template: WorkoutTemplate) => {
-      // Convert template to workout format
-      const templateExercises = template.exercises.map(exercise => ({
-        id: exercise.id.toString(),
-        name: exercise.name,
-        sets: Array.from({ length: exercise.sets }, (_, i) => ({
-          id: `ex${exercise.id}-set${i + 1}`,
-          weight: "",
-          reps: "",
-          completed: false,
-        })),
+    // Convert template to workout format
+    const templateExercises = template.exercises.map((exercise) => ({
+      id: exercise.id.toString(),
+      name: exercise.name,
+      sets: Array.from({ length: exercise.sets }, (_, i) => ({
+        id: `ex${exercise.id}-set${i + 1}`,
+        weight: "",
+        reps: "",
         completed: false,
-        notes: "",
-      }));
-    
-      setSelectedExercises(templateExercises);
-      setWorkoutStarted(true);
-      setShowTemplates(false);
-      if (templateExercises.length > 0) {
-        setExpandedExercise(templateExercises[0].id);
-      }
+      })),
+      completed: false,
+      notes: "",
+    }));
+
+    setSelectedExercises(templateExercises);
+    setWorkoutStarted(true);
+    setShowTemplates(false);
+    if (templateExercises.length > 0) {
+      setExpandedExercise(templateExercises[0].id);
+    }
   };
 
   const styles = getStyles(isDark);
@@ -308,10 +341,15 @@ export default function WorkoutScreen() {
         <ScrollView style={styles.scrollView}>
           <View style={styles.startScreen}>
             <Text style={styles.startTitle}>Start New Workout</Text>
-            <Text style={styles.startSubtitle}>Choose how you want to begin</Text>
+            <Text style={styles.startSubtitle}>
+              Choose how you want to begin
+            </Text>
 
             {/* Quick Start */}
-            <TouchableOpacity style={styles.startOption} onPress={startQuickWorkout}>
+            <TouchableOpacity
+              style={styles.startOption}
+              onPress={startQuickWorkout}
+            >
               <View style={styles.startOptionContent}>
                 <Ionicons name="flash" size={24} color="#007AFF" />
                 <View style={styles.startOptionText}>
@@ -320,12 +358,19 @@ export default function WorkoutScreen() {
                     Start with empty workout, add exercises as you go
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color={isDark ? "#8E8E93" : "#6D6D70"} />
+                <Ionicons
+                  name="chevron-forward"
+                  size={20}
+                  color={isDark ? "#8E8E93" : "#6D6D70"}
+                />
               </View>
             </TouchableOpacity>
 
-            {/* Workout Templates (Coming Soon) */}
-            <TouchableOpacity style={styles.startOption} onPress={() => setShowTemplates(true)}>
+            {/* Workout Templates*/}
+            <TouchableOpacity
+              style={styles.startOption}
+              onPress={() => setShowTemplates(true)}
+            >
               <View style={styles.startOptionContent}>
                 <Ionicons name="library" size={24} color="#68D391" />
                 <View style={styles.startOptionText}>
@@ -341,14 +386,18 @@ export default function WorkoutScreen() {
             </TouchableOpacity>
 
             {/* Recent Workouts (Coming Soon) */}
-            <TouchableOpacity style={[styles.startOption, styles.disabledOption]}>
+            <TouchableOpacity
+              style={[styles.startOption, styles.disabledOption]}
+            >
               <View style={styles.startOptionContent}>
                 <Ionicons name="time" size={24} color="#8E8E93" />
                 <View style={styles.startOptionText}>
                   <Text style={[styles.startOptionTitle, styles.disabledText]}>
                     Recent Workouts
                   </Text>
-                  <Text style={[styles.startOptionDescription, styles.disabledText]}>
+                  <Text
+                    style={[styles.startOptionDescription, styles.disabledText]}
+                  >
                     Coming soon - repeat previous workouts
                   </Text>
                 </View>
@@ -368,7 +417,7 @@ export default function WorkoutScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerTop}>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => setWorkoutStarted(false)}
               style={styles.backButton}
             >
@@ -376,9 +425,11 @@ export default function WorkoutScreen() {
               <Text style={styles.backText}>End Workout</Text>
             </TouchableOpacity>
           </View>
-          
+
           <Text style={styles.workoutTitle}>
-            {selectedExercises.length === 0 ? "Empty Workout" : `${selectedExercises.length} Exercises`}
+            {selectedExercises.length === 0
+              ? "Empty Workout"
+              : `${selectedExercises.length} Exercises`}
           </Text>
           {totalSets > 0 && (
             <Text style={styles.progressText}>
@@ -391,14 +442,19 @@ export default function WorkoutScreen() {
         {totalSets > 0 && (
           <View style={styles.progressContainer}>
             <View style={styles.progressBackground}>
-              <View style={[styles.progressFill, { width: `${progressPercentage}%` }]} />
+              <View
+                style={[
+                  styles.progressFill,
+                  { width: `${progressPercentage}%` },
+                ]}
+              />
             </View>
           </View>
         )}
 
         {/* Add Exercise Button */}
-        <TouchableOpacity 
-          style={styles.addExerciseButton} 
+        <TouchableOpacity
+          style={styles.addExerciseButton}
           onPress={() => setShowExercisePicker(true)}
         >
           <Ionicons name="add" size={24} color="#007AFF" />
@@ -411,7 +467,10 @@ export default function WorkoutScreen() {
             {selectedExercises.map((exercise) => (
               <View
                 key={exercise.id}
-                style={[styles.exerciseCard, exercise.completed && styles.completedExercise]}
+                style={[
+                  styles.exerciseCard,
+                  exercise.completed && styles.completedExercise,
+                ]}
               >
                 {/* Exercise Header */}
                 <TouchableOpacity
@@ -424,9 +483,18 @@ export default function WorkoutScreen() {
                 >
                   <View style={styles.exerciseTitle}>
                     {exercise.completed && (
-                      <Ionicons name="checkmark-circle" size={20} color="#34C759" />
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={20}
+                        color="#34C759"
+                      />
                     )}
-                    <Text style={[styles.exerciseName, exercise.completed && { marginLeft: 8 }]}>
+                    <Text
+                      style={[
+                        styles.exerciseName,
+                        exercise.completed && { marginLeft: 8 },
+                      ]}
+                    >
                       {exercise.name}
                     </Text>
                   </View>
@@ -437,10 +505,14 @@ export default function WorkoutScreen() {
                     >
                       <Ionicons name="trash" size={16} color="#FF3B30" />
                     </TouchableOpacity>
-                    <Ionicons 
-                      name={expandedExercise === exercise.id ? "chevron-up" : "chevron-down"} 
-                      size={20} 
-                      color={isDark ? "#8E8E93" : "#6D6D70"} 
+                    <Ionicons
+                      name={
+                        expandedExercise === exercise.id
+                          ? "chevron-up"
+                          : "chevron-down"
+                      }
+                      size={20}
+                      color={isDark ? "#8E8E93" : "#6D6D70"}
                     />
                   </View>
                 </TouchableOpacity>
@@ -458,36 +530,53 @@ export default function WorkoutScreen() {
 
                     {/* Sets */}
                     {exercise.sets.map((set, index) => (
-                      <View key={set.id} style={[styles.setRow, set.completed && styles.completedSet]}>
+                      <View
+                        key={set.id}
+                        style={[
+                          styles.setRow,
+                          set.completed && styles.completedSet,
+                        ]}
+                      >
                         <Text style={styles.setNumber}>{index + 1}</Text>
-                        
+
                         <TextInput
                           style={styles.input}
                           value={set.weight}
-                          onChangeText={(value) => handleWeightChange(exercise.id, set.id, value)}
+                          onChangeText={(value) =>
+                            handleWeightChange(exercise.id, set.id, value)
+                          }
                           placeholder="0"
                           keyboardType="decimal-pad"
                           selectTextOnFocus={true}
                         />
-                        
+
                         <TextInput
                           style={styles.input}
                           value={set.reps}
-                          onChangeText={(value) => handleRepsChange(exercise.id, set.id, value)}
+                          onChangeText={(value) =>
+                            handleRepsChange(exercise.id, set.id, value)
+                          }
                           placeholder="0"
                           keyboardType="number-pad"
                           selectTextOnFocus={true}
                         />
-                        
+
                         <View style={styles.setActions}>
                           <TouchableOpacity
-                            style={[styles.doneButton, set.completed && styles.doneButtonCompleted]}
-                            onPress={() => handleSetComplete(exercise.id, set.id)}
+                            style={[
+                              styles.doneButton,
+                              set.completed && styles.doneButtonCompleted,
+                            ]}
+                            onPress={() =>
+                              handleSetComplete(exercise.id, set.id)
+                            }
                           >
-                            <Ionicons 
-                              name={set.completed ? "checkmark" : "ellipse-outline"} 
-                              size={20} 
-                              color={set.completed ? "#FFFFFF" : "#007AFF"} 
+                            <Ionicons
+                              name={
+                                set.completed ? "checkmark" : "ellipse-outline"
+                              }
+                              size={20}
+                              color={set.completed ? "#FFFFFF" : "#007AFF"}
                             />
                           </TouchableOpacity>
 
@@ -516,7 +605,11 @@ export default function WorkoutScreen() {
           </View>
         ) : (
           <View style={styles.emptyWorkout}>
-            <Ionicons name="fitness-outline" size={64} color={isDark ? "#3A3A3C" : "#C6C6C8"} />
+            <Ionicons
+              name="fitness-outline"
+              size={64}
+              color={isDark ? "#3A3A3C" : "#C6C6C8"}
+            />
             <Text style={styles.emptyWorkoutText}>No exercises added yet</Text>
             <Text style={styles.emptyWorkoutSubtext}>
               Tap "Add Exercise" to start building your workout
@@ -526,7 +619,10 @@ export default function WorkoutScreen() {
 
         {/* Complete Workout Button */}
         {selectedExercises.length > 0 && (
-          <TouchableOpacity style={styles.completeButton} onPress={handleCompleteWorkout}>
+          <TouchableOpacity
+            style={styles.completeButton}
+            onPress={handleCompleteWorkout}
+          >
             <Text style={styles.completeButtonText}>Complete Workout</Text>
           </TouchableOpacity>
         )}
@@ -550,7 +646,11 @@ export default function WorkoutScreen() {
 
           {/* Fixed Search Bar */}
           <View style={styles.searchContainer}>
-            <Ionicons name="search" size={20} color={isDark ? "#8E8E93" : "#6D6D70"} />
+            <Ionicons
+              name="search"
+              size={20}
+              color={isDark ? "#8E8E93" : "#6D6D70"}
+            />
             <TextInput
               style={styles.searchInput}
               placeholder="Search exercises..."
@@ -562,20 +662,27 @@ export default function WorkoutScreen() {
 
           {/* Fixed Muscle Group Filter */}
           <View style={styles.filterWrapper}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterContainer}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.filterContainer}
+            >
               {muscleGroups.map((group) => (
                 <TouchableOpacity
                   key={group}
                   style={[
                     styles.filterButton,
-                    selectedMuscleGroup === group && styles.filterButtonActive
+                    selectedMuscleGroup === group && styles.filterButtonActive,
                   ]}
                   onPress={() => setSelectedMuscleGroup(group)}
                 >
-                  <Text style={[
-                    styles.filterButtonText,
-                    selectedMuscleGroup === group && styles.filterButtonTextActive
-                  ]}>
+                  <Text
+                    style={[
+                      styles.filterButtonText,
+                      selectedMuscleGroup === group &&
+                        styles.filterButtonTextActive,
+                    ]}
+                  >
                     {group.charAt(0).toUpperCase() + group.slice(1)}
                   </Text>
                 </TouchableOpacity>
@@ -584,7 +691,7 @@ export default function WorkoutScreen() {
           </View>
 
           {/* Scrollable Exercise List */}
-          <ScrollView 
+          <ScrollView
             style={styles.exerciseScrollView}
             contentContainerStyle={styles.exerciseScrollContent}
             showsVerticalScrollIndicator={true}
@@ -598,8 +705,12 @@ export default function WorkoutScreen() {
                   onPress={() => addExerciseToWorkout(exercise)}
                 >
                   <View style={styles.exercisePickerItemContent}>
-                    <Text style={styles.exercisePickerName}>{exercise.name}</Text>
-                    <Text style={styles.exercisePickerMuscle}>{exercise.muscleGroup}</Text>
+                    <Text style={styles.exercisePickerName}>
+                      {exercise.name}
+                    </Text>
+                    <Text style={styles.exercisePickerMuscle}>
+                      {exercise.muscleGroup}
+                    </Text>
                   </View>
                   <Ionicons name="add-circle" size={24} color="#007AFF" />
                 </TouchableOpacity>
@@ -615,536 +726,538 @@ export default function WorkoutScreen() {
           </ScrollView>
         </SafeAreaView>
       </Modal>
-  
-        {/* Workout Templates Modal */}
-        <Modal
-          visible={showTemplates}
-          animationType="slide"
-          presentationStyle="pageSheet"
-        >
-          <SafeAreaView style={styles.modalContainer}>
-            {/* Header */}
-            <View style={styles.modalHeader}>
-              <TouchableOpacity onPress={() => setShowTemplates(false)}>
-                <Text style={styles.modalCancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <Text style={styles.modalTitle}>Workout Templates</Text>
-              <TouchableOpacity onPress={() => setShowCreateTemplate(true)}>
-                <Text style={styles.modalCancelText}>Create</Text>
-              </TouchableOpacity>
-            </View>
-  
-            {/* Templates List */}
-            <ScrollView style={styles.templatesScrollView}>
-              {templates.map((template) => (
-                <TouchableOpacity
-                  key={template.id}
-                  style={styles.templateCard}
-                  onPress={() => startFromTemplate(template)}
-                >
-                  <View style={styles.templateHeader}>
-                    <Text style={styles.templateName}>{template.name}</Text>
-                    <Text style={styles.templateDescription}>{template.description}</Text>
-                  </View>
-                  
-                  <View style={styles.templateExercises}>
-                    {template.exercises.map((exercise, index) => (
-                      <Text key={exercise.id} style={styles.templateExerciseText}>
-                        {index + 1}. {exercise.name} - {exercise.sets} sets × {exercise.reps}
-                      </Text>
-                    ))}
-                  </View>
-                  
-                  <View style={styles.templateFooter}>
-                    <Text style={styles.templateStats}>
-                      {template.exercises.length} exercises • {template.exercises.reduce((acc, ex) => acc + ex.sets, 0)} sets
-                    </Text>
-                    <Ionicons name="chevron-forward" size={20} color="#A0AEC0" />
-                  </View>
-                </TouchableOpacity>
-              ))}
-  
-              {/* Create Template Button */}
-              <TouchableOpacity 
-                style={styles.createTemplateButton}
-                onPress={() => setShowCreateTemplate(true)}
-              >
-                <Ionicons name="add" size={24} color="#68D391" />
-                <Text style={styles.createTemplateText}>Create New Template</Text>
-              </TouchableOpacity>
-            </ScrollView>
-          </SafeAreaView>
-        </Modal>
-  
-      </SafeAreaView>
-      
-    );
-  }
 
-// styles for all components/ui pieces 
+      {/* Workout Templates Modal */}
+      <Modal
+        visible={showTemplates}
+        animationType="slide"
+        presentationStyle="pageSheet"
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          {/* Header */}
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setShowTemplates(false)}>
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Workout Templates</Text>
+            <TouchableOpacity onPress={() => setShowCreateTemplate(true)}>
+              <Text style={styles.modalCancelText}>Create</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Templates List */}
+          <ScrollView style={styles.templatesScrollView}>
+            {templates.map((template) => (
+              <TouchableOpacity
+                key={template.id}
+                style={styles.templateCard}
+                onPress={() => startFromTemplate(template)}
+              >
+                <View style={styles.templateHeader}>
+                  <Text style={styles.templateName}>{template.name}</Text>
+                  <Text style={styles.templateDescription}>
+                    {template.description}
+                  </Text>
+                </View>
+
+                <View style={styles.templateExercises}>
+                    <Text style={styles.templateExerciseList}>
+                      {template.exercises.map(exercise => exercise.name).join(' • ')}
+                    </Text>
+                </View>
+
+                <View style={styles.templateFooter}>
+                  <Text style={styles.templateStats}>
+                    {template.exercises.length} exercises •{" "}
+                    {template.exercises.reduce((acc, ex) => acc + ex.sets, 0)}{" "}
+                    sets
+                  </Text>
+                  <Ionicons name="chevron-forward" size={20} color="#A0AEC0" />
+                </View>
+              </TouchableOpacity>
+            ))}
+
+            {/* Create Template Button */}
+            <TouchableOpacity
+              style={styles.createTemplateButton}
+              onPress={() => setShowCreateTemplate(true)}
+            >
+              <Ionicons name="add" size={24} color="#68D391" />
+              <Text style={styles.createTemplateText}>Create New Template</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
+    </SafeAreaView>
+  );
+}
+
+// styles for all components/ui pieces
 // colors, shapes, sizes, etc
 // to be changed/modified
-const getStyles = (isDark: boolean) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: isDark ? "#000000" : "#F2F2F7",
-  },
-  scrollView: {
-    flex: 1,
-  },
-  // Start screen styles
-  startScreen: {
-    padding: 20,
-  },
-  startTitle: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: isDark ? "#FFFFFF" : "#000000",
-    marginBottom: 8,
-  },
-  startSubtitle: {
-    fontSize: 16,
-    color: isDark ? "#8E8E93" : "#6D6D70",
-    marginBottom: 32,
-  },
-  startOption: {
-    backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-    borderRadius: 12,
-    marginBottom: 16,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: isDark ? 0.3 : 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  disabledOption: {
-    opacity: 0.5,
-  },
-  startOptionContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 20,
-  },
-  startOptionText: {
-    flex: 1,
-    marginLeft: 16,
-  },
-  startOptionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: isDark ? "#FFFFFF" : "#000000",
-    marginBottom: 4,
-  },
-  startOptionDescription: {
-    fontSize: 14,
-    color: isDark ? "#8E8E93" : "#6D6D70",
-  },
-  disabledText: {
-    color: "#8E8E93",
-  },
-  // Active workout styles
-  header: {
-    padding: 16,
-  },
-  headerTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  backButton: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  backText: {
-    fontSize: 16,
-    color: "#007AFF",
-    marginLeft: 4,
-  },
-  workoutTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: isDark ? "#FFFFFF" : "#000000",
-    marginBottom: 8,
-  },
-  progressText: {
-    fontSize: 16,
-    color: isDark ? "#8E8E93" : "#6D6D70",
-  },
-  progressContainer: {
-    marginHorizontal: 16,
-    marginBottom: 24,
-  },
-  progressBackground: {
-    height: 8,
-    backgroundColor: isDark ? "#1C1C1E" : "#E5E5EA",
-    borderRadius: 4,
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: "100%",
-    backgroundColor: "#34C759",
-    borderRadius: 4,
-  },
-  addExerciseButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-    marginHorizontal: 16,
-    marginBottom: 24,
-    paddingVertical: 16,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: "#007AFF",
-    borderStyle: "dashed",
-  },
-  addExerciseText: {
-    fontSize: 16,
-    color: "#007AFF",
-    fontWeight: "600",
-    marginLeft: 8,
-  },
-  emptyWorkout: {
-    alignItems: "center",
-    paddingVertical: 60,
-    paddingHorizontal: 32,
-  },
-  emptyWorkoutText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: isDark ? "#8E8E93" : "#6D6D70",
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptyWorkoutSubtext: {
-    fontSize: 14,
-    color: isDark ? "#8E8E93" : "#6D6D70",
-    textAlign: "center",
-  },
-  exerciseList: {
-    paddingHorizontal: 16,
-    gap: 16,
-  },
-  exerciseCard: {
-    backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: isDark ? 0.3 : 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  completedExercise: {
-    borderColor: "#34C759",
-    borderWidth: 2,
-  },
-  exerciseHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  exerciseTitle: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  exerciseName: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: isDark ? "#FFFFFF" : "#000000",
-  },
-  exerciseActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  removeExerciseButton: {
-    padding: 8,
-  },
-  tableHeader: {
-    flexDirection: "row",
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: isDark ? "#2C2C2E" : "#E5E5EA",
-    marginBottom: 8,
-  },
-  tableHeaderText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: isDark ? "#8E8E93" : "#6D6D70",
-    flex: 1,
-    textAlign: "center",
-  },
-  setRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 8,
-    marginBottom: 8,
-  },
-  completedSet: {
-    opacity: 0.6,
-  },
-  setNumber: {
-    flex: 1,
-    textAlign: "center",
-    fontSize: 16,
-    fontWeight: "600",
-    color: isDark ? "#FFFFFF" : "#000000",
-  },
-  input: {
-    flex: 1,
-    height: 40,
-    borderWidth: 1,
-    borderColor: isDark ? "#3A3A3C" : "#C6C6C8",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    marginHorizontal: 4,
-    textAlign: "center",
-    fontSize: 16,
-    backgroundColor: isDark ? "#2C2C2E" : "#FFFFFF",
-    color: isDark ? "#FFFFFF" : "#000000",
-  },
-  setActions: {
-    flex: 1,
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 8,
-  },
-  doneButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
-  },
-  doneButtonCompleted: {
-    backgroundColor: "#34C759",
-  },
-  removeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
-  },
-  addSetButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "#007AFF",
-    borderStyle: "dashed",
-    borderRadius: 8,
-    paddingVertical: 12,
-    marginTop: 12,
-    gap: 8,
-  },
-  addSetButtonText: {
-    fontSize: 16,
-    color: "#007AFF",
-    fontWeight: "600",
-  },
-  completeButton: {
-    backgroundColor: "#34C759",
-    paddingVertical: 16,
-    borderRadius: 12,
-    marginTop: 24,
-    marginBottom: 32,
-    marginHorizontal: 16,
-    alignItems: "center",
-  },
-  completeButtonText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#FFFFFF",
-  },
-  // Modal styles
-  modalContainer: {
-    flex: 1,
-    backgroundColor: isDark ? "#000000" : "#F2F2F7",
-  },
-  modalHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: isDark ? "#2C2C2E" : "#E5E5EA",
-    backgroundColor: isDark ? "#000000" : "#F2F2F7",
-  },
-  modalCancelText: {
-    fontSize: 16,
-    color: "#007AFF",
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: isDark ? "#FFFFFF" : "#000000",
-  },
-  modalSpacer: {
-    width: 60,
-  },
-  searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-    marginHorizontal: 16,
-    marginTop: 16,
-    marginBottom: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: isDark ? "#FFFFFF" : "#000000",
-    marginLeft: 8,
-  },
-  filterWrapper: {
-    height: 50,
-    marginBottom: 8,
-  },
-  filterContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  filterButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    marginRight: 8,
-    borderRadius: 16,
-    backgroundColor: isDark ? "#2C2C2E" : "#E5E5EA",
-    minWidth: 60,
-    alignItems: "center",
-  },
-  filterButtonActive: {
-    backgroundColor: "#007AFF",
-  },
-  filterButtonText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: isDark ? "#FFFFFF" : "#000000",
-  },
-  filterButtonTextActive: {
-    color: "#FFFFFF",
-  },
-  exerciseScrollView: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
-  exerciseScrollContent: {
-    paddingBottom: 20,
-  },
-  exercisePickerItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 8,
-    borderRadius: 8,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: isDark ? 0.3 : 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  exercisePickerItemContent: {
-    flex: 1,
-  },
-  exercisePickerName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: isDark ? "#FFFFFF" : "#000000",
-    marginBottom: 4,
-  },
-  exercisePickerMuscle: {
-    fontSize: 14,
-    color: isDark ? "#8E8E93" : "#6D6D70",
-    textTransform: "capitalize",
-  },
-  noExercisesFound: {
-    alignItems: "center",
-    paddingVertical: 40,
-    paddingHorizontal: 20,
-  },
-  noExercisesText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: isDark ? "#8E8E93" : "#6D6D70",
-    marginBottom: 8,
-  },
-  noExercisesSubtext: {
-    fontSize: 14,
-    color: isDark ? "#8E8E93" : "#6D6D70",
-    textAlign: "center",
-  },
-  // template styles for pre-made/saved workouts
-  templatesScrollView: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
-  templateCard: {
-    backgroundColor: "#2D3748",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#4A5568",
-  },
-  templateHeader: {
-    marginBottom: 12,
-  },
-  templateName: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#F5F5F5",
-    marginBottom: 4,
-  },
-  templateDescription: {
-    fontSize: 14,
-    color: "#A0AEC0",
-  },
-  templateExercises: {
-    marginBottom: 12,
-  },
-  templateExerciseText: {
-    fontSize: 14,
-    color: "#F5F5F5",
-    marginBottom: 2,
-  },
-  templateFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  templateStats: {
-    fontSize: 12,
-    color: "#A0AEC0",
-  },
-  createTemplateButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#2D3748",
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-    borderWidth: 2,
-    borderColor: "#68D391",
-    borderStyle: "dashed",
-  },
-  createTemplateText: {
-    fontSize: 16,
-    color: "#68D391",
-    fontWeight: "600",
-    marginLeft: 8,
-  },
-});
+const getStyles = (isDark: boolean) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: isDark ? "#000000" : "#F2F2F7",
+    },
+    scrollView: {
+      flex: 1,
+    },
+    // Start screen styles
+    startScreen: {
+      padding: 20,
+    },
+    startTitle: {
+      fontSize: 32,
+      fontWeight: "bold",
+      color: isDark ? "#FFFFFF" : "#000000",
+      marginBottom: 8,
+    },
+    startSubtitle: {
+      fontSize: 16,
+      color: isDark ? "#8E8E93" : "#6D6D70",
+      marginBottom: 32,
+    },
+    startOption: {
+      backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+      borderRadius: 12,
+      marginBottom: 16,
+      shadowColor: "#000000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: isDark ? 0.3 : 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    disabledOption: {
+      opacity: 0.5,
+    },
+    startOptionContent: {
+      flexDirection: "row",
+      alignItems: "center",
+      padding: 20,
+    },
+    startOptionText: {
+      flex: 1,
+      marginLeft: 16,
+    },
+    startOptionTitle: {
+      fontSize: 18,
+      fontWeight: "600",
+      color: isDark ? "#FFFFFF" : "#000000",
+      marginBottom: 4,
+    },
+    startOptionDescription: {
+      fontSize: 14,
+      color: isDark ? "#8E8E93" : "#6D6D70",
+    },
+    disabledText: {
+      color: "#8E8E93",
+    },
+    // Active workout styles
+    header: {
+      padding: 16,
+    },
+    headerTop: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 16,
+    },
+    backButton: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    backText: {
+      fontSize: 16,
+      color: "#007AFF",
+      marginLeft: 4,
+    },
+    workoutTitle: {
+      fontSize: 28,
+      fontWeight: "bold",
+      color: isDark ? "#FFFFFF" : "#000000",
+      marginBottom: 8,
+    },
+    progressText: {
+      fontSize: 16,
+      color: isDark ? "#8E8E93" : "#6D6D70",
+    },
+    progressContainer: {
+      marginHorizontal: 16,
+      marginBottom: 24,
+    },
+    progressBackground: {
+      height: 8,
+      backgroundColor: isDark ? "#1C1C1E" : "#E5E5EA",
+      borderRadius: 4,
+      overflow: "hidden",
+    },
+    progressFill: {
+      height: "100%",
+      backgroundColor: "#34C759",
+      borderRadius: 4,
+    },
+    addExerciseButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+      marginHorizontal: 16,
+      marginBottom: 24,
+      paddingVertical: 16,
+      borderRadius: 12,
+      borderWidth: 2,
+      borderColor: "#007AFF",
+      borderStyle: "dashed",
+    },
+    addExerciseText: {
+      fontSize: 16,
+      color: "#007AFF",
+      fontWeight: "600",
+      marginLeft: 8,
+    },
+    emptyWorkout: {
+      alignItems: "center",
+      paddingVertical: 60,
+      paddingHorizontal: 32,
+    },
+    emptyWorkoutText: {
+      fontSize: 18,
+      fontWeight: "600",
+      color: isDark ? "#8E8E93" : "#6D6D70",
+      marginTop: 16,
+      marginBottom: 8,
+    },
+    emptyWorkoutSubtext: {
+      fontSize: 14,
+      color: isDark ? "#8E8E93" : "#6D6D70",
+      textAlign: "center",
+    },
+    exerciseList: {
+      paddingHorizontal: 16,
+      gap: 16,
+    },
+    exerciseCard: {
+      backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+      borderRadius: 12,
+      padding: 16,
+      shadowColor: "#000000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: isDark ? 0.3 : 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    completedExercise: {
+      borderColor: "#34C759",
+      borderWidth: 2,
+    },
+    exerciseHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 16,
+    },
+    exerciseTitle: {
+      flexDirection: "row",
+      alignItems: "center",
+      flex: 1,
+    },
+    exerciseName: {
+      fontSize: 18,
+      fontWeight: "bold",
+      color: isDark ? "#FFFFFF" : "#000000",
+    },
+    exerciseActions: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    removeExerciseButton: {
+      padding: 8,
+    },
+    tableHeader: {
+      flexDirection: "row",
+      paddingBottom: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? "#2C2C2E" : "#E5E5EA",
+      marginBottom: 8,
+    },
+    tableHeaderText: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: isDark ? "#8E8E93" : "#6D6D70",
+      flex: 1,
+      textAlign: "center",
+    },
+    setRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 8,
+      marginBottom: 8,
+    },
+    completedSet: {
+      opacity: 0.6,
+    },
+    setNumber: {
+      flex: 1,
+      textAlign: "center",
+      fontSize: 16,
+      fontWeight: "600",
+      color: isDark ? "#FFFFFF" : "#000000",
+    },
+    input: {
+      flex: 1,
+      height: 40,
+      borderWidth: 1,
+      borderColor: isDark ? "#3A3A3C" : "#C6C6C8",
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      marginHorizontal: 4,
+      textAlign: "center",
+      fontSize: 16,
+      backgroundColor: isDark ? "#2C2C2E" : "#FFFFFF",
+      color: isDark ? "#FFFFFF" : "#000000",
+    },
+    setActions: {
+      flex: 1,
+      flexDirection: "row",
+      justifyContent: "center",
+      gap: 8,
+    },
+    doneButton: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
+    },
+    doneButtonCompleted: {
+      backgroundColor: "#34C759",
+    },
+    removeButton: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
+    },
+    addSetButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 2,
+      borderColor: "#007AFF",
+      borderStyle: "dashed",
+      borderRadius: 8,
+      paddingVertical: 12,
+      marginTop: 12,
+      gap: 8,
+    },
+    addSetButtonText: {
+      fontSize: 16,
+      color: "#007AFF",
+      fontWeight: "600",
+    },
+    completeButton: {
+      backgroundColor: "#34C759",
+      paddingVertical: 16,
+      borderRadius: 12,
+      marginTop: 24,
+      marginBottom: 32,
+      marginHorizontal: 16,
+      alignItems: "center",
+    },
+    completeButtonText: {
+      fontSize: 18,
+      fontWeight: "bold",
+      color: "#FFFFFF",
+    },
+    // Modal styles
+    modalContainer: {
+      flex: 1,
+      backgroundColor: isDark ? "#000000" : "#F2F2F7",
+    },
+    modalHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 16,
+      paddingVertical: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? "#2C2C2E" : "#E5E5EA",
+      backgroundColor: isDark ? "#000000" : "#F2F2F7",
+    },
+    modalCancelText: {
+      fontSize: 16,
+      color: "#007AFF",
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: "600",
+      color: isDark ? "#FFFFFF" : "#000000",
+    },
+    modalSpacer: {
+      width: 60,
+    },
+    searchContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+      marginHorizontal: 16,
+      marginTop: 16,
+      marginBottom: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 8,
+    },
+    searchInput: {
+      flex: 1,
+      fontSize: 16,
+      color: isDark ? "#FFFFFF" : "#000000",
+      marginLeft: 8,
+    },
+    filterWrapper: {
+      height: 50,
+      marginBottom: 8,
+    },
+    filterContainer: {
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+    },
+    filterButton: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      marginRight: 8,
+      borderRadius: 16,
+      backgroundColor: isDark ? "#2C2C2E" : "#E5E5EA",
+      minWidth: 60,
+      alignItems: "center",
+    },
+    filterButtonActive: {
+      backgroundColor: "#007AFF",
+    },
+    filterButtonText: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: isDark ? "#FFFFFF" : "#000000",
+    },
+    filterButtonTextActive: {
+      color: "#FFFFFF",
+    },
+    exerciseScrollView: {
+      flex: 1,
+      paddingHorizontal: 16,
+    },
+    exerciseScrollContent: {
+      paddingBottom: 20,
+    },
+    exercisePickerItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      marginBottom: 8,
+      borderRadius: 8,
+      shadowColor: "#000000",
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: isDark ? 0.3 : 0.05,
+      shadowRadius: 2,
+      elevation: 2,
+    },
+    exercisePickerItemContent: {
+      flex: 1,
+    },
+    exercisePickerName: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: isDark ? "#FFFFFF" : "#000000",
+      marginBottom: 4,
+    },
+    exercisePickerMuscle: {
+      fontSize: 14,
+      color: isDark ? "#8E8E93" : "#6D6D70",
+      textTransform: "capitalize",
+    },
+    noExercisesFound: {
+      alignItems: "center",
+      paddingVertical: 40,
+      paddingHorizontal: 20,
+    },
+    noExercisesText: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: isDark ? "#8E8E93" : "#6D6D70",
+      marginBottom: 8,
+    },
+    noExercisesSubtext: {
+      fontSize: 14,
+      color: isDark ? "#8E8E93" : "#6D6D70",
+      textAlign: "center",
+    },
+
+    // template styles for pre-made/saved workouts
+    templatesScrollView: {
+      flex: 1,
+      paddingHorizontal: 16,
+    },
+    templateCard: {
+      backgroundColor: "#2D3748",
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: "#4A5568",
+    },
+    templateHeader: {
+      marginBottom: 12,
+    },
+    templateName: {
+      fontSize: 18,
+      fontWeight: "bold",
+      color: "#F5F5F5",
+      marginBottom: 4,
+    },
+    templateDescription: {
+      fontSize: 14,
+      color: "#A0AEC0",
+    },
+    templateExercises: {
+      marginBottom: 12,
+    },
+    templateFooter: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    templateStats: {
+      fontSize: 12,
+      color: "#A0AEC0",
+    },
+    createTemplateButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "#2D3748",
+      borderRadius: 12,
+      padding: 20,
+      marginBottom: 20,
+      borderWidth: 2,
+      borderColor: "#68D391",
+      borderStyle: "dashed",
+    },
+    createTemplateText: {
+      fontSize: 16,
+      color: "#68D391",
+      fontWeight: "600",
+      marginLeft: 8,
+    },
+    templateExerciseList: {
+      fontSize: 14,
+      color: "#A0AEC0",
+      lineHeight: 20,
+    },
+  });
