@@ -40,6 +40,20 @@ interface ExerciseData {
   equipment?: string;
 }
 
+interface TemplateExercise {
+  id: number;
+  name: string;
+  sets: number;
+  reps: string;
+}
+
+interface WorkoutTemplate {
+  id: number;
+  name: string;
+  description: string;
+  exercises: TemplateExercise[];
+}
+
 const apiService = {
   getExercises: async () => {
     const response = await fetch(`${API_BASE_URL}/exercises`);
@@ -61,7 +75,7 @@ export default function WorkoutScreen() {
   const [loading, setLoading] = useState(false);
   const [workoutStartTime] = useState(new Date());
   const [showTemplates, setShowTemplates] = useState(false);
-  const [templates, setTemplates] = useState([
+  const [templates, setTemplates] = useState<WorkoutTemplate[]>([
   // Sample templates - later we'll load from API
     {
       id: 1,
@@ -262,7 +276,7 @@ export default function WorkoutScreen() {
     );
   };
 
-  const startFromTemplate = (template) => {
+  const startFromTemplate = (template: WorkoutTemplate) => {
       // Convert template to workout format
       const templateExercises = template.exercises.map(exercise => ({
         id: exercise.id.toString(),
