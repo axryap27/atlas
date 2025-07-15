@@ -10,24 +10,10 @@ import {
   useColorScheme,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { WorkoutScreen } from "../workout";
-
-interface TemplateExercise {
-  id: number;
-  name: string;
-  sets: number;
-  reps: string;
-}
-
-interface WorkoutTemplate {
-  id: number;
-  name: string;
-  description: string;
-  exercises: TemplateExercise[];
-}
+import { WorkoutScreen, TemplateExercise, WorkoutTemplate, Exercise } from "../workout";
 
 interface TemplatesProps {
-  onNavigate: (screen: WorkoutScreen, exercises?: any[]) => void;
+  onNavigate: (screen: WorkoutScreen, exercises?: Exercise[]) => void;
   onBack: () => void;
 }
 
@@ -42,8 +28,8 @@ export default function Templates({ onNavigate, onBack }: TemplatesProps) {
       description: "Chest, shoulders, triceps",
       exercises: [
         { id: 1, name: "Bench Press", sets: 3, reps: "8-10" },
-        { id: 31, name: "Overhead Press", sets: 3, reps: "8-10" },
-        { id: 46, name: "Tricep Pushdown", sets: 3, reps: "10-12" },
+        { id: 5, name: "Overhead Press", sets: 3, reps: "8-10" },
+        { id: 45, name: "Tricep Pushdown", sets: 3, reps: "10-12" },
       ],
     },
     {
@@ -69,8 +55,8 @@ export default function Templates({ onNavigate, onBack }: TemplatesProps) {
   ]);
 
   const startFromTemplate = (template: WorkoutTemplate) => {
-    // Convert template to workout format
-    const templateExercises = template.exercises.map((exercise) => ({
+    // Convert template to workout format (using your exact logic)
+    const templateExercises: Exercise[] = template.exercises.map((exercise) => ({
       id: exercise.id.toString(),
       name: exercise.name,
       sets: Array.from({ length: exercise.sets }, (_, i) => ({
@@ -83,7 +69,7 @@ export default function Templates({ onNavigate, onBack }: TemplatesProps) {
       notes: "",
     }));
 
-    onNavigate("active", templateExercises);
+    onNavigate('active', templateExercises);
   };
 
   const styles = getStyles(isDark);
@@ -110,23 +96,18 @@ export default function Templates({ onNavigate, onBack }: TemplatesProps) {
           >
             <View style={styles.templateHeader}>
               <Text style={styles.templateName}>{template.name}</Text>
-              <Text style={styles.templateDescription}>
-                {template.description}
-              </Text>
+              <Text style={styles.templateDescription}>{template.description}</Text>
             </View>
-
+            
             <View style={styles.templateExercises}>
               <Text style={styles.templateExerciseList}>
-                {template.exercises
-                  .map((exercise) => exercise.name)
-                  .join(" • ")}
+                {template.exercises.map(exercise => exercise.name).join(' • ')}
               </Text>
             </View>
-
+            
             <View style={styles.templateFooter}>
               <Text style={styles.templateStats}>
-                {template.exercises.length} exercises •{" "}
-                {template.exercises.reduce((acc, ex) => acc + ex.sets, 0)} sets
+                {template.exercises.length} exercises • {template.exercises.reduce((acc, ex) => acc + ex.sets, 0)} sets
               </Text>
               <Ionicons name="chevron-forward" size={20} color="#A0AEC0" />
             </View>
@@ -142,98 +123,97 @@ export default function Templates({ onNavigate, onBack }: TemplatesProps) {
   );
 }
 
-const getStyles = (isDark: boolean) =>
-  StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: "#1E1E1E",
-    },
-    header: {
-      padding: 16,
-    },
-    headerTop: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 16,
-    },
-    backButton: {
-      flexDirection: "row",
-      alignItems: "center",
-    },
-    backText: {
-      fontSize: 16,
-      color: "#68D391",
-      marginLeft: 4,
-    },
-    workoutTitle: {
-      fontSize: 28,
-      fontWeight: "bold",
-      color: "#F5F5F5",
-      marginBottom: 8,
-    },
-    progressText: {
-      fontSize: 16,
-      color: "#A0AEC0",
-    },
-    templatesScrollView: {
-      flex: 1,
-      paddingHorizontal: 16,
-    },
-    templateCard: {
-      backgroundColor: "#2D3748",
-      borderRadius: 12,
-      padding: 16,
-      marginBottom: 12,
-      borderWidth: 1,
-      borderColor: "#4A5568",
-    },
-    templateHeader: {
-      marginBottom: 12,
-    },
-    templateName: {
-      fontSize: 18,
-      fontWeight: "bold",
-      color: "#F5F5F5",
-      marginBottom: 4,
-    },
-    templateDescription: {
-      fontSize: 14,
-      color: "#A0AEC0",
-    },
-    templateExercises: {
-      marginBottom: 12,
-    },
-    templateExerciseList: {
-      fontSize: 14,
-      color: "#A0AEC0",
-      lineHeight: 20,
-    },
-    templateFooter: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-    },
-    templateStats: {
-      fontSize: 12,
-      color: "#A0AEC0",
-    },
-    createTemplateButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: "#2D3748",
-      borderRadius: 12,
-      padding: 20,
-      marginBottom: 20,
-      borderWidth: 2,
-      borderColor: "#68D391",
-      borderStyle: "dashed",
-    },
-    createTemplateText: {
-      fontSize: 16,
-      color: "#68D391",
-      fontWeight: "600",
-      marginLeft: 8,
-    },
-  });
+const getStyles = (isDark: boolean) => StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#1E1E1E",
+  },
+  header: {
+    padding: 16,
+  },
+  headerTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  backButton: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  backText: {
+    fontSize: 16,
+    color: "#68D391",
+    marginLeft: 4,
+  },
+  workoutTitle: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#F5F5F5",
+    marginBottom: 8,
+  },
+  progressText: {
+    fontSize: 16,
+    color: "#A0AEC0",
+  },
+  templatesScrollView: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  templateCard: {
+    backgroundColor: "#2D3748",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#4A5568",
+  },
+  templateHeader: {
+    marginBottom: 12,
+  },
+  templateName: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#F5F5F5",
+    marginBottom: 4,
+  },
+  templateDescription: {
+    fontSize: 14,
+    color: "#A0AEC0",
+  },
+  templateExercises: {
+    marginBottom: 12,
+  },
+  templateExerciseList: {
+    fontSize: 14,
+    color: "#A0AEC0",
+    lineHeight: 20,
+  },
+  templateFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  templateStats: {
+    fontSize: 12,
+    color: "#A0AEC0",
+  },
+  createTemplateButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#2D3748",
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: "#68D391",
+    borderStyle: "dashed",
+  },
+  createTemplateText: {
+    fontSize: 16,
+    color: "#68D391",
+    fontWeight: "600",
+    marginLeft: 8,
+  },
+});
