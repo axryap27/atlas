@@ -366,11 +366,11 @@ export default function WorkoutScreen() {
               </View>
             </TouchableOpacity>
 
-            {/* Workout Templates*/}
-            <TouchableOpacity
-              style={styles.startOption}
-              onPress={() => setShowTemplates(true)}
-            >
+          {/* Workout Templates */}
+            <TouchableOpacity style={styles.startOption} onPress={() => {
+              setWorkoutStarted(true);
+              setShowTemplates(true);
+            }}>
               <View style={styles.startOptionContent}>
                 <Ionicons name="library" size={24} color="#68D391" />
                 <View style={styles.startOptionText}>
@@ -406,6 +406,66 @@ export default function WorkoutScreen() {
             </TouchableOpacity>
           </View>
         </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  // Templates screen
+  if (showTemplates) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+        <View style={styles.headerTop}>
+          <TouchableOpacity 
+            onPress={() => {
+              setShowTemplates(false);
+              setWorkoutStarted(false);
+            }}
+            style={styles.backButton}
+          >
+            <Ionicons name="chevron-back" size={24} color="#68D391" />
+            <Text style={styles.backText}>Back</Text>
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.workoutTitle}>Workout Templates</Text>
+        <Text style={styles.progressText}>Choose a saved workout</Text>
+      </View>
+
+      <ScrollView style={styles.templatesScrollView}>
+        {templates.map((template) => (
+          <TouchableOpacity
+            key={template.id}
+            style={styles.templateCard}
+            onPress={() => startFromTemplate(template)}
+          >
+            <View style={styles.templateHeader}>
+              <Text style={styles.templateName}>{template.name}</Text>
+              <Text style={styles.templateDescription}>{template.description}</Text>
+            </View>
+            
+            <View style={styles.templateExercises}>
+              <Text style={styles.templateExerciseList}>
+                {template.exercises.map(exercise => exercise.name).join(' • ')}
+              </Text>
+            </View>
+            
+            <View style={styles.templateFooter}>
+              <Text style={styles.templateStats}>
+                {template.exercises.length} exercises • {template.exercises.reduce((acc, ex) => acc + ex.sets, 0)} sets
+              </Text>
+              <Ionicons name="chevron-forward" size={20} color="#A0AEC0" />
+            </View>
+          </TouchableOpacity>
+        ))}
+
+        <TouchableOpacity 
+          style={styles.createTemplateButton}
+          onPress={() => setShowCreateTemplate(true)}
+        >
+          <Ionicons name="add" size={24} color="#68D391" />
+          <Text style={styles.createTemplateText}>Create New Template</Text>
+        </TouchableOpacity>
+      </ScrollView>
       </SafeAreaView>
     );
   }
