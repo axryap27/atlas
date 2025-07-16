@@ -2,9 +2,10 @@
 import React, { useState } from "react";
 import WorkoutStart from "./workout/WorkoutStart";
 import Templates from "./workout/Templates";
+import CreateTemplate from "./workout/CreateTemplate";
 import ActiveWorkout from "./workout/ActiveWorkout";
 
-export type WorkoutScreen = "start" | "templates" | "active";
+export type WorkoutScreen = "start" | "templates" | "createTemplate" | "active";
 
 // Using your existing interfaces
 interface Set {
@@ -79,9 +80,9 @@ export default function WorkoutScreen() {
       return (
         <Templates 
           onNavigate={handleNavigate} 
-          onBack={handleBackToStart} 
+          onBack={handleBackToStart}
           needsRefresh={templatesNeedRefresh}
-          onRefreshed = {handleTemplatesRefreshed}
+          onRefreshed={handleTemplatesRefreshed}
         />
       );
 

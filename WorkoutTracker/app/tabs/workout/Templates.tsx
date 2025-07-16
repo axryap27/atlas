@@ -1,5 +1,5 @@
 // app/(tabs)/workout/Templates.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,71 +8,109 @@ import {
   StyleSheet,
   SafeAreaView,
   useColorScheme,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { WorkoutScreen, TemplateExercise, WorkoutTemplate, Exercise } from "../workout";
+import { WorkoutScreen, Exercise } from "../workout";
+
+const API_BASE_URL = "https://workout-tracker-production-9537.up.railway.app/api";
+
+interface TemplateExercise {
+  id: number;
+  exerciseId: number;
+  targetSets: number;
+  targetReps?: number;
+  targetWeight?: number;
+  targetTime?: number;
+  restTime?: number;
+  order: number;
+  notes?: string;
+  exercise: {
+    id: number;
+    name: string;
+    category: string;
+    muscleGroup?: string;
+  };
+}
+
+interface WorkoutTemplate {
+  id: number;
+  name: string;
+  description?: string;
+  createdAt: string;
+  dayExercises: TemplateExercise[];
+}
 
 interface TemplatesProps {
   onNavigate: (screen: WorkoutScreen, exercises?: Exercise[]) => void;
   onBack: () => void;
+  needsRefresh?: boolean;
+  onRefreshed?: () => void;
 }
 
-export default function Templates({ onNavigate, onBack }: TemplatesProps) {
+export default function Templates({ onNavigate, onBack, needsRefresh, onRefreshed }: TemplatesProps) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
 
-  const [templates] = useState<WorkoutTemplate[]>([
-    {
-      id: 1,
-      name: "Push Day",
-      description: "Chest, shoulders, triceps",
-      exercises: [
-        { id: 1, name: "Bench Press", sets: 3, reps: "8-10" },
-        { id: 5, name: "Overhead Press", sets: 3, reps: "8-10" },
-        { id: 45, name: "Tricep Pushdown", sets: 3, reps: "10-12" },
-      ],
-    },
-    {
-      id: 2,
-      name: "Pull Day",
-      description: "Back, biceps",
-      exercises: [
-        { id: 9, name: "Pull-ups", sets: 3, reps: "5-8" },
-        { id: 13, name: "Bent-over Row", sets: 3, reps: "8-10" },
-        { id: 41, name: "Barbell Curls", sets: 3, reps: "10-12" },
-      ],
-    },
-    {
-      id: 3,
-      name: "Leg Day",
-      description: "Quads, hamstrings, glutes",
-      exercises: [
-        { id: 21, name: "Squat", sets: 4, reps: "6-8" },
-        { id: 23, name: "Romanian Deadlift", sets: 3, reps: "8-10" },
-        { id: 24, name: "Lunges", sets: 3, reps: "12 each leg" },
-      ],
-    },
-  ]);
+  const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const styles = getStyles(isDark);
+
+  useEffect(() => {
+    loadTemplates();
+  }, []);
+
+  // Refresh templates when needed
+  useEffect(() => {
+    if (needsRefresh) {
+      loadTemplates();
+      onRefreshed?.();
+    }
+  }, [needsRefresh]);
+
+  const loadTemplates = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_BASE_URL}/days/templates`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch templates');
+      }
+      
+      const data = await response.json();
+      setTemplates(data);
+    } catch (error) {
+      console.error("Error loading templates:", error);
+      Alert.alert("Error", "Failed to load templates. Please try again.");
+      // Keep existing templates on error
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const startFromTemplate = (template: WorkoutTemplate) => {
     // Convert template to workout format (using your exact logic)
-    const templateExercises: Exercise[] = template.exercises.map((exercise) => ({
-      id: exercise.id.toString(),
-      name: exercise.name,
-      sets: Array.from({ length: exercise.sets }, (_, i) => ({
-        id: `ex${exercise.id}-set${i + 1}`,
-        weight: "",
-        reps: "",
+    const templateExercises: Exercise[] = template.dayExercises.map((dayExercise) => ({
+      id: dayExercise.exerciseId.toString(),
+      name: dayExercise.exercise.name,
+      sets: Array.from({ length: dayExercise.targetSets }, (_, i) => ({
+        id: `ex${dayExercise.exerciseId}-set${i + 1}`,
+        weight: dayExercise.targetWeight?.toString() || "",
+        reps: dayExercise.targetReps?.toString() || "",
         completed: false,
       })),
       completed: false,
-      notes: "",
+      notes: dayExercise.notes || "",
     }));
 
     onNavigate('active', templateExercises);
   };
 
-  const styles = getStyles(isDark);
+  const handleCreateTemplate = () => {
+    onNavigate('createTemplate');
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -84,37 +122,59 @@ export default function Templates({ onNavigate, onBack }: TemplatesProps) {
           </TouchableOpacity>
         </View>
         <Text style={styles.workoutTitle}>Workout Templates</Text>
-        <Text style={styles.progressText}>Choose a saved workout</Text>
+        <Text style={styles.progressText}>
+          {loading ? "Loading templates..." : `${templates.length} saved ${templates.length === 1 ? 'template' : 'templates'}`}
+        </Text>
       </View>
 
       <ScrollView style={styles.templatesScrollView}>
-        {templates.map((template) => (
-          <TouchableOpacity
-            key={template.id}
-            style={styles.templateCard}
-            onPress={() => startFromTemplate(template)}
-          >
-            <View style={styles.templateHeader}>
-              <Text style={styles.templateName}>{template.name}</Text>
-              <Text style={styles.templateDescription}>{template.description}</Text>
-            </View>
-            
-            <View style={styles.templateExercises}>
-              <Text style={styles.templateExerciseList}>
-                {template.exercises.map(exercise => exercise.name).join(' • ')}
-              </Text>
-            </View>
-            
-            <View style={styles.templateFooter}>
-              <Text style={styles.templateStats}>
-                {template.exercises.length} exercises • {template.exercises.reduce((acc, ex) => acc + ex.sets, 0)} sets
-              </Text>
-              <Ionicons name="chevron-forward" size={20} color="#A0AEC0" />
-            </View>
-          </TouchableOpacity>
-        ))}
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#68D391" />
+            <Text style={styles.loadingText}>Loading your templates...</Text>
+          </View>
+        ) : templates.length > 0 ? (
+          templates.map((template) => (
+            <TouchableOpacity
+              key={template.id}
+              style={styles.templateCard}
+              onPress={() => startFromTemplate(template)}
+            >
+              <View style={styles.templateHeader}>
+                <Text style={styles.templateName}>{template.name}</Text>
+                <Text style={styles.templateDescription}>
+                  {template.description || "No description"}
+                </Text>
+              </View>
+              
+              <View style={styles.templateExercises}>
+                <Text style={styles.templateExerciseList}>
+                  {template.dayExercises.map(dayEx => dayEx.exercise.name).join(' • ')}
+                </Text>
+              </View>
+              
+              <View style={styles.templateFooter}>
+                <Text style={styles.templateStats}>
+                  {template.dayExercises.length} exercises • {template.dayExercises.reduce((acc, ex) => acc + ex.targetSets, 0)} sets
+                </Text>
+                <Ionicons name="chevron-forward" size={20} color="#A0AEC0" />
+              </View>
+            </TouchableOpacity>
+          ))
+        ) : (
+          <View style={styles.emptyState}>
+            <Ionicons name="library-outline" size={64} color="#A0AEC0" />
+            <Text style={styles.emptyStateText}>No templates yet</Text>
+            <Text style={styles.emptyStateSubtext}>
+              Create your first workout template to get started
+            </Text>
+          </View>
+        )}
 
-        <TouchableOpacity style={styles.createTemplateButton}>
+        <TouchableOpacity 
+          style={styles.createTemplateButton}
+          onPress={handleCreateTemplate}
+        >
           <Ionicons name="add" size={24} color="#68D391" />
           <Text style={styles.createTemplateText}>Create New Template</Text>
         </TouchableOpacity>
@@ -159,6 +219,34 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   templatesScrollView: {
     flex: 1,
     paddingHorizontal: 16,
+  },
+  loadingContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 60,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: "#A0AEC0",
+    marginTop: 12,
+  },
+  emptyState: {
+    alignItems: "center",
+    paddingVertical: 60,
+    paddingHorizontal: 32,
+  },
+  emptyStateText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#F5F5F5",
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    color: "#A0AEC0",
+    textAlign: "center",
+    lineHeight: 20,
   },
   templateCard: {
     backgroundColor: "#2D3748",
