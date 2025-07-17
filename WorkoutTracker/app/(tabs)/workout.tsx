@@ -1,8 +1,8 @@
 // app/(tabs)/workout.tsx - Main Workout Router
 import React, { useState } from "react";
-import WorkoutStart from "./_workout/WorkoutStart";
-import Templates from "./_workout/Templates";
-import ActiveWorkout from "./_workout/ActiveWorkout";
+import WorkoutStart from "../components/workout/WorkoutStart";
+import Templates from "../components/workout/Templates";
+import ActiveWorkout from "../components/workout/ActiveWorkout";
 
 export type WorkoutScreen = "start" | "templates" | "active";
 
