@@ -1,5 +1,4 @@
-
-// app/(tabs)/index.tsx - Fixed Home Dashboard
+// app/(tabs)/index.tsx - Clean Home Dashboard
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -83,8 +82,18 @@ export default function HomeScreen() {
       console.log('Sessions data:', sessionsData);
       console.log('Exercises data:', exercisesData);
       
-      setRecentSessions(sessionsData.slice(0, 3));
-      setExercises(exercisesData);
+      // Handle API errors gracefully
+      if (Array.isArray(sessionsData)) {
+        setRecentSessions(sessionsData.slice(0, 3));
+      } else {
+        setRecentSessions([]);
+      }
+      
+      if (Array.isArray(exercisesData)) {
+        setExercises(exercisesData);
+      } else {
+        setExercises([]);
+      }
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
       // Set empty data on error
@@ -155,7 +164,7 @@ export default function HomeScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Recent Workouts</Text>
-            <TouchableOpacity onPress={() => router.push("/analytics")}>
+            <TouchableOpacity>
               <Text style={styles.seeAllText}>See All</Text>
             </TouchableOpacity>
           </View>
@@ -201,9 +210,9 @@ export default function HomeScreen() {
             </View>
           )}
         </View>
-
-          {/* Progress Overview - Coming Soon */}
-          <View style={styles.section}>
+        
+        {/* Progress Overview - Coming Soon */}
+        <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Progress Overview</Text>
             <Text style={styles.seeAllText}>View All</Text>
@@ -305,11 +314,6 @@ const getStyles = (isDark: boolean) =>
       color: "#007AFF",
       fontWeight: "600",
     },
-    exerciseCount: {
-      fontSize: 16,
-      color: isDark ? "#8E8E93" : "#6D6D70",
-      fontWeight: "600",
-    },
     workoutCard: {
       backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
       borderRadius: 12,
@@ -369,30 +373,6 @@ const getStyles = (isDark: boolean) =>
       fontSize: 14,
       color: isDark ? "#8E8E93" : "#6D6D70",
       textAlign: "center",
-    },
-    exerciseGrid: {
-      gap: 12,
-    },
-    exerciseCard: {
-      backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-      borderRadius: 12,
-      padding: 16,
-      shadowColor: "#000000",
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: isDark ? 0.3 : 0.05,
-      shadowRadius: 2,
-      elevation: 2,
-    },
-    exerciseName: {
-      fontSize: 16,
-      fontWeight: "600",
-      color: isDark ? "#FFFFFF" : "#000000",
-      marginBottom: 4,
-    },
-    exerciseCategory: {
-      fontSize: 14,
-      color: isDark ? "#8E8E93" : "#6D6D70",
-      textTransform: "capitalize",
     },
     progressOverview: {
       marginBottom: 16,
