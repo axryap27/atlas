@@ -1,4 +1,4 @@
-// app/(tabs)/workout/WorkoutStart.tsx
+// app/(tabs)/_workout/WorkoutStart.tsx
 import React from "react";
 import {
   View,
@@ -98,7 +98,7 @@ const getStyles = (isDark: boolean) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: "#1E1E1E", // Dark slate background
+      backgroundColor: "#1E1E1E", // Fixed dark background
     },
     scrollView: {
       flex: 1,
@@ -109,16 +109,16 @@ const getStyles = (isDark: boolean) =>
     startTitle: {
       fontSize: 32,
       fontWeight: "bold",
-      color: "#F5F5F5",
+      color: "#F5F5F5", // Fixed text color
       marginBottom: 8,
     },
     startSubtitle: {
       fontSize: 16,
-      color: "#A0AEC0",
+      color: "#A0AEC0", // Fixed subtitle color
       marginBottom: 32,
     },
     startOption: {
-      backgroundColor: "#2D3748",
+      backgroundColor: "#2D3748", // Fixed background color
       borderRadius: 12,
       marginBottom: 16,
       shadowColor: "#000000",
@@ -127,7 +127,7 @@ const getStyles = (isDark: boolean) =>
       shadowRadius: 4,
       elevation: 3,
       borderWidth: 1,
-      borderColor: "#4A5568",
+      borderColor: "#4A5568", // Fixed border color
     },
     disabledOption: {
       opacity: 0.5,
@@ -144,12 +144,12 @@ const getStyles = (isDark: boolean) =>
     startOptionTitle: {
       fontSize: 18,
       fontWeight: "600",
-      color: "#F5F5F5",
+      color: "#F5F5F5", // Fixed title color
       marginBottom: 4,
     },
     startOptionDescription: {
       fontSize: 14,
-      color: "#A0AEC0",
+      color: "#A0AEC0", // Fixed description color
     },
     disabledText: {
       color: "#8E8E93",

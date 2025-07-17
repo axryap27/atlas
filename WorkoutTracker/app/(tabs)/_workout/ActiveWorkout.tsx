@@ -1,4 +1,4 @@
-// app/(tabs)/workout/ActiveWorkout.tsx
+// app/(tabs)/_workout/ActiveWorkout.tsx
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -34,8 +34,21 @@ interface ActiveWorkoutProps {
 
 const apiService = {
   getExercises: async () => {
-    const response = await fetch(`${API_BASE_URL}/exercises`);
-    return await response.json();
+    try {
+      const response = await fetch(`${API_BASE_URL}/exercises`);
+      const data = await response.json();
+      
+      // Check if response is an error object
+      if (data && data.code && data.message) {
+        console.warn('API returned error:', data.message);
+        return [];
+      }
+      
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      console.error("Error fetching exercises:", error);
+      return [];
+    }
   },
 };
 
@@ -71,6 +84,7 @@ export default function ActiveWorkout({
       setAvailableExercises(exercisesData);
     } catch (error) {
       console.error("Failed to load exercises:", error);
+      setAvailableExercises([]);
       Alert.alert("Error", "Failed to load exercises");
     } finally {
       setLoading(false);
@@ -79,8 +93,9 @@ export default function ActiveWorkout({
 
   const muscleGroups = ["all", "chest", "back", "legs", "shoulders", "biceps", "triceps", "abs", "calves"];
 
-  const filteredExercises = availableExercises.filter(exercise => {
-    const matchesSearch = exercise.name.toLowerCase().includes(searchQuery.toLowerCase());
+  // Fixed filter with safety check
+  const filteredExercises = (availableExercises || []).filter(exercise => {
+    const matchesSearch = exercise.name && exercise.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesMuscleGroup = selectedMuscleGroup === "all" || exercise.muscleGroup === selectedMuscleGroup;
     return matchesSearch && matchesMuscleGroup;
   });
@@ -319,6 +334,7 @@ export default function ActiveWorkout({
                           value={set.weight}
                           onChangeText={(value) => handleWeightChange(exercise.id, set.id, value)}
                           placeholder="0"
+                          placeholderTextColor="#A0AEC0"
                           keyboardType="decimal-pad"
                           selectTextOnFocus={true}
                         />
@@ -328,6 +344,7 @@ export default function ActiveWorkout({
                           value={set.reps}
                           onChangeText={(value) => handleRepsChange(exercise.id, set.id, value)}
                           placeholder="0"
+                          placeholderTextColor="#A0AEC0"
                           keyboardType="number-pad"
                           selectTextOnFocus={true}
                         />
@@ -452,7 +469,7 @@ export default function ActiveWorkout({
                 >
                   <View style={styles.exercisePickerItemContent}>
                     <Text style={styles.exercisePickerName}>{exercise.name}</Text>
-                    <Text style={styles.exercisePickerMuscle}>{exercise.muscleGroup}</Text>
+                    <Text style={styles.exercisePickerMuscle}>{exercise.muscleGroup || "Unknown"}</Text>
                   </View>
                   <Ionicons name="add-circle" size={24} color="#68D391" />
                 </TouchableOpacity>
@@ -461,7 +478,7 @@ export default function ActiveWorkout({
               <View style={styles.noExercisesFound}>
                 <Text style={styles.noExercisesText}>No exercises found</Text>
                 <Text style={styles.noExercisesSubtext}>
-                  Try adjusting your search or filter
+                  {loading ? "Loading exercises..." : "Try adjusting your search or filter"}
                 </Text>
               </View>
             )}
