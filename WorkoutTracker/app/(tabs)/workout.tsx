@@ -2,9 +2,10 @@
 import React, { useState } from "react";
 import WorkoutStart from "../components/workout/WorkoutStart";
 import Templates from "../components/workout/Templates";
+import CreateTemplate from "../components/workout/CreateTemplate";
 import ActiveWorkout from "../components/workout/ActiveWorkout";
 
-export type WorkoutScreen = "start" | "templates" | "active";
+export type WorkoutScreen = "start" | "templates" | "createTemplate" | "active";
 
 // Using your existing interfaces
 interface Set {
@@ -41,6 +42,7 @@ export type { Exercise, Set, TemplateExercise, WorkoutTemplate };
 export default function WorkoutScreen() {
   const [currentScreen, setCurrentScreen] = useState<WorkoutScreen>("start");
   const [selectedExercises, setSelectedExercises] = useState<Exercise[]>([]);
+  const [templatesNeedRefresh, setTemplatesNeedRefresh] = useState(false);
 
   const handleNavigate = (screen: WorkoutScreen, exercises?: Exercise[]) => {
     setCurrentScreen(screen);
@@ -54,13 +56,42 @@ export default function WorkoutScreen() {
     setSelectedExercises([]);
   };
 
+  const handleBackToTemplates = () => {
+    setCurrentScreen("templates");
+    // Trigger refresh when coming back from create template
+    setTemplatesNeedRefresh(true);
+  };
+
+  const handleTemplateCreated = () => {
+    // Mark that templates need to be refreshed
+    setTemplatesNeedRefresh(true);
+  };
+
+  const handleTemplatesRefreshed = () => {
+    // Reset the refresh flag
+    setTemplatesNeedRefresh(false);
+  };
+
   switch (currentScreen) {
     case "start":
       return <WorkoutStart onNavigate={handleNavigate} />;
 
     case "templates":
       return (
-        <Templates onNavigate={handleNavigate} onBack={handleBackToStart} />
+        <Templates 
+          onNavigate={handleNavigate} 
+          onBack={handleBackToStart}
+          needsRefresh={templatesNeedRefresh}
+          onRefreshed={handleTemplatesRefreshed}
+        />
+      );
+
+    case "createTemplate":
+      return (
+        <CreateTemplate 
+          onBack={handleBackToTemplates}
+          onTemplateCreated={handleTemplateCreated}
+        />
       );
 
     case "active":
