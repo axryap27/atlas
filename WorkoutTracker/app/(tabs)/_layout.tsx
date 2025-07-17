@@ -41,7 +41,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="fitness" size={size} color={color} />
           ),
-          headerTitle: 'Active Workout',
+          headerTitle: 'Workout',
         }}
       />
     </Tabs>

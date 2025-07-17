@@ -4,7 +4,7 @@ import WorkoutStart from "./workout/WorkoutStart";
 import Templates from "./workout/Templates";
 import ActiveWorkout from "./workout/ActiveWorkout";
 
-export type WorkoutScreen = 'start' | 'templates' | 'active';
+export type WorkoutScreen = "start" | "templates" | "active";
 
 // Using your existing interfaces
 interface Set {
@@ -39,7 +39,7 @@ interface WorkoutTemplate {
 export type { Exercise, Set, TemplateExercise, WorkoutTemplate };
 
 export default function WorkoutScreen() {
-  const [currentScreen, setCurrentScreen] = useState<WorkoutScreen>('start');
+  const [currentScreen, setCurrentScreen] = useState<WorkoutScreen>("start");
   const [selectedExercises, setSelectedExercises] = useState<Exercise[]>([]);
 
   const handleNavigate = (screen: WorkoutScreen, exercises?: Exercise[]) => {
@@ -50,24 +50,28 @@ export default function WorkoutScreen() {
   };
 
   const handleBackToStart = () => {
-    setCurrentScreen('start');
+    setCurrentScreen("start");
     setSelectedExercises([]);
   };
 
-  switch(currentScreen) {
-    case 'start':
+  switch (currentScreen) {
+    case "start":
       return <WorkoutStart onNavigate={handleNavigate} />;
-    
-    case 'templates':
-      return <Templates onNavigate={handleNavigate} onBack={handleBackToStart} />;
-    
-    case 'active':
-      return <ActiveWorkout 
-        initialExercises={selectedExercises}
-        onNavigate={handleNavigate} 
-        onBack={handleBackToStart} 
-      />;
-    
+
+    case "templates":
+      return (
+        <Templates onNavigate={handleNavigate} onBack={handleBackToStart} />
+      );
+
+    case "active":
+      return (
+        <ActiveWorkout
+          initialExercises={selectedExercises}
+          onNavigate={handleNavigate}
+          onBack={handleBackToStart}
+        />
+      );
+
     default:
       return <WorkoutStart onNavigate={handleNavigate} />;
   }

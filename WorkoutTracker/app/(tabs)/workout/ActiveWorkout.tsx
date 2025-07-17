@@ -13,24 +13,9 @@ import {
   Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { WorkoutScreen } from "../workout";
+import { WorkoutScreen, Exercise, Set } from "../workout";
 
 const API_BASE_URL = "https://workout-tracker-production-9537.up.railway.app/api";
-
-interface Set {
-  id: string;
-  weight: string;
-  reps: string;
-  completed: boolean;
-}
-
-interface Exercise {
-  id: string;
-  name: string;
-  sets: Set[];
-  completed: boolean;
-  notes: string;
-}
 
 interface ExerciseData {
   id: number;

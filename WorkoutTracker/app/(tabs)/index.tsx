@@ -96,7 +96,7 @@ export default function HomeScreen() {
   };
 
   const startQuickWorkout = () => {
-    router.push("/workout");
+    router.push("/workout" as any);
   };
 
   const formatDate = (dateString: string) => {
@@ -202,24 +202,6 @@ export default function HomeScreen() {
           )}
         </View>
 
-        {/* Available Exercises
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Available Exercises</Text>
-            <Text style={styles.exerciseCount}>{exercises.length}</Text>
-          </View>
-
-          <View style={styles.exerciseGrid}>
-            {exercises.map((exercise) => (
-              <View key={exercise.id} style={styles.exerciseCard}>
-                <Text style={styles.exerciseName}>{exercise.name}</Text>
-                <Text style={styles.exerciseCategory}>
-                  {exercise.category} • {exercise.muscleGroup}
-                </Text>
-              </View>
-        ))}
-          </View>
-        </View> */}
           {/* Progress Overview - Coming Soon */}
           <View style={styles.section}>
           <View style={styles.sectionHeader}>
