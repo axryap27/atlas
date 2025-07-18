@@ -12,8 +12,7 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import RecentWorkouts from "../components/RecentWorkouts";
-
+import RecentWorkouts from '../components/RecentWorkouts';
 
 // Updated imports to match your file structure
 const API_BASE_URL = "https://workout-tracker-production-9537.up.railway.app/api";
@@ -30,28 +29,9 @@ const apiService = {
       throw error;
     }
   },
-
-  getUserSessions: async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/sessions`);
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error("Error fetching sessions:", error);
-      return []; // Return empty array if fails
-    }
-  },
 };
 
 // Simple types (inline)
-interface WorkoutSession {
-  id: number;
-  startTime: string;
-  duration?: number;
-  notes?: string;
-  location?: string;
-}
-
 interface ExerciseData {
   id: number;
   name: string;
@@ -63,7 +43,6 @@ export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
 
-  const [recentSessions, setRecentSessions] = useState<WorkoutSession[]>([]);
   const [exercises, setExercises] = useState<ExerciseData[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -76,20 +55,9 @@ export default function HomeScreen() {
       setLoading(true);
       console.log('Starting to load dashboard data...');
       
-      const [sessionsData, exercisesData] = await Promise.all([
-        apiService.getUserSessions(),
-        apiService.getExercises(),
-      ]);
+      const exercisesData = await apiService.getExercises();
       
-      console.log('Sessions data:', sessionsData);
       console.log('Exercises data:', exercisesData);
-      
-      // Handle API errors gracefully
-      if (Array.isArray(sessionsData)) {
-        setRecentSessions(sessionsData.slice(0, 3));
-      } else {
-        setRecentSessions([]);
-      }
       
       if (Array.isArray(exercisesData)) {
         setExercises(exercisesData);
@@ -98,8 +66,6 @@ export default function HomeScreen() {
       }
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
-      // Set empty data on error
-      setRecentSessions([]);
       setExercises([]);
     } finally {
       setLoading(false);
@@ -108,16 +74,6 @@ export default function HomeScreen() {
 
   const startQuickWorkout = () => {
     router.push("/workout" as any);
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
   };
 
   const styles = getStyles(isDark);
@@ -162,7 +118,6 @@ export default function HomeScreen() {
           </View>
         </TouchableOpacity>
 
-        {/* Recent Workouts */}
         {/* Recent Workouts */}
         <RecentWorkouts 
           onViewWorkout={(sessionId) => {
@@ -273,66 +228,6 @@ const getStyles = (isDark: boolean) =>
       fontSize: 16,
       color: "#007AFF",
       fontWeight: "600",
-    },
-    workoutCard: {
-      backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-      borderRadius: 12,
-      padding: 16,
-      marginBottom: 12,
-      shadowColor: "#000000",
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: isDark ? 0.3 : 0.1,
-      shadowRadius: 4,
-      elevation: 3,
-    },
-    workoutCardHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 12,
-    },
-    workoutCardTitle: {
-      fontSize: 16,
-      fontWeight: "600",
-      color: isDark ? "#FFFFFF" : "#000000",
-      flex: 1,
-    },
-    workoutCardDate: {
-      fontSize: 14,
-      color: isDark ? "#8E8E93" : "#6D6D70",
-    },
-    workoutCardStats: {
-      flexDirection: "row",
-      gap: 20,
-    },
-    statItem: {
-      alignItems: "center",
-    },
-    statValue: {
-      fontSize: 18,
-      fontWeight: "bold",
-      color: "#007AFF",
-      marginBottom: 2,
-    },
-    statLabel: {
-      fontSize: 12,
-      color: isDark ? "#8E8E93" : "#6D6D70",
-    },
-    emptyState: {
-      alignItems: "center",
-      padding: 32,
-    },
-    emptyStateText: {
-      fontSize: 16,
-      fontWeight: "600",
-      color: isDark ? "#8E8E93" : "#6D6D70",
-      marginTop: 12,
-      marginBottom: 4,
-    },
-    emptyStateSubtext: {
-      fontSize: 14,
-      color: isDark ? "#8E8E93" : "#6D6D70",
-      textAlign: "center",
     },
     progressOverview: {
       marginBottom: 16,
