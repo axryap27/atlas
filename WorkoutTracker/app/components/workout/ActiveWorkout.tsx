@@ -146,10 +146,17 @@ export default function ActiveWorkout({
 
   useEffect(() => {
     loadAvailableExercises();
+    initializeSession();
     // Auto-expand first exercise if we have exercises from template
     if (initialExercises.length > 0) {
       setExpandedExercise(initialExercises[0].id);
     }
+
+    const timer = setInterval(() => {
+      setElapsedTime(prev => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
   }, []);
 
   const initializeSession = async () => {
@@ -212,13 +219,34 @@ export default function ActiveWorkout({
   );
   const progressPercentage = totalSets > 0 ? (completedSets / totalSets) * 100 : 0;
 
-  const handleSetComplete = (exerciseId: string, setId: string) => {
+  // Format elapsed time
+  const formatTime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Replace your existing handleSetComplete function with this:
+  const handleSetComplete = async (exerciseId: string, setId: string) => {
+    const exercise = selectedExercises.find(ex => ex.id === exerciseId);
+    const set = exercise?.sets.find(s => s.id === setId);
+    
+    if (!exercise || !set) return;
+
+    // Toggle completion state
+    const newCompleted = !set.completed;
+    
     setSelectedExercises((prevExercises) =>
       prevExercises.map((exercise) => {
         if (exercise.id === exerciseId) {
           const updatedSets = exercise.sets.map((set) => {
             if (set.id === setId) {
-              return { ...set, completed: !set.completed };
+              return { ...set, completed: newCompleted };
             }
             return set;
           });
@@ -234,6 +262,18 @@ export default function ActiveWorkout({
         return exercise;
       })
     );
+
+    // Log the set to the database if completed and we have a session
+    if (newCompleted && currentSession && set.weight && set.reps) {
+      const setNumber = exercise.sets.findIndex(s => s.id === setId) + 1;
+      await apiService.logSet(
+        currentSession.id,
+        parseInt(exerciseId),
+        setNumber,
+        parseInt(set.reps),
+        parseFloat(set.weight)
+      );
+    }
   };
 
   const handleWeightChange = (exerciseId: string, setId: string, value: string) => {
@@ -297,9 +337,15 @@ export default function ActiveWorkout({
     );
   };
 
-  const handleCompleteWorkout = () => {
+  // Replace your existing handleCompleteWorkout with this:
+  const handleCompleteWorkout = async () => {
     const completedExercises = selectedExercises.filter((ex) => ex.completed).length;
     const duration = Math.round((new Date().getTime() - workoutStartTime.getTime()) / (1000 * 60));
+    
+    // Finish the session in the database
+    if (currentSession) {
+      await apiService.finishSession(currentSession.id);
+    }
     
     Alert.alert(
       "Workout Complete!",
@@ -308,6 +354,26 @@ export default function ActiveWorkout({
         { 
           text: "Finish", 
           onPress: onBack
+        }
+      ]
+    );
+  };
+
+  const handleEndWorkout = async () => {
+    Alert.alert(
+      "End Workout",
+      "Are you sure you want to end this workout? Your progress will be saved.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "End Workout", 
+          style: "destructive",
+          onPress: async () => {
+            if (currentSession) {
+              await apiService.finishSession(currentSession.id);
+            }
+            onBack();
+          }
         }
       ]
     );
