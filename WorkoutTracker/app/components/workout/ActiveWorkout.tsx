@@ -32,6 +32,12 @@ interface ActiveWorkoutProps {
   onBack: () => void;
 }
 
+interface SessionData {
+  id: number;
+  startTime: string;
+  workoutDayId?: number;
+}
+
 const apiService = {
   getExercises: async () => {
     try {
@@ -50,12 +56,79 @@ const apiService = {
       return [];
     }
   },
+  // Add these methods to your existing apiService object
+  createSession: async (workoutDayId?: number): Promise<SessionData | null> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/sessions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          workoutDayId: workoutDayId,
+        }),
+      });
+
+      if (response.ok) {
+        return await response.json();
+      } else {
+        console.error('Failed to create session');
+        return null;
+      }
+    } catch (error) {
+      console.error('Error creating session:', error);
+      return null;
+    }
+  },
+
+  finishSession: async (sessionId: number) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/sessions/${sessionId}/complete`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to finish session');
+      }
+    } catch (error) {
+      console.error('Error finishing session:', error);
+    }
+  },
+
+  logSet: async (sessionId: number, exerciseId: number, setNumber: number, reps: number, weight: number) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/sessions/${sessionId}/sets`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          exerciseId: exerciseId,
+          setNumber: setNumber,
+          reps: reps,
+          weight: weight,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to log set');
+      }
+    } catch (error) {
+      console.error('Error logging set:', error);
+    }
+  },
+
 };
 
 export default function ActiveWorkout({ 
   initialExercises = [], 
   onNavigate, 
-  onBack 
+  onBack, 
+  templateId
 }: ActiveWorkoutProps) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
@@ -68,6 +141,8 @@ export default function ActiveWorkout({
   const [expandedExercise, setExpandedExercise] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [workoutStartTime] = useState(new Date());
+  const [currentSession, setCurrentSession] = useState<SessionData | null>(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
 
   useEffect(() => {
     loadAvailableExercises();
@@ -76,6 +151,13 @@ export default function ActiveWorkout({
       setExpandedExercise(initialExercises[0].id);
     }
   }, []);
+
+  const initializeSession = async () => {
+    const session = await apiService.createSession(templateId);
+    if (session) {
+      setCurrentSession(session);
+    }
+  };
 
   const loadAvailableExercises = async () => {
     try {
