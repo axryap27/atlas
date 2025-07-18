@@ -125,19 +125,22 @@ export default function CreateTemplate({ onBack, onTemplateCreated }: CreateTemp
   };
 
   const saveTemplate = async () => {
+    console.log('=== SAVE TEMPLATE FUNCTION CALLED ===');
+    Alert.alert("Debug", "saveTemplate function started"); // Temporary debug alert
+    
     if (!templateName.trim()) {
       Alert.alert("Validation Error", "Please enter a template name");
       return;
     }
-
+  
     if (templateExercises.length === 0) {
       Alert.alert("Validation Error", "Please add at least one exercise");
       return;
     }
-
+  
     try {
       setSaving(true);
-
+  
       const templateData = {
         name: templateName.trim(),
         description: templateDescription.trim(),
@@ -151,7 +154,11 @@ export default function CreateTemplate({ onBack, onTemplateCreated }: CreateTemp
           notes: te.notes,
         })),
       };
-
+  
+      console.log('=== TEMPLATE SAVE DEBUG ===');
+      console.log('Sending template data:', JSON.stringify(templateData, null, 2));
+      console.log('API URL:', `${API_BASE_URL}/days/templates`);
+  
       const response = await fetch(`${API_BASE_URL}/days/templates`, {
         method: "POST",
         headers: {
@@ -159,11 +166,26 @@ export default function CreateTemplate({ onBack, onTemplateCreated }: CreateTemp
         },
         body: JSON.stringify(templateData),
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to create template");
+  
+      console.log('Response status:', response.status);
+      
+      const responseText = await response.text();
+      console.log('Raw response:', responseText);
+      
+      let responseData;
+      try {
+        responseData = JSON.parse(responseText);
+      } catch (parseError) {
+        console.log('Failed to parse JSON response:', parseError);
+        responseData = responseText;
       }
-
+      
+      console.log('Parsed response data:', responseData);
+  
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${JSON.stringify(responseData)}`);
+      }
+  
       Alert.alert("Success", "Template created successfully!", [
         {
           text: "OK",
@@ -174,12 +196,77 @@ export default function CreateTemplate({ onBack, onTemplateCreated }: CreateTemp
         },
       ]);
     } catch (error) {
-      console.error("Error creating template:", error);
-      Alert.alert("Error", "Failed to create template. Please try again.");
+      console.log('=== FULL ERROR DETAILS ===');
+      console.error("Full error object:", error);
+      
+      // Handle TypeScript unknown error type
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : 'No stack trace';
+      
+      console.error("Error message:", errorMessage);
+      console.error("Error stack:", errorStack);
+      Alert.alert("Error", `Failed to create template: ${errorMessage}`);
     } finally {
       setSaving(false);
     }
   };
+
+//   const saveTemplate = async () => {
+//     if (!templateName.trim()) {
+//       Alert.alert("Validation Error", "Please enter a template name");
+//       return;
+//     }
+
+//     if (templateExercises.length === 0) {
+//       Alert.alert("Validation Error", "Please add at least one exercise");
+//       return;
+//     }
+
+//     try {
+//       setSaving(true);
+
+//       const templateData = {
+//         name: templateName.trim(),
+//         description: templateDescription.trim(),
+//         exercises: templateExercises.map((te) => ({
+//           exerciseId: te.exerciseId,
+//           targetSets: te.targetSets,
+//           targetReps: te.targetReps,
+//           targetWeight: te.targetWeight,
+//           targetTime: te.targetTime,
+//           restTime: te.restTime,
+//           notes: te.notes,
+//         })),
+//       };
+
+//       const response = await fetch(`${API_BASE_URL}/days/templates`, {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//         },
+//         body: JSON.stringify(templateData),
+//       });
+
+//       if (!response.ok) {
+//         throw new Error("Failed to create template");
+//       }
+
+//       Alert.alert("Success", "Template created successfully!", [
+//         {
+//           text: "OK",
+//           onPress: () => {
+//             onTemplateCreated();
+//             onBack();
+//           },
+//         },
+//       ]);
+//     } catch (error) {
+//       console.error("Error creating template:", error);
+//       Alert.alert("Error", "Failed to create template. Please try again.");
+//     } finally {
+//       setSaving(false);
+//     }
+//   };
 
   const filteredExercises = exercises.filter((exercise) =>
     exercise.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
