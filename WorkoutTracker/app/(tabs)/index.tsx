@@ -12,6 +12,8 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import RecentWorkouts from "../components/RecentWorkouts";
+
 
 // Updated imports to match your file structure
 const API_BASE_URL = "https://workout-tracker-production-9537.up.railway.app/api";
@@ -161,55 +163,13 @@ export default function HomeScreen() {
         </TouchableOpacity>
 
         {/* Recent Workouts */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Workouts</Text>
-            <TouchableOpacity>
-              <Text style={styles.seeAllText}>See All</Text>
-            </TouchableOpacity>
-          </View>
-
-          {recentSessions.length > 0 ? (
-            recentSessions.map((session) => (
-              <View key={session.id} style={styles.workoutCard}>
-                <View style={styles.workoutCardHeader}>
-                  <Text style={styles.workoutCardTitle}>
-                    {session.notes || "Workout Session"}
-                  </Text>
-                  <Text style={styles.workoutCardDate}>
-                    {formatDate(session.startTime)}
-                  </Text>
-                </View>
-                <View style={styles.workoutCardStats}>
-                  <View style={styles.statItem}>
-                    <Text style={styles.statValue}>
-                      {session.duration || 0}m
-                    </Text>
-                    <Text style={styles.statLabel}>Duration</Text>
-                  </View>
-                  <View style={styles.statItem}>
-                    <Text style={styles.statValue}>
-                      {session.location || "Gym"}
-                    </Text>
-                    <Text style={styles.statLabel}>Location</Text>
-                  </View>
-                </View>
-              </View>
-            ))
-          ) : (
-            <View style={styles.emptyState}>
-              <Ionicons
-                name="fitness-outline"
-                size={48}
-                color={isDark ? "#8E8E93" : "#C7C7CC"}
-              />
-              <Text style={styles.emptyStateText}>No recent workouts</Text>
-              <Text style={styles.emptyStateSubtext}>
-                Start your first workout to see it here
-              </Text>
-            </View>
-          )}
-        </View>
+        {/* Recent Workouts */}
+        <RecentWorkouts 
+          onViewWorkout={(sessionId) => {
+            console.log('View workout:', sessionId);
+            // TODO: Navigate to workout details
+          }} 
+        />
         
         {/* Progress Overview - Coming Soon */}
         <View style={styles.section}>
