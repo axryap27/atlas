@@ -1,187 +1,332 @@
+// controllers/sessionController.js
 const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient({
-  log: ['query', 'info', 'warn', 'error'],
-});
+const prisma = new PrismaClient();
 
-// Start a new workout session
-const startSession = async (req, res) => {
-  try {
-    const { workoutDayId, notes, location, bodyWeight } = req.body;
-    const userId = 1; // Hardcoded for now
-    
-    const session = await prisma.session.create({
-      data: {
-        userId,
-        workoutDayId: workoutDayId || null, // Optional - can log freestyle workouts
-        notes,
-        location,
-        bodyWeight
-      },
-      include: {
-        workoutDay: {
-          include: {
-            dayExercises: {
-              include: {
-                exercise: true
-              },
-              orderBy: {
-                order: 'asc'
-              }
+const sessionController = {
+  // Create a new workout session
+  createSession: async (req, res) => {
+    try {
+      const { userId, workoutDayId, startTime, notes, location, bodyWeight } = req.body;
+
+      if (!userId) {
+        return res.status(400).json({ 
+          error: 'userId is required' 
+        });
+      }
+
+      const session = await prisma.session.create({
+        data: {
+          userId: parseInt(userId),
+          workoutDayId: workoutDayId ? parseInt(workoutDayId) : null,
+          startTime: startTime ? new Date(startTime) : new Date(),
+          notes,
+          location,
+          bodyWeight: bodyWeight ? parseFloat(bodyWeight) : null,
+        },
+        include: {
+          workoutDay: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
             }
           }
         }
-      }
-    });
-    
-    res.status(201).json(session);
-  } catch (error) {
-    console.error('Error starting session:', error);
-    res.status(500).json({ error: 'Failed to start session' });
-  }
-};
+      });
 
-// Log a set during the workout
-// Log a set during the workout
-const logSet = async (req, res) => {
+      res.status(201).json(session);
+    } catch (error) {
+      console.error('Error creating session:', error);
+      res.status(500).json({ 
+        error: 'Failed to create session',
+        details: error.message 
+      });
+    }
+  },
+
+  // Finish/update a session
+  updateSession: async (req, res) => {
     try {
-        const { id } = req.params;
-        const sessionId = id;     
-        const { exerciseId, setNumber, reps, weight, duration, distance, restTime, rpe, notes } = req.body;
-      
-      // Make sure sessionId is a valid number
-      const sessionIdNum = parseInt(sessionId);
-      if (isNaN(sessionIdNum)) {
-        return res.status(400).json({ error: 'Invalid session ID' });
-      }
-      
-      const setLog = await prisma.setLog.create({
+      const { id } = req.params;
+      const { endTime, duration, notes, location, bodyWeight } = req.body;
+
+      const session = await prisma.session.update({
+        where: { id: parseInt(id) },
         data: {
-          sessionId: sessionIdNum,
-          exerciseId: parseInt(exerciseId),
-          setNumber: parseInt(setNumber),
-          reps: reps ? parseInt(reps) : null,
-          weight: weight ? parseFloat(weight) : null,
+          endTime: endTime ? new Date(endTime) : new Date(),
           duration: duration ? parseInt(duration) : null,
-          distance: distance ? parseFloat(distance) : null,
-          restTime: restTime ? parseInt(restTime) : null,
-          rpe: rpe ? parseInt(rpe) : null,
-          notes
+          notes,
+          location,
+          bodyWeight: bodyWeight ? parseFloat(bodyWeight) : null,
         },
         include: {
-          exercise: true
+          workoutDay: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+            }
+          },
+          setLogs: {
+            include: {
+              exercise: {
+                select: {
+                  id: true,
+                  name: true,
+                  muscleGroup: true,
+                }
+              }
+            },
+            orderBy: [
+              { exerciseId: 'asc' },
+              { setNumber: 'asc' }
+            ]
+          }
         }
       });
-      
-      res.status(201).json(setLog);
+
+      res.json(session);
     } catch (error) {
-      console.error('Error logging set:', error);
-      res.status(500).json({ error: 'Failed to log set' });
+      console.error('Error updating session:', error);
+      if (error.code === 'P2025') {
+        return res.status(404).json({ error: 'Session not found' });
+      }
+      res.status(500).json({ 
+        error: 'Failed to update session',
+        details: error.message 
+      });
     }
-  };
+  },
 
-// Get session with all logged sets
-const getSession = async (req, res) => {
-  try {
-    const { id } = req.params;
-    
-    const session = await prisma.session.findUnique({
-      where: { id: parseInt(id) },
-      include: {
-        workoutDay: true,
-        setLogs: {
-          include: {
-            exercise: true
+  // Get recent sessions for a user
+  getRecentSessions: async (req, res) => {
+    try {
+      const { userId, limit = 10 } = req.query;
+
+      if (!userId) {
+        return res.status(400).json({ 
+          error: 'userId is required' 
+        });
+      }
+
+      const sessions = await prisma.session.findMany({
+        where: {
+          userId: parseInt(userId)
+        },
+        include: {
+          workoutDay: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+            }
           },
-          orderBy: [
-            { exerciseId: 'asc' },
-            { setNumber: 'asc' }
-          ]
-        }
-      }
-    });
-    
-    if (!session) {
-      return res.status(404).json({ error: 'Session not found' });
-    }
-    
-    res.json(session);
-  } catch (error) {
-    console.error('Error fetching session:', error);
-    res.status(500).json({ error: 'Failed to fetch session' });
-  }
-};
+          setLogs: {
+            include: {
+              exercise: {
+                select: {
+                  id: true,
+                  name: true,
+                  muscleGroup: true,
+                }
+              }
+            },
+            orderBy: [
+              { exerciseId: 'asc' },
+              { setNumber: 'asc' }
+            ]
+          }
+        },
+        orderBy: {
+          startTime: 'desc'
+        },
+        take: parseInt(limit)
+      });
 
-// Complete a session (set end time and duration)
-const completeSession = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { notes } = req.body;
-    
-    const session = await prisma.session.findUnique({
-      where: { id: parseInt(id) }
-    });
-    
-    if (!session) {
-      return res.status(404).json({ error: 'Session not found' });
+      res.json(sessions);
+    } catch (error) {
+      console.error('Error fetching recent sessions:', error);
+      res.status(500).json({ 
+        error: 'Failed to fetch recent sessions',
+        details: error.message 
+      });
     }
-    
-    const endTime = new Date();
-    const duration = Math.round((endTime - session.startTime) / (1000 * 60)); // minutes
-    
-    const updatedSession = await prisma.session.update({
-      where: { id: parseInt(id) },
-      data: {
-        endTime,
-        duration,
-        notes: notes || session.notes
-      },
-      include: {
-        setLogs: {
-          include: {
-            exercise: true
+  },
+
+  // Get a specific session by ID
+  getSessionById: async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      const session = await prisma.session.findUnique({
+        where: { id: parseInt(id) },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            }
+          },
+          workoutDay: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+            }
+          },
+          setLogs: {
+            include: {
+              exercise: {
+                select: {
+                  id: true,
+                  name: true,
+                  muscleGroup: true,
+                  category: true,
+                  equipment: true,
+                }
+              }
+            },
+            orderBy: [
+              { exerciseId: 'asc' },
+              { setNumber: 'asc' }
+            ]
           }
         }
-      }
-    });
-    
-    res.json(updatedSession);
-  } catch (error) {
-    console.error('Error completing session:', error);
-    res.status(500).json({ error: 'Failed to complete session' });
-  }
-};
+      });
 
-// Get all sessions for user
-const getUserSessions = async (req, res) => {
-  try {
-    const userId = 1; // Hardcoded for now
-    
-    const sessions = await prisma.session.findMany({
-      where: { userId },
-      include: {
-        workoutDay: true,
-        setLogs: {
-          include: {
-            exercise: true
+      if (!session) {
+        return res.status(404).json({ error: 'Session not found' });
+      }
+
+      res.json(session);
+    } catch (error) {
+      console.error('Error fetching session:', error);
+      res.status(500).json({ 
+        error: 'Failed to fetch session',
+        details: error.message 
+      });
+    }
+  },
+
+  // Delete a session
+  // Add this to your sessionController.js file
+  deleteSession: async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const session = await prisma.session.findUnique({
+        where: { id: parseInt(id) }
+      });
+      
+      if (!session) {
+        return res.status(404).json({ error: 'Session not found' });
+      }
+      
+      await prisma.session.delete({
+        where: { id: parseInt(id) }
+      });
+      
+      res.json({ message: 'Session deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting session:', error);
+      res.status(500).json({ error: 'Failed to delete session' });
+    }
+  },
+
+  // Get user's workout statistics
+  getUserStats: async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const { startDate, endDate } = req.query;
+
+      if (!userId) {
+        return res.status(400).json({ 
+          error: 'userId is required' 
+        });
+      }
+
+      const whereClause = {
+        userId: parseInt(userId),
+        endTime: { not: null } // Only completed sessions
+      };
+
+      if (startDate && endDate) {
+        whereClause.startTime = {
+          gte: new Date(startDate),
+          lte: new Date(endDate)
+        };
+      }
+
+      const [totalSessions, totalDuration, totalVolume] = await Promise.all([
+        // Total completed sessions
+        prisma.session.count({
+          where: whereClause
+        }),
+
+        // Total workout duration
+        prisma.session.aggregate({
+          where: whereClause,
+          _sum: {
+            duration: true
+          }
+        }),
+
+        // Total volume (weight * reps)
+        prisma.setLog.aggregate({
+          where: {
+            session: {
+              userId: parseInt(userId),
+              endTime: { not: null }
+            },
+            weight: { not: null },
+            reps: { not: null }
+          },
+          _sum: {
+            weight: true,
+            reps: true
+          }
+        })
+      ]);
+
+      // Calculate total volume
+      const sessionsWithSetLogs = await prisma.session.findMany({
+        where: whereClause,
+        include: {
+          setLogs: {
+            where: {
+              weight: { not: null },
+              reps: { not: null }
+            }
           }
         }
-      },
-      orderBy: {
-        startTime: 'desc'
-      }
-    });
-    
-    res.json(sessions);
-  } catch (error) {
-    console.error('Error fetching sessions:', error);
-    res.status(500).json({ error: 'Failed to fetch sessions' });
+      });
+
+      let calculatedVolume = 0;
+      sessionsWithSetLogs.forEach(session => {
+        session.setLogs.forEach(setLog => {
+          if (setLog.weight && setLog.reps) {
+            calculatedVolume += setLog.weight * setLog.reps;
+          }
+        });
+      });
+
+      res.json({
+        totalSessions,
+        totalDuration: totalDuration._sum.duration || 0,
+        totalVolume: calculatedVolume,
+        averageDuration: totalSessions > 0 
+          ? Math.round((totalDuration._sum.duration || 0) / totalSessions) 
+          : 0
+      });
+    } catch (error) {
+      console.error('Error fetching user stats:', error);
+      res.status(500).json({ 
+        error: 'Failed to fetch user stats',
+        details: error.message 
+      });
+    }
   }
 };
 
-module.exports = {
-  startSession,
-  logSet,
-  getSession,
-  completeSession,
-  getUserSessions
-};
+module.exports = sessionController;
