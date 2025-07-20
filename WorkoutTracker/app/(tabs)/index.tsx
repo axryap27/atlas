@@ -123,7 +123,8 @@ export default function HomeScreen() {
           onViewWorkout={(sessionId) => {
             console.log('View workout:', sessionId);
             // TODO: Navigate to workout details
-          }} 
+          }}
+          showDebugTools={true} // Enable debug tools for development
         />
         
         {/* Progress Overview - Coming Soon */}
