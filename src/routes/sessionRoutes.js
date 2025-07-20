@@ -1,26 +1,30 @@
 const express = require('express');
 const router = express.Router();
 const { 
-  startSession, 
-  logSet, 
-  getSession, 
-  completeSession, 
-  getUserSessions 
+  createSession, 
+  updateSession, 
+  getSessionById, 
+  getRecentSessions, 
+  deleteSession,
+  getUserStats
 } = require('../controllers/sessionController');
 
-// GET /api/sessions - Get all user sessions
-router.get('/', getUserSessions);
+// GET /api/sessions - Get recent sessions
+router.get('/', getRecentSessions);
 
 // POST /api/sessions - Start new workout session
-router.post('/', startSession);
+router.post('/', createSession);
 
 // GET /api/sessions/:id - Get specific session with all sets
-router.get('/:id', getSession);
+router.get('/:id', getSessionById);
 
-// PUT /api/sessions/:id/complete - Mark session as complete
-router.put('/:id/complete', completeSession);
+// PUT /api/sessions/:id - Update/complete session
+router.put('/:id', updateSession);
 
-// POST /api/sessions/:id/sets - Log a set during workout
-router.post('/:id/sets', logSet);
+// DELETE /api/sessions/:id - Delete session
+router.delete('/:id', deleteSession);
+
+// GET /api/sessions/stats/:userId - Get user stats
+router.get('/stats/:userId', getUserStats);
 
 module.exports = router;
