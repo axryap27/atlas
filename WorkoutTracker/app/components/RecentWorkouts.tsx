@@ -71,6 +71,16 @@ const apiService = {
         method: 'DELETE',
       });
       
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Delete failed:', response.status, errorData);
+        
+        // If it's a 404 route not found, the backend needs to be updated
+        if (response.status === 404 && errorData.error === 'Route not found') {
+          throw new Error('Delete feature not available - backend needs update');
+        }
+      }
+      
       return response.ok;
     } catch (error) {
       console.error('Error deleting session:', error);
@@ -236,11 +246,16 @@ export default function RecentWorkouts({ onViewWorkout, showDebugTools = false }
           text: "Delete",
           style: "destructive",
           onPress: async () => {
-            const success = await apiService.deleteSession(sessionId);
-            if (success) {
-              setSessions(prev => prev.filter(s => s.id !== sessionId));
-            } else {
-              Alert.alert("Error", "Failed to delete session");
+            try {
+              const success = await apiService.deleteSession(sessionId);
+              if (success) {
+                setSessions(prev => prev.filter(s => s.id !== sessionId));
+                Alert.alert("Success", "Workout deleted successfully");
+              } else {
+                Alert.alert("Error", "Failed to delete workout. The backend may need to be updated with the latest delete functionality.");
+              }
+            } catch (error: any) {
+              Alert.alert("Error", error.message || "Failed to delete workout");
             }
           }
         }
