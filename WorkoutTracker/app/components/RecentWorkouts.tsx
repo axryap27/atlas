@@ -9,6 +9,7 @@ import {
   useColorScheme,
   RefreshControl,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -42,6 +43,7 @@ interface WorkoutSession {
 
 interface RecentWorkoutsProps {
   onViewWorkout?: (sessionId: number) => void;
+  showDebugTools?: boolean; // Add debug prop
 }
 
 const apiService = {
@@ -51,7 +53,8 @@ const apiService = {
       
       if (response.ok) {
         const data = await response.json();
-        return Array.isArray(data) ? data : [];
+        // Only return last 3 sessions
+        return Array.isArray(data) ? data.slice(0, 3) : [];
       } else {
         console.error('Failed to fetch recent sessions');
         return [];
@@ -61,9 +64,46 @@ const apiService = {
       return [];
     }
   },
+
+  deleteSession: async (sessionId: number): Promise<boolean> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/sessions/${sessionId}`, {
+        method: 'DELETE',
+      });
+      
+      return response.ok;
+    } catch (error) {
+      console.error('Error deleting session:', error);
+      return false;
+    }
+  },
+
+  deleteAllSessions: async (): Promise<boolean> => {
+    try {
+      // First get all sessions
+      const response = await fetch(`${API_BASE_URL}/sessions`);
+      if (!response.ok) return false;
+      
+      const sessions = await response.json();
+      if (!Array.isArray(sessions)) return false;
+
+      // Delete each session
+      const deletePromises = sessions.map(session => 
+        fetch(`${API_BASE_URL}/sessions/${session.id}`, {
+          method: 'DELETE',
+        })
+      );
+
+      const results = await Promise.all(deletePromises);
+      return results.every(result => result.ok);
+    } catch (error) {
+      console.error('Error deleting all sessions:', error);
+      return false;
+    }
+  },
 };
 
-export default function RecentWorkouts({ onViewWorkout }: RecentWorkoutsProps) {
+export default function RecentWorkouts({ onViewWorkout, showDebugTools = false }: RecentWorkoutsProps) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
@@ -161,6 +201,53 @@ export default function RecentWorkouts({ onViewWorkout }: RecentWorkoutsProps) {
     return [...new Set(muscleGroups)];
   };
 
+  const handleDeleteAllSessions = async () => {
+    Alert.alert(
+      "Delete All Workouts",
+      "Are you sure you want to delete all workout sessions? This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete All",
+          style: "destructive",
+          onPress: async () => {
+            setRefreshing(true);
+            const success = await apiService.deleteAllSessions();
+            if (success) {
+              setSessions([]);
+              Alert.alert("Success", "All workout sessions deleted");
+            } else {
+              Alert.alert("Error", "Failed to delete all sessions");
+            }
+            setRefreshing(false);
+          }
+        }
+      ]
+    );
+  };
+
+  const handleDeleteSession = async (sessionId: number) => {
+    Alert.alert(
+      "Delete Workout",
+      "Are you sure you want to delete this workout session?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            const success = await apiService.deleteSession(sessionId);
+            if (success) {
+              setSessions(prev => prev.filter(s => s.id !== sessionId));
+            } else {
+              Alert.alert("Error", "Failed to delete session");
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const styles = getStyles(isDark);
 
   if (loading) {
@@ -176,11 +263,18 @@ export default function RecentWorkouts({ onViewWorkout }: RecentWorkoutsProps) {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Recent Workouts</Text>
-        {sessions.length > 0 && (
-          <TouchableOpacity onPress={handleRefresh}>
-            <Ionicons name="refresh" size={20} color="#007AFF" />
-          </TouchableOpacity>
-        )}
+        <View style={styles.headerActions}>
+          {sessions.length > 0 && (
+            <TouchableOpacity onPress={handleRefresh} style={styles.headerButton}>
+              <Ionicons name="refresh" size={20} color="#007AFF" />
+            </TouchableOpacity>
+          )}
+          {showDebugTools && (
+            <TouchableOpacity onPress={handleDeleteAllSessions} style={styles.deleteButton}>
+              <Ionicons name="trash" size={20} color="#FF3B30" />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {sessions.length === 0 ? (
@@ -249,7 +343,7 @@ export default function RecentWorkouts({ onViewWorkout }: RecentWorkoutsProps) {
                   {stats.volume > 0 && (
                     <View style={styles.statItem}>
                       <Text style={styles.statValue}>
-                        {stats.volume.toLocaleString()}
+                        {stats.volume.toLocaleString()} lbs
                       </Text>
                       <Text style={styles.statLabel}>Volume</Text>
                     </View>
@@ -262,7 +356,7 @@ export default function RecentWorkouts({ onViewWorkout }: RecentWorkoutsProps) {
                     {muscleGroups.map((group, index) => (
                       <View key={index} style={styles.muscleGroupTag}>
                         <Text style={styles.muscleGroupText}>
-                          {group ? group.charAt(0).toUpperCase() + group.slice(1) : "Unknown"}
+                          {group ? group.charAt(0).toUpperCase() + group.slice(1) : 'Unknown'}
                         </Text>
                       </View>
                     ))}
@@ -271,18 +365,28 @@ export default function RecentWorkouts({ onViewWorkout }: RecentWorkoutsProps) {
 
                 {/* Completion Status */}
                 <View style={styles.statusContainer}>
-                  {session.endTime ? (
-                    <View style={styles.statusCompleted}>
-                      <Ionicons name="checkmark-circle" size={16} color="#34C759" />
-                      <Text style={styles.statusCompletedText}>Completed</Text>
-                    </View>
-                  ) : (
-                    <View style={styles.statusIncomplete}>
-                      <Ionicons name="time-outline" size={16} color="#FF9500" />
-                      <Text style={styles.statusIncompleteText}>In Progress</Text>
-                    </View>
-                  )}
-                  <Ionicons name="chevron-forward" size={16} color="#C7C7CC" />
+                  <View style={styles.statusLeft}>
+                    {session.endTime ? (
+                      <View style={styles.statusCompleted}>
+                        <Ionicons name="checkmark-circle" size={16} color="#34C759" />
+                        <Text style={styles.statusCompletedText}>Completed</Text>
+                      </View>
+                    ) : (
+                      <View style={styles.statusIncomplete}>
+                        <Ionicons name="time-outline" size={16} color="#FF9500" />
+                        <Text style={styles.statusIncompleteText}>In Progress</Text>
+                      </View>
+                    )}
+                  </View>
+                  <View style={styles.statusRight}>
+                    <TouchableOpacity 
+                      onPress={() => handleDeleteSession(session.id)}
+                      style={styles.deleteSessionButton}
+                    >
+                      <Ionicons name="trash-outline" size={16} color="#FF3B30" />
+                    </TouchableOpacity>
+                    <Ionicons name="chevron-forward" size={16} color="#C7C7CC" />
+                  </View>
                 </View>
               </TouchableOpacity>
             );
@@ -310,6 +414,17 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#000000',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  headerButton: {
+    padding: 4,
+  },
+  deleteButton: {
+    padding: 4,
   },
   loadingContainer: {
     flex: 1,
@@ -436,6 +551,14 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#F2F2F7',
   },
+  statusLeft: {
+    flex: 1,
+  },
+  statusRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
   statusCompleted: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -455,5 +578,8 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     color: '#FF9500',
+  },
+  deleteSessionButton: {
+    padding: 4,
   },
 });

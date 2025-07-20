@@ -26,16 +26,17 @@ interface ExerciseData {
   equipment?: string;
 }
 
-interface ActiveWorkoutProps {
-  initialExercises?: Exercise[];
-  onNavigate: (screen: WorkoutScreen) => void;
-  onBack: () => void;
-}
-
 interface SessionData {
   id: number;
   startTime: string;
   workoutDayId?: number;
+}
+
+interface ActiveWorkoutProps {
+  initialExercises?: Exercise[];
+  onNavigate: (screen: WorkoutScreen) => void;
+  onBack: () => void;
+  templateId?: number; // Add template ID for session tracking
 }
 
 const apiService = {
@@ -44,7 +45,6 @@ const apiService = {
       const response = await fetch(`${API_BASE_URL}/exercises`);
       const data = await response.json();
       
-      // Check if response is an error object
       if (data && data.code && data.message) {
         console.warn('API returned error:', data.message);
         return [];
@@ -56,7 +56,7 @@ const apiService = {
       return [];
     }
   },
-  // Add these methods to your existing apiService object
+
   createSession: async (workoutDayId?: number): Promise<SessionData | null> => {
     try {
       const response = await fetch(`${API_BASE_URL}/sessions`, {
@@ -121,13 +121,12 @@ const apiService = {
       console.error('Error logging set:', error);
     }
   },
-
 };
 
 export default function ActiveWorkout({ 
   initialExercises = [], 
   onNavigate, 
-  onBack, 
+  onBack,
   templateId
 }: ActiveWorkoutProps) {
   const colorScheme = useColorScheme();
@@ -141,17 +140,21 @@ export default function ActiveWorkout({
   const [expandedExercise, setExpandedExercise] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [workoutStartTime] = useState(new Date());
+  
+  // Session tracking state
   const [currentSession, setCurrentSession] = useState<SessionData | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
 
   useEffect(() => {
     loadAvailableExercises();
     initializeSession();
+    
     // Auto-expand first exercise if we have exercises from template
     if (initialExercises.length > 0) {
       setExpandedExercise(initialExercises[0].id);
     }
 
+    // Start elapsed time counter
     const timer = setInterval(() => {
       setElapsedTime(prev => prev + 1);
     }, 1000);
@@ -182,7 +185,6 @@ export default function ActiveWorkout({
 
   const muscleGroups = ["all", "chest", "back", "legs", "shoulders", "biceps", "triceps", "abs", "calves"];
 
-  // Fixed filter with safety check
   const filteredExercises = (availableExercises || []).filter(exercise => {
     const matchesSearch = exercise.name && exercise.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesMuscleGroup = selectedMuscleGroup === "all" || exercise.muscleGroup === selectedMuscleGroup;
@@ -231,7 +233,6 @@ export default function ActiveWorkout({
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Replace your existing handleSetComplete function with this:
   const handleSetComplete = async (exerciseId: string, setId: string) => {
     const exercise = selectedExercises.find(ex => ex.id === exerciseId);
     const set = exercise?.sets.find(s => s.id === setId);
@@ -337,7 +338,6 @@ export default function ActiveWorkout({
     );
   };
 
-  // Replace your existing handleCompleteWorkout with this:
   const handleCompleteWorkout = async () => {
     const completedExercises = selectedExercises.filter((ex) => ex.completed).length;
     const duration = Math.round((new Date().getTime() - workoutStartTime.getTime()) / (1000 * 60));
@@ -387,10 +387,16 @@ export default function ActiveWorkout({
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerTop}>
-            <TouchableOpacity onPress={onBack} style={styles.backButton}>
+            <TouchableOpacity onPress={handleEndWorkout} style={styles.backButton}>
               <Ionicons name="chevron-back" size={24} color="#007AFF" />
               <Text style={styles.backText}>End Workout</Text>
             </TouchableOpacity>
+            
+            {/* Workout Timer */}
+            <View style={styles.timerContainer}>
+              <Ionicons name="time-outline" size={16} color="#8E8E93" />
+              <Text style={styles.timerText}>{formatTime(elapsedTime)}</Text>
+            </View>
           </View>
           
           <Text style={styles.workoutTitle}>
@@ -640,7 +646,7 @@ export default function ActiveWorkout({
 const getStyles = (isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F2F2F7", // Light background
+    backgroundColor: "#F2F2F7",
   },
   scrollView: {
     flex: 1,
@@ -663,15 +669,29 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     color: "#007AFF",
     marginLeft: 4,
   },
+  timerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 4,
+  },
+  timerText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#000000",
+  },
   workoutTitle: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#000000", // Dark text
+    color: "#000000",
     marginBottom: 8,
   },
   progressText: {
     fontSize: 16,
-    color: "#6D6D70", // Light theme secondary
+    color: "#6D6D70",
   },
   progressContainer: {
     marginHorizontal: 16,
@@ -679,20 +699,20 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   },
   progressBackground: {
     height: 8,
-    backgroundColor: "#E5E5EA", // Light progress background
+    backgroundColor: "#E5E5EA",
     borderRadius: 4,
     overflow: "hidden",
   },
   progressFill: {
     height: "100%",
-    backgroundColor: "#007AFF", // Blue progress
+    backgroundColor: "#007AFF",
     borderRadius: 4,
   },
   addExerciseButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF", // White background
+    backgroundColor: "#FFFFFF",
     marginHorizontal: 16,
     marginBottom: 24,
     paddingVertical: 16,
@@ -734,12 +754,12 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     gap: 16,
   },
   exerciseCard: {
-    backgroundColor: "#FFFFFF", // White cards
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     padding: 16,
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1, // Light shadow
+    shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
@@ -761,7 +781,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   exerciseName: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#000000", // Dark text
+    color: "#000000",
   },
   exerciseActions: {
     flexDirection: "row",
@@ -799,7 +819,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     textAlign: "center",
     fontSize: 16,
     fontWeight: "600",
-    color: "#000000", // Dark text
+    color: "#000000",
   },
   input: {
     flex: 1,
@@ -812,7 +832,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     textAlign: "center",
     fontSize: 16,
     backgroundColor: "#F8F8F8",
-    color: "#000000", // Dark text
+    color: "#000000",
   },
   setActions: {
     flex: 1,
@@ -873,7 +893,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   // Modal styles
   modalContainer: {
     flex: 1,
-    backgroundColor: "#F2F2F7", // Light background
+    backgroundColor: "#F2F2F7",
   },
   modalHeader: {
     flexDirection: "row",
@@ -892,7 +912,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#000000", // Dark text
+    color: "#000000",
   },
   modalSpacer: {
     width: 60,
@@ -900,7 +920,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF", // White search
+    backgroundColor: "#FFFFFF",
     marginHorizontal: 16,
     marginTop: 16,
     marginBottom: 8,
@@ -913,7 +933,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: "#000000", // Dark text
+    color: "#000000",
     marginLeft: 8,
   },
   filterWrapper: {
@@ -929,7 +949,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     paddingVertical: 6,
     marginRight: 8,
     borderRadius: 16,
-    backgroundColor: "#E5E5EA", // Light background
+    backgroundColor: "#E5E5EA",
     minWidth: 60,
     alignItems: "center",
   },
@@ -939,7 +959,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   filterButtonText: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#000000", // Dark text
+    color: "#000000",
   },
   filterButtonTextActive: {
     color: "#FFFFFF",
@@ -954,7 +974,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   exercisePickerItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF", // White background
+    backgroundColor: "#FFFFFF",
     paddingHorizontal: 16,
     paddingVertical: 12,
     marginBottom: 8,
@@ -971,7 +991,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   exercisePickerName: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#000000", // Dark text
+    color: "#000000",
     marginBottom: 4,
   },
   exercisePickerMuscle: {
