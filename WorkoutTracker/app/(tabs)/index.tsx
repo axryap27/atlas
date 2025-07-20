@@ -124,7 +124,7 @@ export default function HomeScreen() {
             console.log('View workout:', sessionId);
             // TODO: Navigate to workout details
           }}
-          showDebugTools={true} // Enable debug tools for development
+          showDebugTools={false} // Disable debug tools in production
         />
         
         {/* Progress Overview - Coming Soon */}
