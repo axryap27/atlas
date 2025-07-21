@@ -6,7 +6,8 @@ const {
   getSessionById, 
   getRecentSessions, 
   deleteSession,
-  getUserStats
+  getUserStats,
+  logSet
 } = require('../controllers/sessionController');
 
 // GET /api/sessions - Get recent sessions
@@ -20,6 +21,9 @@ router.get('/:id', getSessionById);
 
 // PUT /api/sessions/:id - Update/complete session
 router.put('/:id', updateSession);
+
+// POST /api/sessions/:id/sets - Log a set to a session
+router.post('/:id/sets', logSet);
 
 // DELETE /api/sessions/:id - Delete session
 router.delete('/:id', deleteSession);

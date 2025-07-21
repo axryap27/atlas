@@ -234,6 +234,58 @@ const sessionController = {
     }
   },
 
+  // Log a set to a session
+  logSet: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { exerciseId, setNumber, reps, weight, notes } = req.body;
+
+      if (!exerciseId || !setNumber || !reps) {
+        return res.status(400).json({ 
+          error: 'exerciseId, setNumber, and reps are required' 
+        });
+      }
+
+      // Verify the session exists
+      const session = await prisma.session.findUnique({
+        where: { id: parseInt(id) }
+      });
+
+      if (!session) {
+        return res.status(404).json({ error: 'Session not found' });
+      }
+
+      // Create the set log
+      const setLog = await prisma.setLog.create({
+        data: {
+          sessionId: parseInt(id),
+          exerciseId: parseInt(exerciseId),
+          setNumber: parseInt(setNumber),
+          reps: parseInt(reps),
+          weight: weight ? parseFloat(weight) : null,
+          notes,
+        },
+        include: {
+          exercise: {
+            select: {
+              id: true,
+              name: true,
+              muscleGroup: true,
+            }
+          }
+        }
+      });
+
+      res.status(201).json(setLog);
+    } catch (error) {
+      console.error('Error logging set:', error);
+      res.status(500).json({ 
+        error: 'Failed to log set',
+        details: error.message 
+      });
+    }
+  },
+
   // Get user's workout statistics
   getUserStats: async (req, res) => {
     try {
