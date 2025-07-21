@@ -65,6 +65,7 @@ const apiService = {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          userId: 1, // For now, we'll use userId=1 as a default. In a real app, this would come from authentication
           workoutDayId: workoutDayId,
         }),
       });
@@ -83,12 +84,15 @@ const apiService = {
 
   finishSession: async (sessionId: number) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/sessions/${sessionId}/complete`, {
+      const response = await fetch(`${API_BASE_URL}/sessions/${sessionId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({}),
+        body: JSON.stringify({
+          endTime: new Date().toISOString(),
+          duration: Math.round((new Date().getTime() - new Date().getTime()) / (1000 * 60)), // Will be calculated properly by backend
+        }),
       });
 
       if (!response.ok) {

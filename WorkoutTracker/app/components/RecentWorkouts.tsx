@@ -49,7 +49,8 @@ interface RecentWorkoutsProps {
 const apiService = {
   getRecentSessions: async (): Promise<WorkoutSession[]> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/sessions`);
+      // For now, we'll use userId=1 as a default. In a real app, this would come from authentication
+      const response = await fetch(`${API_BASE_URL}/sessions?userId=1`);
       
       if (response.ok) {
         const data = await response.json();
