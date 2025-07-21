@@ -268,17 +268,18 @@ export default function ActiveWorkout({
       })
     );
 
-    // Log the set to the database if completed and we have a session
-    if (newCompleted && currentSession && set.weight && set.reps) {
-      const setNumber = exercise.sets.findIndex(s => s.id === setId) + 1;
-      await apiService.logSet(
-        currentSession.id,
-        parseInt(exerciseId),
-        setNumber,
-        parseInt(set.reps),
-        parseFloat(set.weight)
-      );
-    }
+    // TODO: Log the set to the database if completed and we have a session
+    // Set logging endpoint is not implemented in the backend yet
+    // if (newCompleted && currentSession && set.weight && set.reps) {
+    //   const setNumber = exercise.sets.findIndex(s => s.id === setId) + 1;
+    //   await apiService.logSet(
+    //     currentSession.id,
+    //     parseInt(exerciseId),
+    //     setNumber,
+    //     parseInt(set.reps),
+    //     parseFloat(set.weight)
+    //   );
+    // }
   };
 
   const handleWeightChange = (exerciseId: string, setId: string, value: string) => {
