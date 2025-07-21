@@ -120,6 +120,38 @@ export default function Templates({ onNavigate, onBack, needsRefresh, onRefreshe
     onNavigate('createTemplate');
   };
 
+  const handleDeleteTemplate = async (templateId: number, templateName: string) => {
+    Alert.alert(
+      "Delete Template",
+      `Are you sure you want to delete "${templateName}"? This action cannot be undone.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const response = await fetch(`${API_BASE_URL}/days/templates/${templateId}`, {
+                method: 'DELETE',
+              });
+              
+              if (response.ok) {
+                setTemplates(prev => prev.filter(t => t.id !== templateId));
+                Alert.alert("Success", "Template deleted successfully");
+              } else {
+                const errorData = await response.json().catch(() => ({}));
+                Alert.alert("Error", errorData.error || "Failed to delete template");
+              }
+            } catch (error) {
+              console.error('Error deleting template:', error);
+              Alert.alert("Error", "Failed to delete template. Please try again.");
+            }
+          }
+        }
+      ]
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -143,31 +175,42 @@ export default function Templates({ onNavigate, onBack, needsRefresh, onRefreshe
           </View>
         ) : templates.length > 0 ? (
           templates.map((template) => (
-            <TouchableOpacity
-              key={template.id}
-              style={styles.templateCard}
-              onPress={() => startFromTemplate(template)}
-            >
-              <View style={styles.templateHeader}>
-                <Text style={styles.templateName}>{template.name}</Text>
-                <Text style={styles.templateDescription}>
-                  {template.description || "No description"}
-                </Text>
-              </View>
+            <View key={template.id} style={styles.templateCard}>
+              <TouchableOpacity
+                style={styles.templateContent}
+                onPress={() => startFromTemplate(template)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.templateHeader}>
+                  <Text style={styles.templateName}>{template.name}</Text>
+                  <Text style={styles.templateDescription}>
+                    {template.description || "No description"}
+                  </Text>
+                </View>
+                
+                <View style={styles.templateExercises}>
+                  <Text style={styles.templateExerciseList}>
+                    {template.dayExercises.map(dayEx => dayEx.exercise.name).join(' • ')}
+                  </Text>
+                </View>
+                
+                <View style={styles.templateFooter}>
+                  <Text style={styles.templateStats}>
+                    {template.dayExercises.length} exercises • {template.dayExercises.reduce((acc, ex) => acc + ex.targetSets, 0)} sets
+                  </Text>
+                  <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
+                </View>
+              </TouchableOpacity>
               
-              <View style={styles.templateExercises}>
-                <Text style={styles.templateExerciseList}>
-                  {template.dayExercises.map(dayEx => dayEx.exercise.name).join(' • ')}
-                </Text>
+              <View style={styles.templateActions}>
+                <TouchableOpacity 
+                  onPress={() => handleDeleteTemplate(template.id, template.name)}
+                  style={styles.deleteButton}
+                >
+                  <Ionicons name="trash-outline" size={18} color="#FF3B30" />
+                </TouchableOpacity>
               </View>
-              
-              <View style={styles.templateFooter}>
-                <Text style={styles.templateStats}>
-                  {template.dayExercises.length} exercises • {template.dayExercises.reduce((acc, ex) => acc + ex.targetSets, 0)} sets
-                </Text>
-                <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
-              </View>
-            </TouchableOpacity>
+            </View>
           ))
         ) : (
           <View style={styles.emptyState}>
@@ -259,13 +302,29 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   templateCard: {
     backgroundColor: "#FFFFFF", // White cards
     borderRadius: 12,
-    padding: 16,
     marginBottom: 12,
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1, // Light shadow
     shadowRadius: 4,
     elevation: 3,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  templateContent: {
+    flex: 1,
+    padding: 16,
+  },
+  templateActions: {
+    paddingHorizontal: 12,
+    paddingVertical: 16,
+    borderLeftWidth: 1,
+    borderLeftColor: "#F2F2F7",
+  },
+  deleteButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: "#FFF2F2",
   },
   templateHeader: {
     marginBottom: 12,
