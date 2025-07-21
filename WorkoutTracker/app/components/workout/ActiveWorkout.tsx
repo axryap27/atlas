@@ -1,5 +1,5 @@
 // app/components/workout/ActiveWorkout.tsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,9 @@ import {
   SafeAreaView,
   useColorScheme,
   Modal,
+  Animated,
+  PanResponder,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { WorkoutScreen, Exercise, Set } from "../../(tabs)/workout";
@@ -148,6 +151,10 @@ export default function ActiveWorkout({
   // Session tracking state
   const [currentSession, setCurrentSession] = useState<SessionData | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
+  
+  // Exercise swipe state
+  const [swipedExercise, setSwipedExercise] = useState<string | null>(null);
+  const exerciseSwipeRefs = useRef<{ [key: string]: Animated.Value }>({});
 
   useEffect(() => {
     loadAvailableExercises();
@@ -167,10 +174,20 @@ export default function ActiveWorkout({
   }, []);
 
   const initializeSession = async () => {
-    const session = await apiService.createSession(templateId);
-    if (session) {
-      setCurrentSession(session);
+    // Don't create a session until the user adds exercises or sets
+    // Sessions will be created when needed
+    setCurrentSession(null);
+  };
+
+  const ensureSession = async () => {
+    if (!currentSession) {
+      const session = await apiService.createSession(templateId);
+      if (session) {
+        setCurrentSession(session);
+        return session;
+      }
     }
+    return currentSession;
   };
 
   const loadAvailableExercises = async () => {
@@ -215,6 +232,103 @@ export default function ActiveWorkout({
 
   const removeExerciseFromWorkout = (exerciseId: string) => {
     setSelectedExercises(prev => prev.filter(ex => ex.id !== exerciseId));
+    // Clean up animation ref
+    delete exerciseSwipeRefs.current[exerciseId];
+    if (swipedExercise === exerciseId) {
+      setSwipedExercise(null);
+    }
+  };
+
+  const createExerciseSwipeGesture = (exerciseId: string) => {
+    return PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        const { dx, dy } = gestureState;
+        
+        // More strict horizontal detection to prevent scroll interference
+        const isHorizontal = Math.abs(dx) > Math.abs(dy) * 2 && Math.abs(dx) > 15;
+        
+        if (isHorizontal) {
+          if (swipedExercise && swipedExercise !== exerciseId) {
+            closeExerciseSwipe(swipedExercise);
+          }
+          return true;
+        }
+        return false;
+      },
+      onStartShouldSetPanResponderCapture: () => false,
+      onMoveShouldSetPanResponderCapture: (_, gestureState) => {
+        const { dx, dy } = gestureState;
+        
+        // Capture the gesture early if it's clearly horizontal
+        const isDefinitelyHorizontal = Math.abs(dx) > Math.abs(dy) * 3 && Math.abs(dx) > 20;
+        return isDefinitelyHorizontal;
+      },
+      onPanResponderGrant: () => {
+        if (Platform.OS === 'ios') {
+          const Haptics = require('expo-haptics');
+          Haptics?.impactAsync(Haptics?.ImpactFeedbackStyle?.Light);
+        }
+      },
+      onPanResponderMove: (_, gestureState) => {
+        const { dx } = gestureState;
+        const maxSwipe = -80;
+        
+        let swipeValue;
+        if (dx < 0) {
+          swipeValue = Math.max(maxSwipe, dx);
+        } else {
+          swipeValue = Math.min(20, dx * 0.3);
+        }
+        
+        if (exerciseSwipeRefs.current[exerciseId]) {
+          exerciseSwipeRefs.current[exerciseId].setValue(swipeValue);
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        const { dx, vx } = gestureState;
+        const shouldShowDelete = dx < -40 || (dx < -20 && vx < -0.5);
+        
+        if (shouldShowDelete) {
+          setSwipedExercise(exerciseId);
+          Animated.spring(exerciseSwipeRefs.current[exerciseId], {
+            toValue: -80,
+            useNativeDriver: true,
+            speed: 20,
+            bounciness: 0,
+          }).start();
+        } else {
+          setSwipedExercise(null);
+          Animated.spring(exerciseSwipeRefs.current[exerciseId], {
+            toValue: 0,
+            useNativeDriver: true,
+            speed: 20,
+            bounciness: 0,
+          }).start();
+        }
+      },
+      onPanResponderTerminate: () => {
+        setSwipedExercise(null);
+        Animated.spring(exerciseSwipeRefs.current[exerciseId], {
+          toValue: 0,
+          useNativeDriver: true,
+          speed: 20,
+          bounciness: 0,
+        }).start();
+      },
+    });
+  };
+
+  const closeExerciseSwipe = (exerciseId: string) => {
+    if (exerciseSwipeRefs.current[exerciseId]) {
+      setSwipedExercise(null);
+      Animated.spring(exerciseSwipeRefs.current[exerciseId], {
+        toValue: 0,
+        useNativeDriver: true,
+        speed: 20,
+        bounciness: 0,
+      }).start();
+    }
   };
 
   // Calculate progress
@@ -268,18 +382,20 @@ export default function ActiveWorkout({
       })
     );
 
-    // TODO: Log the set to the database if completed and we have a session
-    // Set logging endpoint is not implemented in the backend yet
-    // if (newCompleted && currentSession && set.weight && set.reps) {
-    //   const setNumber = exercise.sets.findIndex(s => s.id === setId) + 1;
-    //   await apiService.logSet(
-    //     currentSession.id,
-    //     parseInt(exerciseId),
-    //     setNumber,
-    //     parseInt(set.reps),
-    //     parseFloat(set.weight)
-    //   );
-    // }
+    // Create session and log set if completed
+    if (newCompleted && set.weight && set.reps) {
+      const session = await ensureSession();
+      if (session) {
+        const setNumber = exercise.sets.findIndex(s => s.id === setId) + 1;
+        await apiService.logSet(
+          session.id,
+          parseInt(exerciseId),
+          setNumber,
+          parseInt(set.reps),
+          parseFloat(set.weight)
+        );
+      }
+    }
   };
 
   const handleWeightChange = (exerciseId: string, setId: string, value: string) => {
@@ -345,11 +461,18 @@ export default function ActiveWorkout({
 
   const handleCompleteWorkout = async () => {
     const completedExercises = selectedExercises.filter((ex) => ex.completed).length;
+    const totalCompletedSets = selectedExercises.reduce((acc, ex) => 
+      acc + ex.sets.filter(set => set.completed).length, 0
+    );
     const duration = Math.round((new Date().getTime() - workoutStartTime.getTime()) / (1000 * 60));
     
-    // Finish the session in the database
-    if (currentSession) {
+    // Only create/finish session if there are actually completed sets
+    if (totalCompletedSets > 0 && currentSession) {
       await apiService.finishSession(currentSession.id);
+    } else if (totalCompletedSets === 0) {
+      // No completed sets, don't save anything
+      onBack();
+      return;
     }
     
     Alert.alert(
@@ -365,23 +488,28 @@ export default function ActiveWorkout({
   };
 
   const handleEndWorkout = async () => {
-    Alert.alert(
-      "End Workout",
-      "Are you sure you want to end this workout? Your progress will be saved.",
-      [
-        { text: "Cancel", style: "cancel" },
-        { 
-          text: "End Workout", 
-          style: "destructive",
-          onPress: async () => {
-            if (currentSession) {
+    const hasCompletedSets = selectedExercises.some(ex => ex.sets.some(set => set.completed));
+    
+    if (hasCompletedSets && currentSession) {
+      Alert.alert(
+        "End Workout",
+        "Are you sure you want to end this workout? Your progress will be saved.",
+        [
+          { text: "Cancel", style: "cancel" },
+          { 
+            text: "End Workout", 
+            style: "destructive",
+            onPress: async () => {
               await apiService.finishSession(currentSession.id);
+              onBack();
             }
-            onBack();
           }
-        }
-      ]
-    );
+        ]
+      );
+    } else {
+      // No completed sets or no session created, just exit without saving
+      onBack();
+    }
   };
 
   const styles = getStyles(isDark);
@@ -435,42 +563,67 @@ export default function ActiveWorkout({
         {/* Selected Exercises */}
         {selectedExercises.length > 0 ? (
           <View style={styles.exerciseList}>
-            {selectedExercises.map((exercise) => (
-              <View
-                key={exercise.id}
-                style={[styles.exerciseCard, exercise.completed && styles.completedExercise]}
-              >
-                {/* Exercise Header */}
-                <TouchableOpacity
-                  style={styles.exerciseHeader}
-                  onPress={() =>
-                    setExpandedExercise(
-                      expandedExercise === exercise.id ? null : exercise.id
-                    )
-                  }
-                >
-                  <View style={styles.exerciseTitle}>
-                    {exercise.completed && (
-                      <Ionicons name="checkmark-circle" size={20} color="#34C759" />
-                    )}
-                    <Text style={[styles.exerciseName, exercise.completed && { marginLeft: 8 }]}>
-                      {exercise.name}
-                    </Text>
-                  </View>
-                  <View style={styles.exerciseActions}>
+            {selectedExercises.map((exercise) => {
+              // Initialize swipe animation ref if it doesn't exist
+              if (!exerciseSwipeRefs.current[exercise.id]) {
+                exerciseSwipeRefs.current[exercise.id] = new Animated.Value(0);
+              }
+              
+              const exerciseSwipeGesture = createExerciseSwipeGesture(exercise.id);
+              
+              return (
+                <View key={exercise.id} style={styles.exerciseSwipeContainer}>
+                  {/* Delete button behind the card */}
+                  <View style={styles.exerciseDeleteButton}>
                     <TouchableOpacity
+                      style={styles.deleteButtonContent}
                       onPress={() => removeExerciseFromWorkout(exercise.id)}
-                      style={styles.removeExerciseButton}
                     >
-                      <Ionicons name="trash" size={16} color="#FF3B30" />
+                      <Ionicons name="trash" size={20} color="white" />
+                      <Text style={styles.deleteButtonText}>Delete</Text>
                     </TouchableOpacity>
-                    <Ionicons 
-                      name={expandedExercise === exercise.id ? "chevron-up" : "chevron-down"} 
-                      size={20} 
-                      color="#C7C7CC" 
-                    />
                   </View>
-                </TouchableOpacity>
+                  
+                  {/* Swipeable exercise card */}
+                  <Animated.View
+                    style={[
+                      styles.swipeableExerciseCard,
+                      {
+                        transform: [{ translateX: exerciseSwipeRefs.current[exercise.id] }]
+                      }
+                    ]}
+                    {...exerciseSwipeGesture.panHandlers}
+                  >
+                    <View style={[styles.exerciseCard, exercise.completed && styles.completedExercise]}>
+                      {/* Exercise Header */}
+                      <TouchableOpacity
+                        style={styles.exerciseHeader}
+                        onPress={() => {
+                          if (swipedExercise === exercise.id) {
+                            closeExerciseSwipe(exercise.id);
+                          } else {
+                            setExpandedExercise(
+                              expandedExercise === exercise.id ? null : exercise.id
+                            );
+                          }
+                        }}
+                      >
+                        <View style={styles.exerciseTitle}>
+                          {exercise.completed && (
+                            <Ionicons name="checkmark-circle" size={20} color="#34C759" />
+                          )}
+                          <Text style={[styles.exerciseName, exercise.completed && { marginLeft: 8 }]}>
+                            {exercise.name}
+                          </Text>
+                        </View>
+                        <View style={styles.exerciseActions}>
+                          <Ionicons 
+                            name={expandedExercise === exercise.id ? "chevron-up" : "chevron-down"} 
+                            size={20} 
+                            color="#C7C7CC" 
+                          />
+                        </View>
+                      </TouchableOpacity>
 
                 {/* Sets (when expanded) */}
                 {expandedExercise === exercise.id && (
@@ -538,10 +691,13 @@ export default function ActiveWorkout({
                       <Ionicons name="add" size={20} color="#007AFF" />
                       <Text style={styles.addSetButtonText}>Add Set</Text>
                     </TouchableOpacity>
-                  </>
-                )}
-              </View>
-            ))}
+                      </>
+                    )}
+                    </View>
+                  </Animated.View>
+                </View>
+              );
+            })}
           </View>
         ) : (
           <View style={styles.emptyWorkout}>
@@ -758,6 +914,38 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     paddingHorizontal: 16,
     gap: 16,
   },
+  exerciseSwipeContainer: {
+    position: "relative",
+    marginBottom: 16,
+  },
+  exerciseDeleteButton: {
+    position: "absolute",
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 80,
+    backgroundColor: "#FF3B30",
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 12,
+    overflow: 'hidden',
+    zIndex: 1,
+  },
+  deleteButtonContent: {
+    alignItems: "center",
+    justifyContent: "center",
+    flex: 1,
+  },
+  deleteButtonText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "600",
+    marginTop: 4,
+  },
+  swipeableExerciseCard: {
+    backgroundColor: "transparent",
+    zIndex: 2,
+  },
   exerciseCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
@@ -792,9 +980,6 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-  },
-  removeExerciseButton: {
-    padding: 8,
   },
   tableHeader: {
     flexDirection: "row",
