@@ -1,5 +1,5 @@
 // app/components/RecentWorkouts.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,8 +10,13 @@ import {
   RefreshControl,
   ActivityIndicator,
   Alert,
+  Animated,
+  Dimensions,
+  PanResponder,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_BASE_URL = "https://workout-tracker-production-9537.up.railway.app/api";
 
@@ -39,11 +44,13 @@ interface WorkoutSession {
     name: string;
   };
   setLogs: SetLog[];
+  isHidden?: boolean;
 }
 
 interface RecentWorkoutsProps {
   onViewWorkout?: (sessionId: number) => void;
   showDebugTools?: boolean; // Add debug prop
+  refreshTrigger?: number; // Add prop to trigger refresh from outside
 }
 
 const apiService = {
@@ -89,6 +96,30 @@ const apiService = {
     }
   },
 
+  hideSession: async (sessionId: number): Promise<boolean> => {
+    try {
+      // Store hidden sessions in React Native's AsyncStorage
+      const hiddenSessionsStr = await AsyncStorage.getItem('hiddenSessions');
+      const hiddenSessions = hiddenSessionsStr ? JSON.parse(hiddenSessionsStr) : [];
+      const updatedHidden = [...hiddenSessions, sessionId];
+      await AsyncStorage.setItem('hiddenSessions', JSON.stringify(updatedHidden));
+      return true;
+    } catch (error) {
+      console.error('Error hiding session:', error);
+      return false;
+    }
+  },
+
+  getHiddenSessions: async (): Promise<number[]> => {
+    try {
+      const hiddenSessionsStr = await AsyncStorage.getItem('hiddenSessions');
+      return hiddenSessionsStr ? JSON.parse(hiddenSessionsStr) : [];
+    } catch (error) {
+      console.error('Error getting hidden sessions:', error);
+      return [];
+    }
+  },
+
   deleteAllSessions: async (): Promise<boolean> => {
     try {
       // First get all sessions
@@ -114,22 +145,52 @@ const apiService = {
   },
 };
 
-export default function RecentWorkouts({ onViewWorkout, showDebugTools = false }: RecentWorkoutsProps) {
+export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, refreshTrigger }: RecentWorkoutsProps) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [hiddenSessions, setHiddenSessions] = useState<number[]>([]);
+  const [animatingOut, setAnimatingOut] = useState<number[]>([]);
+  const [swipedSession, setSwipedSession] = useState<number | null>(null);
+  
+  // Animation refs for each session
+  const animationRefs = useRef<{ [key: number]: Animated.Value }>({});
+  // Swipe animation refs for each session
+  const swipeAnimationRefs = useRef<{ [key: number]: Animated.Value }>({});
 
   useEffect(() => {
     loadRecentSessions();
   }, []);
 
+  useEffect(() => {
+    if (refreshTrigger && refreshTrigger > 0) {
+      loadRecentSessions();
+    }
+  }, [refreshTrigger]);
+
   const loadRecentSessions = async () => {
     try {
       setLoading(true);
       const recentSessions = await apiService.getRecentSessions();
-      setSessions(recentSessions);
+      const hidden = await apiService.getHiddenSessions();
+      setHiddenSessions(hidden);
+      
+      // Filter out hidden sessions
+      const visibleSessions = recentSessions.filter(session => !hidden.includes(session.id));
+      
+      // Initialize animation values for new sessions
+      visibleSessions.forEach(session => {
+        if (!animationRefs.current[session.id]) {
+          animationRefs.current[session.id] = new Animated.Value(1);
+        }
+        if (!swipeAnimationRefs.current[session.id]) {
+          swipeAnimationRefs.current[session.id] = new Animated.Value(0);
+        }
+      });
+      
+      setSessions(visibleSessions);
     } catch (error) {
       console.error('Failed to load recent sessions:', error);
     } finally {
@@ -237,31 +298,194 @@ export default function RecentWorkouts({ onViewWorkout, showDebugTools = false }
     );
   };
 
+  const animateSessionOut = (sessionId: number, onComplete: () => void) => {
+    if (!animationRefs.current[sessionId]) {
+      animationRefs.current[sessionId] = new Animated.Value(1);
+    }
+    
+    setAnimatingOut(prev => [...prev, sessionId]);
+    
+    Animated.timing(animationRefs.current[sessionId], {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start(() => {
+      setAnimatingOut(prev => prev.filter(id => id !== sessionId));
+      onComplete();
+    });
+  };
+
+  const createSwipeGesture = (sessionId: number) => {
+    return PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        const { dx, dy } = gestureState;
+        
+        // More strict horizontal detection to prevent scroll interference
+        const isHorizontal = Math.abs(dx) > Math.abs(dy) * 2 && Math.abs(dx) > 15;
+        
+        if (isHorizontal) {
+          // Close any other open swipes
+          if (swipedSession && swipedSession !== sessionId) {
+            closeSwipe(swipedSession);
+          }
+          return true;
+        }
+        return false;
+      },
+      onStartShouldSetPanResponderCapture: () => false,
+      onMoveShouldSetPanResponderCapture: (_, gestureState) => {
+        const { dx, dy } = gestureState;
+        
+        // Capture the gesture early if it's clearly horizontal
+        const isDefinitelyHorizontal = Math.abs(dx) > Math.abs(dy) * 3 && Math.abs(dx) > 20;
+        return isDefinitelyHorizontal;
+      },
+      onPanResponderGrant: () => {
+        // Add haptic feedback for iOS
+        if (Platform.OS === 'ios') {
+          const Haptics = require('expo-haptics');
+          Haptics?.impactAsync(Haptics?.ImpactFeedbackStyle?.Light);
+        }
+      },
+      onPanResponderMove: (_, gestureState) => {
+        const { dx } = gestureState;
+        const maxSwipe = -120;
+        
+        // Apple Mail style: follow finger exactly, allow both directions but limit left swipe
+        let swipeValue;
+        if (dx < 0) {
+          // Left swipe: limit to maxSwipe
+          swipeValue = Math.max(maxSwipe, dx);
+        } else {
+          // Right swipe: allow some bounce back but limit
+          swipeValue = Math.min(20, dx * 0.3);
+        }
+        
+        if (swipeAnimationRefs.current[sessionId]) {
+          swipeAnimationRefs.current[sessionId].setValue(swipeValue);
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        const { dx, vx } = gestureState;
+        
+        // Apple Mail style: simple threshold-based logic
+        const shouldShowActions = dx < -60 || (dx < -20 && vx < -0.5);
+        
+        if (shouldShowActions) {
+          // Show action buttons
+          setSwipedSession(sessionId);
+          Animated.spring(swipeAnimationRefs.current[sessionId], {
+            toValue: -120,
+            useNativeDriver: true,
+            speed: 20,
+            bounciness: 0,
+          }).start();
+        } else {
+          // Hide action buttons
+          setSwipedSession(null);
+          Animated.spring(swipeAnimationRefs.current[sessionId], {
+            toValue: 0,
+            useNativeDriver: true,
+            speed: 20,
+            bounciness: 0,
+          }).start();
+        }
+      },
+      onPanResponderTerminate: () => {
+        // Reset on interruption
+        setSwipedSession(null);
+        Animated.spring(swipeAnimationRefs.current[sessionId], {
+          toValue: 0,
+          useNativeDriver: true,
+          speed: 20,
+          bounciness: 0,
+        }).start();
+      },
+    });
+  };
+
+  const closeSwipe = (sessionId: number) => {
+    if (swipeAnimationRefs.current[sessionId]) {
+      setSwipedSession(null);
+      Animated.spring(swipeAnimationRefs.current[sessionId], {
+        toValue: 0,
+        useNativeDriver: true,
+        speed: 20,
+        bounciness: 0,
+      }).start();
+    }
+  };
+
   const handleDeleteSession = async (sessionId: number) => {
+    // Close swipe first
+    closeSwipe(sessionId);
+    
     Alert.alert(
       "Delete Workout",
-      "Are you sure you want to delete this workout session?",
+      "Are you sure you want to delete this workout session? This action cannot be undone.",
       [
         { text: "Cancel", style: "cancel" },
         {
           text: "Delete",
           style: "destructive",
           onPress: async () => {
-            try {
-              const success = await apiService.deleteSession(sessionId);
-              if (success) {
-                setSessions(prev => prev.filter(s => s.id !== sessionId));
-                Alert.alert("Success", "Workout deleted successfully");
-              } else {
-                Alert.alert("Error", "Failed to delete workout. The backend may need to be updated with the latest delete functionality.");
+            animateSessionOut(sessionId, async () => {
+              try {
+                const success = await apiService.deleteSession(sessionId);
+                if (success) {
+                  setSessions(prev => prev.filter(s => s.id !== sessionId));
+                  delete animationRefs.current[sessionId];
+                  delete swipeAnimationRefs.current[sessionId];
+                } else {
+                  // If delete failed, restore the session
+                  if (animationRefs.current[sessionId]) {
+                    animationRefs.current[sessionId].setValue(1);
+                  }
+                  Alert.alert("Error", "Failed to delete workout. The backend may need to be updated with the latest delete functionality.");
+                }
+              } catch (error: any) {
+                // If delete failed, restore the session
+                if (animationRefs.current[sessionId]) {
+                  animationRefs.current[sessionId].setValue(1);
+                }
+                
+                Alert.alert("Error", error.message || "Failed to delete workout");
               }
-            } catch (error: any) {
-              Alert.alert("Error", error.message || "Failed to delete workout");
-            }
+            });
           }
         }
       ]
     );
+  };
+
+  const handleHideSession = async (sessionId: number) => {
+    // Close swipe first
+    closeSwipe(sessionId);
+    
+    animateSessionOut(sessionId, async () => {
+      try {
+        const success = await apiService.hideSession(sessionId);
+        if (success) {
+          setSessions(prev => prev.filter(s => s.id !== sessionId));
+          setHiddenSessions(prev => [...prev, sessionId]);
+          delete animationRefs.current[sessionId];
+          delete swipeAnimationRefs.current[sessionId];
+        } else {
+          // If hide failed, restore the session
+          if (animationRefs.current[sessionId]) {
+            animationRefs.current[sessionId].setValue(1);
+          }
+          Alert.alert("Error", "Failed to hide workout");
+        }
+      } catch (error: any) {
+        // If hide failed, restore the session
+        if (animationRefs.current[sessionId]) {
+          animationRefs.current[sessionId].setValue(1);
+        }
+        Alert.alert("Error", error.message || "Failed to hide workout");
+      }
+    });
   };
 
   const styles = getStyles(isDark);
@@ -280,11 +504,9 @@ export default function RecentWorkouts({ onViewWorkout, showDebugTools = false }
       <View style={styles.header}>
         <Text style={styles.title}>Recent Workouts</Text>
         <View style={styles.headerActions}>
-          {sessions.length > 0 && (
-            <TouchableOpacity onPress={handleRefresh} style={styles.headerButton}>
-              <Ionicons name="refresh" size={20} color="#007AFF" />
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity onPress={handleRefresh} style={styles.headerButton}>
+            <Ionicons name="refresh" size={20} color="#007AFF" />
+          </TouchableOpacity>
           {showDebugTools && (
             <TouchableOpacity onPress={handleDeleteAllSessions} style={styles.deleteButton}>
               <Ionicons name="trash" size={20} color="#FF3B30" />
@@ -316,14 +538,82 @@ export default function RecentWorkouts({ onViewWorkout, showDebugTools = false }
           {sessions.map((session) => {
             const stats = getWorkoutStats(session);
             const muscleGroups = getTopMuscleGroups(session);
+            const swipeGesture = createSwipeGesture(session.id);
+            
+            // Initialize animation values if they don't exist
+            if (!animationRefs.current[session.id]) {
+              animationRefs.current[session.id] = new Animated.Value(1);
+            }
+            if (!swipeAnimationRefs.current[session.id]) {
+              swipeAnimationRefs.current[session.id] = new Animated.Value(0);
+            }
 
             return (
-              <TouchableOpacity
+              <Animated.View
                 key={session.id}
-                style={styles.workoutCard}
-                onPress={() => onViewWorkout?.(session.id)}
-                activeOpacity={0.7}
+                style={[
+                  styles.animatedCard,
+                  {
+                    opacity: animationRefs.current[session.id],
+                    transform: [
+                      {
+                        scale: animationRefs.current[session.id].interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0.8, 1],
+                        })
+                      },
+                      {
+                        translateX: animationRefs.current[session.id].interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [100, 0],
+                        })
+                      }
+                    ]
+                  }
+                ]}
               >
+                <View style={styles.swipeContainer}>
+                  {/* Action buttons behind the card */}
+                  <View style={styles.actionButtons}>
+                    <TouchableOpacity
+                      style={styles.hideActionButton}
+                      onPress={() => handleHideSession(session.id)}
+                    >
+                      <Ionicons name="eye-off-outline" size={20} color="white" />
+                      <Text style={styles.actionButtonText}>Hide</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.deleteActionButton}
+                      onPress={() => handleDeleteSession(session.id)}
+                    >
+                      <Ionicons name="trash-outline" size={20} color="white" />
+                      <Text style={styles.actionButtonText}>Delete</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Swipeable card */}
+                  <Animated.View
+                    style={[
+                      styles.swipeableCard,
+                      {
+                        transform: [
+                          { translateX: swipeAnimationRefs.current[session.id] }
+                        ]
+                      }
+                    ]}
+                    {...swipeGesture.panHandlers}
+                  >
+                    <TouchableOpacity
+                      style={styles.workoutCard}
+                      onPress={() => {
+                        if (swipedSession === session.id) {
+                          closeSwipe(session.id);
+                        } else {
+                          onViewWorkout?.(session.id);
+                        }
+                      }}
+                      activeOpacity={0.7}
+                    >
                 {/* Header */}
                 <View style={styles.cardHeader}>
                   <View style={styles.cardTitleContainer}>
@@ -395,16 +685,13 @@ export default function RecentWorkouts({ onViewWorkout, showDebugTools = false }
                     )}
                   </View>
                   <View style={styles.statusRight}>
-                    <TouchableOpacity 
-                      onPress={() => handleDeleteSession(session.id)}
-                      style={styles.deleteSessionButton}
-                    >
-                      <Ionicons name="trash-outline" size={16} color="#FF3B30" />
-                    </TouchableOpacity>
                     <Ionicons name="chevron-forward" size={16} color="#C7C7CC" />
                   </View>
                 </View>
-              </TouchableOpacity>
+                    </TouchableOpacity>
+                  </Animated.View>
+                </View>
+              </Animated.View>
             );
           })}
         </ScrollView>
@@ -477,11 +764,54 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
   },
+  animatedCard: {
+    marginVertical: 6,
+  },
+  swipeContainer: {
+    position: 'relative',
+    height: 'auto',
+  },
+  actionButtons: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    flexDirection: 'row',
+    width: 120,
+    zIndex: 1,
+  },
+  hideActionButton: {
+    flex: 1,
+    backgroundColor: '#FF9500',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    borderTopLeftRadius: 12,
+    borderBottomLeftRadius: 12,
+  },
+  deleteActionButton: {
+    flex: 1,
+    backgroundColor: '#FF3B30',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    borderTopRightRadius: 12,
+    borderBottomRightRadius: 12,
+  },
+  actionButtonText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  swipeableCard: {
+    backgroundColor: 'transparent',
+    zIndex: 2,
+  },
   workoutCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 16,
-    marginVertical: 6,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -594,8 +924,5 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     color: '#FF9500',
-  },
-  deleteSessionButton: {
-    padding: 4,
   },
 });
