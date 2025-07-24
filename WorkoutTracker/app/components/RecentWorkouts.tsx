@@ -16,7 +16,6 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_BASE_URL = "https://workout-tracker-production-9537.up.railway.app/api";
 
@@ -57,7 +56,8 @@ const apiService = {
   getRecentSessions: async (): Promise<WorkoutSession[]> => {
     try {
       // For now, we'll use userId=1 as a default. In a real app, this would come from authentication
-      const response = await fetch(`${API_BASE_URL}/sessions?userId=1`);
+      // Add include parameter to request workout day data
+      const response = await fetch(`${API_BASE_URL}/sessions?userId=1&include=workoutDay`);
       
       if (response.ok) {
         const data = await response.json();
@@ -96,29 +96,6 @@ const apiService = {
     }
   },
 
-  hideSession: async (sessionId: number): Promise<boolean> => {
-    try {
-      // Store hidden sessions in React Native's AsyncStorage
-      const hiddenSessionsStr = await AsyncStorage.getItem('hiddenSessions');
-      const hiddenSessions = hiddenSessionsStr ? JSON.parse(hiddenSessionsStr) : [];
-      const updatedHidden = [...hiddenSessions, sessionId];
-      await AsyncStorage.setItem('hiddenSessions', JSON.stringify(updatedHidden));
-      return true;
-    } catch (error) {
-      console.error('Error hiding session:', error);
-      return false;
-    }
-  },
-
-  getHiddenSessions: async (): Promise<number[]> => {
-    try {
-      const hiddenSessionsStr = await AsyncStorage.getItem('hiddenSessions');
-      return hiddenSessionsStr ? JSON.parse(hiddenSessionsStr) : [];
-    } catch (error) {
-      console.error('Error getting hidden sessions:', error);
-      return [];
-    }
-  },
 
   deleteAllSessions: async (): Promise<boolean> => {
     try {
@@ -151,9 +128,9 @@ export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, 
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [hiddenSessions, setHiddenSessions] = useState<number[]>([]);
   const [animatingOut, setAnimatingOut] = useState<number[]>([]);
   const [swipedSession, setSwipedSession] = useState<number | null>(null);
+  const [allWorkoutsHidden, setAllWorkoutsHidden] = useState(false);
   
   // Animation refs for each session
   const animationRefs = useRef<{ [key: number]: Animated.Value }>({});
@@ -174,14 +151,12 @@ export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, 
     try {
       setLoading(true);
       const recentSessions = await apiService.getRecentSessions();
-      const hidden = await apiService.getHiddenSessions();
-      setHiddenSessions(hidden);
       
-      // Filter out hidden sessions
-      const visibleSessions = recentSessions.filter(session => !hidden.includes(session.id));
+      // Debug: Log the session data to see what we're getting
+      console.log('Recent sessions data:', JSON.stringify(recentSessions, null, 2));
       
       // Initialize animation values for new sessions
-      visibleSessions.forEach(session => {
+      recentSessions.forEach(session => {
         if (!animationRefs.current[session.id]) {
           animationRefs.current[session.id] = new Animated.Value(1);
         }
@@ -190,7 +165,7 @@ export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, 
         }
       });
       
-      setSessions(visibleSessions);
+      setSessions(recentSessions);
     } catch (error) {
       console.error('Failed to load recent sessions:', error);
     } finally {
@@ -350,7 +325,7 @@ export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, 
       },
       onPanResponderMove: (_, gestureState) => {
         const { dx } = gestureState;
-        const maxSwipe = -120;
+        const maxSwipe = -80; // Reduced from -120 since we only have one button
         
         // Apple Mail style: follow finger exactly, allow both directions but limit left swipe
         let swipeValue;
@@ -376,7 +351,7 @@ export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, 
           // Show action buttons
           setSwipedSession(sessionId);
           Animated.spring(swipeAnimationRefs.current[sessionId], {
-            toValue: -120,
+            toValue: -80, // Reduced from -120 since we only have one button
             useNativeDriver: true,
             speed: 20,
             bounciness: 0,
@@ -459,34 +434,6 @@ export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, 
     );
   };
 
-  const handleHideSession = async (sessionId: number) => {
-    // Close swipe first
-    closeSwipe(sessionId);
-    
-    animateSessionOut(sessionId, async () => {
-      try {
-        const success = await apiService.hideSession(sessionId);
-        if (success) {
-          setSessions(prev => prev.filter(s => s.id !== sessionId));
-          setHiddenSessions(prev => [...prev, sessionId]);
-          delete animationRefs.current[sessionId];
-          delete swipeAnimationRefs.current[sessionId];
-        } else {
-          // If hide failed, restore the session
-          if (animationRefs.current[sessionId]) {
-            animationRefs.current[sessionId].setValue(1);
-          }
-          Alert.alert("Error", "Failed to hide workout");
-        }
-      } catch (error: any) {
-        // If hide failed, restore the session
-        if (animationRefs.current[sessionId]) {
-          animationRefs.current[sessionId].setValue(1);
-        }
-        Alert.alert("Error", error.message || "Failed to hide workout");
-      }
-    });
-  };
 
   const styles = getStyles(isDark);
 
@@ -504,6 +451,16 @@ export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, 
       <View style={styles.header}>
         <Text style={styles.title}>Recent Workouts</Text>
         <View style={styles.headerActions}>
+          <TouchableOpacity 
+            onPress={() => setAllWorkoutsHidden(!allWorkoutsHidden)} 
+            style={styles.headerButton}
+          >
+            <Ionicons 
+              name={allWorkoutsHidden ? "eye-off" : "eye"} 
+              size={20} 
+              color="#007AFF" 
+            />
+          </TouchableOpacity>
           <TouchableOpacity onPress={handleRefresh} style={styles.headerButton}>
             <Ionicons name="refresh" size={20} color="#007AFF" />
           </TouchableOpacity>
@@ -515,12 +472,21 @@ export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, 
         </View>
       </View>
 
-      {sessions.length === 0 ? (
+      {sessions.length === 0 || allWorkoutsHidden ? (
         <View style={styles.emptyState}>
-          <Ionicons name="barbell-outline" size={48} color="#C7C7CC" />
-          <Text style={styles.emptyStateTitle}>No Workouts Yet</Text>
+          <Ionicons 
+            name={allWorkoutsHidden ? "eye-off-outline" : "barbell-outline"} 
+            size={48} 
+            color="#C7C7CC" 
+          />
+          <Text style={styles.emptyStateTitle}>
+            {allWorkoutsHidden ? "Workouts Hidden" : "No Workouts Yet"}
+          </Text>
           <Text style={styles.emptyStateSubtitle}>
-            Start your first workout to see your history here
+            {allWorkoutsHidden 
+              ? "Tap the eye icon to show your recent workouts" 
+              : "Start your first workout to see your history here"
+            }
           </Text>
         </View>
       ) : (
@@ -575,13 +541,6 @@ export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, 
                 <View style={styles.swipeContainer}>
                   {/* Action buttons behind the card */}
                   <View style={styles.actionButtons}>
-                    <TouchableOpacity
-                      style={styles.hideActionButton}
-                      onPress={() => handleHideSession(session.id)}
-                    >
-                      <Ionicons name="eye-off-outline" size={20} color="white" />
-                      <Text style={styles.actionButtonText}>Hide</Text>
-                    </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.deleteActionButton}
                       onPress={() => handleDeleteSession(session.id)}
@@ -777,17 +736,8 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     top: 0,
     bottom: 0,
     flexDirection: 'row',
-    width: 120,
+    width: 80, // Reduced from 120 since we only have one button
     zIndex: 1,
-  },
-  hideActionButton: {
-    flex: 1,
-    backgroundColor: '#FF9500',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    borderTopLeftRadius: 12,
-    borderBottomLeftRadius: 12,
   },
   deleteActionButton: {
     flex: 1,
@@ -795,8 +745,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 10,
-    borderTopRightRadius: 12,
-    borderBottomRightRadius: 12,
+    borderRadius: 12, // Full border radius since it's the only button
   },
   actionButtonText: {
     color: 'white',

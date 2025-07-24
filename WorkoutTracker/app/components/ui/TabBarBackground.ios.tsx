@@ -1,4 +1,4 @@
-import { useBottomTabBarHeight } from "@/node_modules/@react-navigation/bottom-tabs/lib/typescript/src";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { BlurView } from "expo-blur";
 import { StyleSheet } from "react-native";
 
