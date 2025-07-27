@@ -395,6 +395,40 @@ export default function ActiveWorkout({
     );
   };
 
+  const handleRepsIncrement = (exerciseId: string, setId: string) => {
+    setSelectedExercises((exercises) =>
+      exercises.map((exercise) =>
+        exercise.id === exerciseId
+          ? {
+              ...exercise,
+              sets: exercise.sets.map((set) =>
+                set.id === setId 
+                  ? { ...set, reps: String(Math.max(0, (parseInt(set.reps) || 0) + 1)) }
+                  : set
+              ),
+            }
+          : exercise
+      )
+    );
+  };
+
+  const handleRepsDecrement = (exerciseId: string, setId: string) => {
+    setSelectedExercises((exercises) =>
+      exercises.map((exercise) =>
+        exercise.id === exerciseId
+          ? {
+              ...exercise,
+              sets: exercise.sets.map((set) =>
+                set.id === setId 
+                  ? { ...set, reps: String(Math.max(0, (parseInt(set.reps) || 0) - 1)) }
+                  : set
+              ),
+            }
+          : exercise
+      )
+    );
+  };
+
   const handleAddSet = (exerciseId: string) => {
     setSelectedExercises((prevExercises) =>
       prevExercises.map((exercise) => {
@@ -597,10 +631,10 @@ export default function ActiveWorkout({
                   <>
                     {/* Sets Table Header */}
                     <View style={styles.tableHeader}>
-                      <Text style={styles.tableHeaderText}>Set</Text>
-                      <Text style={styles.tableHeaderText}>Weight</Text>
-                      <Text style={styles.tableHeaderText}>Reps</Text>
-                      <Text style={styles.tableHeaderText}>✓</Text>
+                      <Text style={[styles.tableHeaderText, styles.tableHeaderSet]}>Set</Text>
+                      <Text style={[styles.tableHeaderText, styles.tableHeaderWeight]}>Weight</Text>
+                      <Text style={[styles.tableHeaderText, styles.tableHeaderReps]}>Reps</Text>
+                      <Text style={[styles.tableHeaderText, styles.tableHeaderActions]}>✓</Text>
                     </View>
 
                     {/* Sets */}
@@ -618,15 +652,31 @@ export default function ActiveWorkout({
                           selectTextOnFocus={true}
                         />
                         
-                        <TextInput
-                          style={styles.input}
-                          value={set.reps}
-                          onChangeText={(value) => handleRepsChange(exercise.id, set.id, value)}
-                          placeholder="0"
-                          placeholderTextColor="#8E8E93"
-                          keyboardType="number-pad"
-                          selectTextOnFocus={true}
-                        />
+                        <View style={styles.inputWithButtons}>
+                          <TouchableOpacity 
+                            style={[styles.incrementButton, styles.incrementButtonLeft]} 
+                            onPress={() => handleRepsDecrement(exercise.id, set.id)}
+                          >
+                            <Ionicons name="remove" size={16} color="#007AFF" />
+                          </TouchableOpacity>
+                          
+                          <TextInput
+                            style={[styles.input, styles.inputWithButtonsField]}
+                            value={set.reps}
+                            onChangeText={(value) => handleRepsChange(exercise.id, set.id, value)}
+                            placeholder="0"
+                            placeholderTextColor="#8E8E93"
+                            keyboardType="number-pad"
+                            selectTextOnFocus={true}
+                          />
+                          
+                          <TouchableOpacity 
+                            style={[styles.incrementButton, styles.incrementButtonRight]} 
+                            onPress={() => handleRepsIncrement(exercise.id, set.id)}
+                          >
+                            <Ionicons name="add" size={16} color="#007AFF" />
+                          </TouchableOpacity>
+                        </View>
                         
                         <View style={styles.setActions}>
                           <TouchableOpacity
@@ -959,8 +1009,22 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: "#8E8E93",
-    flex: 1,
     textAlign: "center",
+  },
+  tableHeaderSet: {
+    width: 30,
+  },
+  tableHeaderWeight: {
+    width: 80,
+    marginHorizontal: 4,
+  },
+  tableHeaderReps: {
+    width: 120,
+    marginHorizontal: 4,
+  },
+  tableHeaderActions: {
+    width: 80,
+    marginLeft: 8,
   },
   setRow: {
     flexDirection: "row",
@@ -972,14 +1036,14 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     opacity: 0.6,
   },
   setNumber: {
-    flex: 1,
+    width: 30,
     textAlign: "center",
     fontSize: 16,
     fontWeight: "600",
     color: "#000000",
   },
   input: {
-    flex: 1,
+    width: 80,
     height: 40,
     borderWidth: 1,
     borderColor: "#E5E5EA",
@@ -991,11 +1055,44 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     backgroundColor: "#F8F8F8",
     color: "#000000",
   },
-  setActions: {
+  inputWithButtons: {
+    width: 120,
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: 4,
+  },
+  inputWithButtonsField: {
     flex: 1,
+    marginHorizontal: 0,
+    borderLeftWidth: 0,
+    borderRightWidth: 0,
+    borderRadius: 0,
+  },
+  incrementButton: {
+    width: 32,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E5E5EA",
+    backgroundColor: "#F8F8F8",
+  },
+  incrementButtonLeft: {
+    borderTopLeftRadius: 8,
+    borderBottomLeftRadius: 8,
+    borderRightWidth: 0,
+  },
+  incrementButtonRight: {
+    borderTopRightRadius: 8,
+    borderBottomRightRadius: 8,
+    borderLeftWidth: 0,
+  },
+  setActions: {
+    width: 80,
     flexDirection: "row",
     justifyContent: "center",
     gap: 8,
+    marginLeft: 8,
   },
   doneButton: {
     width: 32,
