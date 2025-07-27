@@ -1,10 +1,9 @@
 // lib/supabase.ts
 import { createClient } from '@supabase/supabase-js'
 
-// Replace these with your actual Supabase project credentials
-// You'll get these from your Supabase project settings
-const supabaseUrl = 'https://fnnskpbrovagfmemychr.supabase.co'
-const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZubnNrcGJyb3ZhZ2ZtZW15Y2hyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzNTE1NzgsImV4cCI6MjA2ODkyNzU3OH0.fa8zTJSYgewV--vM_N9SAGnHDqOktgqZIFCM6LtIHBE"
+// Get credentials from environment variables for security
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'YOUR_SUPABASE_URL'
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'YOUR_SUPABASE_ANON_KEY'
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // Database types (matching your schema)
