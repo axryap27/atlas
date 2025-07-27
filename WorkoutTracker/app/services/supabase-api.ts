@@ -8,8 +8,7 @@ export const supabaseApi = {
   // ===== EXERCISES =====
   
   async getExercises(): Promise<Exercise[]> {
-    console.log('🔍 SUPABASE DEBUG: Fetching exercises from Supabase...')
-    console.log('🔍 Checking Supabase connection...')
+    console.log('🔍 SUPABASE: Fetching exercises...')
     
     const { data, error } = await supabase
       .from('exercises')
@@ -18,19 +17,30 @@ export const supabaseApi = {
     
     if (error) {
       console.error('❌ SUPABASE ERROR fetching exercises:', error)
-      console.error('❌ Error details:', JSON.stringify(error, null, 2))
       throw error
     }
     
-    console.log('✅ SUPABASE SUCCESS: Fetched exercises:', data?.length, 'exercises')
-    console.log('🔍 First few exercises:', data?.slice(0, 3))
-    
     // Transform snake_case to camelCase for frontend compatibility
-    const transformedData = data?.map(exercise => ({
-      ...exercise,
-      muscleGroup: exercise.muscle_group,
-      createdAt: exercise.created_at
-    })) || []
+    const transformedData = data?.map(exercise => {
+      const result = {
+        ...exercise,
+        muscleGroup: exercise.muscle_group || 'DEBUG_FALLBACK',
+        createdAt: exercise.created_at
+      }
+      
+      // Debug first exercise in detail
+      if (exercise.name === 'Arnold Press') {
+        console.log('🚨 ARNOLD PRESS DEBUG:')
+        console.log('  Original exercise:', JSON.stringify(exercise, null, 2))
+        console.log('  muscle_group value:', exercise.muscle_group)
+        console.log('  Transformed muscleGroup:', result.muscleGroup)
+      }
+      
+      return result
+    }) || []
+    
+    console.log(`✅ SUPABASE: Loaded ${transformedData.length} exercises`)
+    console.log('🔍 First 3 muscle groups:', transformedData.slice(0, 3).map(e => `${e.name}:${e.muscleGroup}`))
     
     return transformedData
   },
@@ -94,9 +104,9 @@ export const supabaseApi = {
     console.log('🔍 Workout days:', data?.map(wd => ({ id: wd.id, name: wd.name, is_template: wd.is_template })))
     
     // Transform exercise data to include camelCase properties
-    const transformedData = data?.map(workoutDay => ({
+    const transformedData = data?.map((workoutDay: any) => ({
       ...workoutDay,
-      day_exercises: workoutDay.day_exercises?.map(dayExercise => ({
+      day_exercises: workoutDay.day_exercises?.map((dayExercise: any) => ({
         ...dayExercise,
         exercise: dayExercise.exercise ? {
           ...dayExercise.exercise,
@@ -129,9 +139,9 @@ export const supabaseApi = {
     }
     
     // Transform exercise data to include camelCase properties
-    const transformedData = data?.map(workoutDay => ({
+    const transformedData = data?.map((workoutDay: any) => ({
       ...workoutDay,
-      day_exercises: workoutDay.day_exercises?.map(dayExercise => ({
+      day_exercises: workoutDay.day_exercises?.map((dayExercise: any) => ({
         ...dayExercise,
         exercise: dayExercise.exercise ? {
           ...dayExercise.exercise,
@@ -165,7 +175,7 @@ export const supabaseApi = {
     // Transform exercise data to include camelCase properties
     const transformedData = {
       ...data,
-      day_exercises: data.day_exercises?.map(dayExercise => ({
+      day_exercises: data.day_exercises?.map((dayExercise: any) => ({
         ...dayExercise,
         exercise: dayExercise.exercise ? {
           ...dayExercise.exercise,
@@ -270,9 +280,9 @@ export const supabaseApi = {
     }
     
     // Transform exercise data to include camelCase properties
-    const transformedData = data?.map(session => ({
+    const transformedData = data?.map((session: any) => ({
       ...session,
-      set_logs: session.set_logs?.map(setLog => ({
+      set_logs: session.set_logs?.map((setLog: any) => ({
         ...setLog,
         exercise: setLog.exercise ? {
           ...setLog.exercise,
@@ -308,7 +318,7 @@ export const supabaseApi = {
     // Transform exercise data to include camelCase properties
     const transformedData = {
       ...data,
-      set_logs: data.set_logs?.map(setLog => ({
+      set_logs: data.set_logs?.map((setLog: any) => ({
         ...setLog,
         exercise: setLog.exercise ? {
           ...setLog.exercise,

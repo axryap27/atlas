@@ -15,6 +15,9 @@ export interface Exercise {
   muscle_group?: string
   equipment?: string
   created_at: string
+  // Transformed properties for frontend compatibility
+  muscleGroup?: string
+  createdAt?: string
 }
 
 export interface WorkoutDay {

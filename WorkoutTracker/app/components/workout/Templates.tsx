@@ -14,7 +14,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { WorkoutScreen, Exercise } from "../../(tabs)/workout";
 
-const API_BASE_URL = "https://workout-tracker-production-9537.up.railway.app/api";
+import { supabaseApi } from "../../services/supabase-api";
 
 interface TemplateExercise {
   id: number;
@@ -73,22 +73,34 @@ export default function Templates({ onNavigate, onBack, needsRefresh, onRefreshe
   const loadTemplates = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/days/templates`);
+      const data = await supabaseApi.getTemplates();
       
-      if (!response.ok) {
-        throw new Error('Failed to fetch templates');
-      }
+      // Transform Supabase data to match component expectations
+      const transformedTemplates = data.map(template => ({
+        id: template.id,
+        name: template.name,
+        description: template.description,
+        createdAt: template.created_at,
+        dayExercises: template.day_exercises?.map(de => ({
+          id: de.id,
+          exerciseId: de.exercise_id,
+          targetSets: de.target_sets || 0,
+          targetReps: de.target_reps,
+          targetWeight: de.target_weight,
+          targetTime: de.target_time,
+          restTime: de.rest_time,
+          order: de.exercise_order || 0,
+          notes: de.notes,
+          exercise: {
+            id: de.exercise?.id || 0,
+            name: de.exercise?.name || 'Unknown',
+            category: de.exercise?.category || 'strength',
+            muscleGroup: de.exercise?.muscleGroup || de.exercise?.muscle_group || 'Unknown'
+          }
+        })) || []
+      }));
       
-      const data = await response.json();
-      
-      // Check if response is an error object
-      if (data && data.code && data.message) {
-        console.warn('API returned error:', data.message);
-        setTemplates([]);
-        return;
-      }
-      
-      setTemplates(Array.isArray(data) ? data : []);
+      setTemplates(transformedTemplates);
     } catch (error) {
       console.error("Error loading templates:", error);
       Alert.alert("Error", "Failed to load templates. Please try again.");
@@ -131,17 +143,9 @@ export default function Templates({ onNavigate, onBack, needsRefresh, onRefreshe
           style: "destructive",
           onPress: async () => {
             try {
-              const response = await fetch(`${API_BASE_URL}/days/templates/${templateId}`, {
-                method: 'DELETE',
-              });
-              
-              if (response.ok) {
-                setTemplates(prev => prev.filter(t => t.id !== templateId));
-                Alert.alert("Success", "Template deleted successfully");
-              } else {
-                const errorData = await response.json().catch(() => ({}));
-                Alert.alert("Error", errorData.error || "Failed to delete template");
-              }
+              await supabaseApi.deleteTemplate(templateId);
+              setTemplates(prev => prev.filter(t => t.id !== templateId));
+              Alert.alert("Success", "Template deleted successfully");
             } catch (error) {
               console.error('Error deleting template:', error);
               Alert.alert("Error", "Failed to delete template. Please try again.");

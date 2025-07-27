@@ -17,7 +17,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { WorkoutScreen, Exercise, Set } from "../../(tabs)/workout";
-import { apiService as mainApiService } from "../../services/api";
+import { supabaseApi } from "../../services/supabase-api";
 
 interface ExerciseData {
   id: number;
@@ -44,7 +44,7 @@ interface ActiveWorkoutProps {
 const apiService = {
   getExercises: async () => {
     try {
-      const data = await mainApiService.getExercises();
+      const data = await supabaseApi.getExercises();
       return Array.isArray(data) ? data : [];
     } catch (error) {
       console.error("Error fetching exercises:", error);
@@ -58,7 +58,7 @@ const apiService = {
         workout_day_id: workoutDayId
       };
       
-      const response = await mainApiService.startSession(sessionData);
+      const response = await supabaseApi.startSession(sessionData);
       
       return {
         id: response.id,
@@ -73,7 +73,7 @@ const apiService = {
 
   finishSession: async (sessionId: number) => {
     try {
-      await mainApiService.completeSession(sessionId);
+      await supabaseApi.completeSession(sessionId);
       console.log('Session completed successfully');
     } catch (error) {
       console.error('Error finishing session:', error);
@@ -89,7 +89,7 @@ const apiService = {
         weight: weight,
       };
       
-      await mainApiService.logSet(sessionId, setData);
+      await supabaseApi.logSet(sessionId, setData);
       console.log('Set logged successfully');
     } catch (error) {
       console.error('Error logging set:', error);
@@ -161,6 +161,11 @@ export default function ActiveWorkout({
     try {
       setLoading(true);
       const exercisesData = await apiService.getExercises();
+      
+      console.log('🎯 ACTIVE WORKOUT: Loaded exercises count:', exercisesData.length);
+      console.log('🎯 ACTIVE WORKOUT: First 3 exercises muscle groups:', 
+        exercisesData.slice(0, 3).map(e => `${e.name}: ${e.muscleGroup}`));
+      
       setAvailableExercises(exercisesData);
     } catch (error) {
       console.error("Failed to load exercises:", error);
@@ -171,7 +176,7 @@ export default function ActiveWorkout({
     }
   };
 
-  const muscleGroups = ["all", "chest", "back", "legs", "shoulders", "biceps", "triceps", "abs", "calves"];
+  const muscleGroups = ["all", "arms", "back", "cardio", "chest", "core", "legs", "shoulders"];
 
   const filteredExercises = (availableExercises || []).filter(exercise => {
     const matchesSearch = exercise.name && exercise.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -1214,6 +1219,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
     color: "#000000",
+    textAlign: "center",
   },
   filterButtonTextActive: {
     color: "#FFFFFF",
