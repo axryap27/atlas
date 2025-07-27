@@ -3,8 +3,9 @@
 
 import { createClient } from '@supabase/supabase-js';
 
+// Replace these with your NEW credentials after regenerating them
 const supabaseUrl = 'https://fnnskpbrovagfmemychr.supabase.co';
-const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZubnNrcGJyb3ZhZ2ZtZW15Y2hyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzNTE1NzgsImV4cCI6MjA2ODkyNzU3OH0.fa8zTJSYgewV--vM_N9SAGnHDqOktgqZIFCM6LtIHBE";
+const supabaseAnonKey = 'YOUR_NEW_ANON_KEY_HERE';
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
