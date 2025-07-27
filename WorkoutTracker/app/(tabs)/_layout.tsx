@@ -44,6 +44,16 @@ export default function TabLayout() {
           headerTitle: 'Workout',
         }}
       />
+      <Tabs.Screen
+        name="progress"
+        options={{
+          title: 'Progress',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="analytics" size={size} color={color} />
+          ),
+          headerTitle: 'Progress',
+        }}
+      />
     </Tabs>
   );
 }
