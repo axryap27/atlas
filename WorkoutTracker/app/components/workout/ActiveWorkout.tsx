@@ -176,7 +176,18 @@ export default function ActiveWorkout({
     }
   };
 
-  const muscleGroups = ["all", "arms", "back", "cardio", "chest", "core", "legs", "shoulders"];
+  const muscleGroups = ["all", "arms", "back", "chest", "core", "legs", "shoulders"];
+
+  // Helper function to determine if exercise should have bodyweight default
+  const isBodyweightExercise = (exercise: ExerciseData): boolean => {
+    if (exercise.equipment !== "bodyweight") return false;
+    
+    // Exclude squats and squat variations
+    const excludedNames = ["squat", "lunge", "split squat"];
+    const exerciseName = exercise.name.toLowerCase();
+    
+    return !excludedNames.some(excluded => exerciseName.includes(excluded));
+  };
 
   const filteredExercises = (availableExercises || []).filter(exercise => {
     const matchesSearch = exercise.name && exercise.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -185,13 +196,16 @@ export default function ActiveWorkout({
   });
 
   const addExerciseToWorkout = (exercise: ExerciseData) => {
+    // Set default weight for bodyweight exercises (excluding squats/lunges)
+    const defaultWeight = isBodyweightExercise(exercise) ? "bodyweight" : "";
+    
     const newExercise: Exercise = {
       id: exercise.id.toString(),
       name: exercise.name,
       sets: [
-        { id: `ex${exercise.id}-set1`, weight: "", reps: "", completed: false },
-        { id: `ex${exercise.id}-set2`, weight: "", reps: "", completed: false },
-        { id: `ex${exercise.id}-set3`, weight: "", reps: "", completed: false },
+        { id: `ex${exercise.id}-set1`, weight: defaultWeight, reps: "", completed: false },
+        { id: `ex${exercise.id}-set2`, weight: defaultWeight, reps: "", completed: false },
+        { id: `ex${exercise.id}-set3`, weight: defaultWeight, reps: "", completed: false },
       ],
       completed: false,
       notes: "",
@@ -359,12 +373,21 @@ export default function ActiveWorkout({
       const session = await ensureSession();
       if (session) {
         const setNumber = exercise.sets.findIndex(s => s.id === setId) + 1;
+        
+        // Handle bodyweight exercises - convert "bodyweight" to 0 for logging
+        let weightValue: number;
+        if (set.weight.toLowerCase() === "bodyweight") {
+          weightValue = 0; // 0 indicates bodyweight in database
+        } else {
+          weightValue = parseFloat(set.weight);
+        }
+        
         await apiService.logSet(
           session.id,
           parseInt(exerciseId),
           setNumber,
           parseInt(set.reps),
-          parseFloat(set.weight)
+          weightValue
         );
       }
     }
