@@ -8,15 +8,22 @@ export const supabaseApi = {
   // ===== EXERCISES =====
   
   async getExercises(): Promise<Exercise[]> {
+    console.log('🔍 SUPABASE DEBUG: Fetching exercises from Supabase...')
+    console.log('🔍 Checking Supabase connection...')
+    
     const { data, error } = await supabase
       .from('exercises')
       .select('*')
       .order('name')
     
     if (error) {
-      console.error('Error fetching exercises:', error)
+      console.error('❌ SUPABASE ERROR fetching exercises:', error)
+      console.error('❌ Error details:', JSON.stringify(error, null, 2))
       throw error
     }
+    
+    console.log('✅ SUPABASE SUCCESS: Fetched exercises:', data?.length, 'exercises')
+    console.log('🔍 First few exercises:', data?.slice(0, 3))
     
     return data || []
   },
@@ -57,6 +64,8 @@ export const supabaseApi = {
   // ===== WORKOUT DAYS/TEMPLATES =====
   
   async getWorkoutDays(userId: number = DEFAULT_USER_ID): Promise<WorkoutDay[]> {
+    console.log('🔍 SUPABASE DEBUG: Fetching workout days for user:', userId)
+    
     const { data, error } = await supabase
       .from('workout_days')
       .select(`
@@ -70,9 +79,12 @@ export const supabaseApi = {
       .order('created_at', { ascending: false })
     
     if (error) {
-      console.error('Error fetching workout days:', error)
+      console.error('❌ SUPABASE ERROR fetching workout days:', error)
       throw error
     }
+    
+    console.log('✅ SUPABASE SUCCESS: Fetched workout days:', data?.length, 'templates')
+    console.log('🔍 Workout days:', data?.map(wd => ({ id: wd.id, name: wd.name, is_template: wd.is_template })))
     
     return data || []
   },
@@ -332,6 +344,27 @@ export const supabaseApi = {
     rpe?: number
     notes?: string
   }): Promise<SetLog> {
+    console.log('Logging set with data:', setData)
+    
+    // Check if exercise exists
+    const { data: exerciseExists } = await supabase
+      .from('exercises')
+      .select('id, name')
+      .eq('id', setData.exercise_id)
+      .single()
+    
+    console.log('Exercise exists check:', exerciseExists)
+    
+    if (!exerciseExists) {
+      console.error(`Exercise ID ${setData.exercise_id} not found in database`)
+      // Get all exercises to help debug
+      const { data: allExercises } = await supabase
+        .from('exercises')
+        .select('id, name')
+      console.log('All available exercises:', allExercises)
+      throw new Error(`Exercise ID ${setData.exercise_id} not found`)
+    }
+    
     const { data, error } = await supabase
       .from('set_logs')
       .insert([{
