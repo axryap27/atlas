@@ -17,8 +17,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { WorkoutScreen, Exercise, Set } from "../../(tabs)/workout";
-
-const API_BASE_URL = "https://workout-tracker-production-9537.up.railway.app/api";
+import { apiService as mainApiService } from "../../services/api";
 
 interface ExerciseData {
   id: number;
@@ -45,14 +44,7 @@ interface ActiveWorkoutProps {
 const apiService = {
   getExercises: async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/exercises`);
-      const data = await response.json();
-      
-      if (data && data.code && data.message) {
-        console.warn('API returned error:', data.message);
-        return [];
-      }
-      
+      const data = await mainApiService.getExercises();
       return Array.isArray(data) ? data : [];
     } catch (error) {
       console.error("Error fetching exercises:", error);
@@ -62,23 +54,17 @@ const apiService = {
 
   createSession: async (workoutDayId?: number): Promise<SessionData | null> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/sessions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: 1, // For now, we'll use userId=1 as a default. In a real app, this would come from authentication
-          workoutDayId: workoutDayId,
-        }),
-      });
-
-      if (response.ok) {
-        return await response.json();
-      } else {
-        console.error('Failed to create session');
-        return null;
-      }
+      const sessionData = {
+        workout_day_id: workoutDayId
+      };
+      
+      const response = await mainApiService.startSession(sessionData);
+      
+      return {
+        id: response.id,
+        startTime: response.start_time,
+        workoutDayId: response.workout_day_id
+      };
     } catch (error) {
       console.error('Error creating session:', error);
       return null;
@@ -87,20 +73,8 @@ const apiService = {
 
   finishSession: async (sessionId: number) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/sessions/${sessionId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          endTime: new Date().toISOString(),
-          duration: Math.round((new Date().getTime() - new Date().getTime()) / (1000 * 60)), // Will be calculated properly by backend
-        }),
-      });
-
-      if (!response.ok) {
-        console.error('Failed to finish session');
-      }
+      await mainApiService.completeSession(sessionId);
+      console.log('Session completed successfully');
     } catch (error) {
       console.error('Error finishing session:', error);
     }
@@ -108,22 +82,15 @@ const apiService = {
 
   logSet: async (sessionId: number, exerciseId: number, setNumber: number, reps: number, weight: number) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/sessions/${sessionId}/sets`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          exerciseId: exerciseId,
-          setNumber: setNumber,
-          reps: reps,
-          weight: weight,
-        }),
-      });
-
-      if (!response.ok) {
-        console.error('Failed to log set');
-      }
+      const setData = {
+        exercise_id: exerciseId,
+        set_number: setNumber,
+        reps: reps,
+        weight: weight,
+      };
+      
+      await mainApiService.logSet(sessionId, setData);
+      console.log('Set logged successfully');
     } catch (error) {
       console.error('Error logging set:', error);
     }
