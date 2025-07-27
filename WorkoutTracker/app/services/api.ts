@@ -1,13 +1,11 @@
 // services/api.ts
-const API_BASE_URL = "https://workout-tracker-production-9537.up.railway.app/api";
+import { supabaseApi } from './supabase-api';
 
 export const apiService = {
   // Get all exercises
   getExercises: async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/exercises`);
-      const data = await response.json();
-      return data;
+      return await supabaseApi.getExercises();
     } catch (error) {
       console.error("Error fetching exercises:", error);
       throw error;
@@ -18,20 +16,18 @@ export const apiService = {
   createExercise: async (exercise: {
     name: string;
     description: string;
-    category: string;
+    category: 'strength' | 'cardio' | 'flexibility' | 'core';
     muscleGroup: string;
     equipment: string;
   }) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/exercises`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(exercise),
+      return await supabaseApi.createExercise({
+        name: exercise.name,
+        description: exercise.description,
+        category: exercise.category,
+        muscle_group: exercise.muscleGroup,
+        equipment: exercise.equipment,
       });
-      const data = await response.json();
-      return data;
     } catch (error) {
       console.error("Error creating exercise:", error);
       throw error;
@@ -41,9 +37,7 @@ export const apiService = {
   // Get workout days
   getWorkoutDays: async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/days`);
-      const data = await response.json();
-      return data;
+      return await supabaseApi.getWorkoutDays();
     } catch (error) {
       console.error("Error fetching workout days:", error);
       throw error;
@@ -53,15 +47,7 @@ export const apiService = {
   // Start workout session
   startSession: async (sessionData: any) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/sessions`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(sessionData),
-      });
-      const data = await response.json();
-      return data;
+      return await supabaseApi.startSession(sessionData);
     } catch (error) {
       console.error("Error starting session:", error);
       throw error;
@@ -71,15 +57,7 @@ export const apiService = {
   // Log a set
   logSet: async (sessionId: number, setData: any) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/sessions/${sessionId}/sets`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(setData),
-      });
-      const data = await response.json();
-      return data;
+      return await supabaseApi.logSet(sessionId, setData);
     } catch (error) {
       console.error("Error logging set:", error);
       throw error;
@@ -89,15 +67,7 @@ export const apiService = {
   // Complete session
   completeSession: async (sessionId: number, notes?: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/sessions/${sessionId}/complete`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ notes }),
-      });
-      const data = await response.json();
-      return data;
+      return await supabaseApi.completeSession(sessionId, notes);
     } catch (error) {
       console.error("Error completing session:", error);
       throw error;
@@ -107,9 +77,7 @@ export const apiService = {
   // Get user sessions
   getUserSessions: async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/sessions`);
-      const data = await response.json();
-      return data;
+      return await supabaseApi.getUserSessions();
     } catch (error) {
       console.error("Error fetching sessions:", error);
       throw error;

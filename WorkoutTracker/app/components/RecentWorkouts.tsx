@@ -17,33 +17,14 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const API_BASE_URL = "https://workout-tracker-production-9537.up.railway.app/api";
+import { supabaseApi } from '../services/supabase-api';
+import { Session, SetLog, Exercise } from '../../lib/supabase';
 
-interface Exercise {
-  id: number;
-  name: string;
-  muscleGroup?: string;
-}
-
-interface SetLog {
-  id: number;
-  setNumber: number;
-  reps?: number;
-  weight?: number;
-  exercise: Exercise;
-}
-
-interface WorkoutSession {
-  id: number;
-  startTime: string;
-  endTime?: string;
-  duration?: number;
-  workoutDay?: {
-    id: number;
-    name: string;
-  };
-  setLogs: SetLog[];
-  isHidden?: boolean;
+// Type aliases for backwards compatibility
+interface WorkoutSession extends Session {
+  startTime: string; // alias for start_time
+  endTime?: string; // alias for end_time
+  setLogs: SetLog[]; // alias for set_logs
 }
 
 interface RecentWorkoutsProps {
@@ -55,18 +36,15 @@ interface RecentWorkoutsProps {
 const apiService = {
   getRecentSessions: async (): Promise<WorkoutSession[]> => {
     try {
-      // For now, we'll use userId=1 as a default. In a real app, this would come from authentication
-      // Add include parameter to request workout day data
-      const response = await fetch(`${API_BASE_URL}/sessions?userId=1&include=workoutDay`);
+      const sessions = await supabaseApi.getUserSessions(1, 3); // Get last 3 sessions for user 1
       
-      if (response.ok) {
-        const data = await response.json();
-        // Only return last 3 sessions
-        return Array.isArray(data) ? data.slice(0, 3) : [];
-      } else {
-        console.error('Failed to fetch recent sessions');
-        return [];
-      }
+      // Transform Supabase format to match existing interface
+      return sessions.map(session => ({
+        ...session,
+        startTime: session.start_time,
+        endTime: session.end_time || undefined,
+        setLogs: session.set_logs || []
+      }));
     } catch (error) {
       console.error('Error fetching recent sessions:', error);
       return [];
@@ -75,46 +53,26 @@ const apiService = {
 
   deleteSession: async (sessionId: number): Promise<boolean> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/sessions/${sessionId}`, {
-        method: 'DELETE',
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Delete failed:', response.status, errorData);
-        
-        // If it's a 404 route not found, the backend needs to be updated
-        if (response.status === 404 && errorData.error === 'Route not found') {
-          throw new Error('Delete feature not available - backend needs update');
-        }
-      }
-      
-      return response.ok;
+      await supabaseApi.deleteSession(sessionId);
+      return true;
     } catch (error) {
       console.error('Error deleting session:', error);
       return false;
     }
   },
 
-
   deleteAllSessions: async (): Promise<boolean> => {
     try {
-      // First get all sessions
-      const response = await fetch(`${API_BASE_URL}/sessions`);
-      if (!response.ok) return false;
+      // Get all sessions first
+      const sessions = await supabaseApi.getUserSessions(1, 1000); // Get all sessions
       
-      const sessions = await response.json();
-      if (!Array.isArray(sessions)) return false;
-
       // Delete each session
       const deletePromises = sessions.map(session => 
-        fetch(`${API_BASE_URL}/sessions/${session.id}`, {
-          method: 'DELETE',
-        })
+        supabaseApi.deleteSession(session.id)
       );
 
-      const results = await Promise.all(deletePromises);
-      return results.every(result => result.ok);
+      await Promise.all(deletePromises);
+      return true;
     } catch (error) {
       console.error('Error deleting all sessions:', error);
       return false;
@@ -241,7 +199,7 @@ export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, 
 
   const getTopMuscleGroups = (session: WorkoutSession) => {
     const muscleGroups = session.setLogs
-      .map(setLog => setLog.exercise.muscleGroup)
+      .map(setLog => setLog.exercise?.muscle_group)
       .filter((group): group is string => Boolean(group)) // Type guard to filter out undefined
       .slice(0, 3);
     
