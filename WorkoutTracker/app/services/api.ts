@@ -5,9 +5,10 @@ export const apiService = {
   // Get all exercises
   getExercises: async () => {
     try {
+      console.log('📞 API SERVICE: getExercises called - routing to Supabase');
       return await supabaseApi.getExercises();
     } catch (error) {
-      console.error("Error fetching exercises:", error);
+      console.error("❌ API SERVICE ERROR fetching exercises:", error);
       throw error;
     }
   },
@@ -37,9 +38,10 @@ export const apiService = {
   // Get workout days
   getWorkoutDays: async () => {
     try {
+      console.log('📞 API SERVICE: getWorkoutDays called - routing to Supabase');
       return await supabaseApi.getWorkoutDays();
     } catch (error) {
-      console.error("Error fetching workout days:", error);
+      console.error("❌ API SERVICE ERROR fetching workout days:", error);
       throw error;
     }
   },
