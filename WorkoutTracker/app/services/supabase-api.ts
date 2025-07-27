@@ -25,7 +25,14 @@ export const supabaseApi = {
     console.log('✅ SUPABASE SUCCESS: Fetched exercises:', data?.length, 'exercises')
     console.log('🔍 First few exercises:', data?.slice(0, 3))
     
-    return data || []
+    // Transform snake_case to camelCase for frontend compatibility
+    const transformedData = data?.map(exercise => ({
+      ...exercise,
+      muscleGroup: exercise.muscle_group,
+      createdAt: exercise.created_at
+    })) || []
+    
+    return transformedData
   },
 
   async createExercise(exercise: {
@@ -86,7 +93,20 @@ export const supabaseApi = {
     console.log('✅ SUPABASE SUCCESS: Fetched workout days:', data?.length, 'templates')
     console.log('🔍 Workout days:', data?.map(wd => ({ id: wd.id, name: wd.name, is_template: wd.is_template })))
     
-    return data || []
+    // Transform exercise data to include camelCase properties
+    const transformedData = data?.map(workoutDay => ({
+      ...workoutDay,
+      day_exercises: workoutDay.day_exercises?.map(dayExercise => ({
+        ...dayExercise,
+        exercise: dayExercise.exercise ? {
+          ...dayExercise.exercise,
+          muscleGroup: dayExercise.exercise.muscle_group,
+          createdAt: dayExercise.exercise.created_at
+        } : undefined
+      }))
+    })) || []
+    
+    return transformedData
   },
 
   async getTemplates(userId: number = DEFAULT_USER_ID): Promise<WorkoutDay[]> {
@@ -108,7 +128,20 @@ export const supabaseApi = {
       throw error
     }
     
-    return data || []
+    // Transform exercise data to include camelCase properties
+    const transformedData = data?.map(workoutDay => ({
+      ...workoutDay,
+      day_exercises: workoutDay.day_exercises?.map(dayExercise => ({
+        ...dayExercise,
+        exercise: dayExercise.exercise ? {
+          ...dayExercise.exercise,
+          muscleGroup: dayExercise.exercise.muscle_group,
+          createdAt: dayExercise.exercise.created_at
+        } : undefined
+      }))
+    })) || []
+    
+    return transformedData
   },
 
   async getWorkoutDayById(id: number): Promise<WorkoutDay> {
@@ -129,7 +162,20 @@ export const supabaseApi = {
       throw error
     }
     
-    return data
+    // Transform exercise data to include camelCase properties
+    const transformedData = {
+      ...data,
+      day_exercises: data.day_exercises?.map(dayExercise => ({
+        ...dayExercise,
+        exercise: dayExercise.exercise ? {
+          ...dayExercise.exercise,
+          muscleGroup: dayExercise.exercise.muscle_group,
+          createdAt: dayExercise.exercise.created_at
+        } : undefined
+      }))
+    }
+    
+    return transformedData
   },
 
   async createWorkoutDay(workoutDay: {
@@ -223,8 +269,21 @@ export const supabaseApi = {
       throw error
     }
     
-    console.log('Supabase sessions response:', JSON.stringify(data, null, 2))
-    return data || []
+    // Transform exercise data to include camelCase properties
+    const transformedData = data?.map(session => ({
+      ...session,
+      set_logs: session.set_logs?.map(setLog => ({
+        ...setLog,
+        exercise: setLog.exercise ? {
+          ...setLog.exercise,
+          muscleGroup: setLog.exercise.muscle_group,
+          createdAt: setLog.exercise.created_at
+        } : undefined
+      }))
+    })) || []
+    
+    console.log('Supabase sessions response:', JSON.stringify(transformedData, null, 2))
+    return transformedData
   },
 
   async getSessionById(id: number): Promise<Session> {
@@ -246,7 +305,20 @@ export const supabaseApi = {
       throw error
     }
     
-    return data
+    // Transform exercise data to include camelCase properties
+    const transformedData = {
+      ...data,
+      set_logs: data.set_logs?.map(setLog => ({
+        ...setLog,
+        exercise: setLog.exercise ? {
+          ...setLog.exercise,
+          muscleGroup: setLog.exercise.muscle_group,
+          createdAt: setLog.exercise.created_at
+        } : undefined
+      }))
+    }
+    
+    return transformedData
   },
 
   async startSession(sessionData: {
