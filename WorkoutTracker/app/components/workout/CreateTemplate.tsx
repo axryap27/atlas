@@ -124,6 +124,26 @@ export default function CreateTemplate({ onBack, onTemplateCreated }: CreateTemp
     );
   };
 
+  const incrementReps = (exerciseId: number) => {
+    setTemplateExercises(
+      templateExercises.map((te) =>
+        te.exerciseId === exerciseId 
+          ? { ...te, targetReps: Math.max(0, (te.targetReps || 0) + 1) } 
+          : te
+      )
+    );
+  };
+
+  const decrementReps = (exerciseId: number) => {
+    setTemplateExercises(
+      templateExercises.map((te) =>
+        te.exerciseId === exerciseId 
+          ? { ...te, targetReps: Math.max(0, (te.targetReps || 0) - 1) } 
+          : te
+      )
+    );
+  };
+
   const saveTemplate = async () => {
     console.log('=== SAVE TEMPLATE FUNCTION CALLED ===');
     Alert.alert("Debug", "saveTemplate function started"); // Temporary debug alert
@@ -380,20 +400,36 @@ export default function CreateTemplate({ onBack, onTemplateCreated }: CreateTemp
 
                   <View style={styles.exerciseInputGroup}>
                     <Text style={styles.exerciseInputLabel}>Reps</Text>
-                    <TextInput
-                      style={styles.exerciseInput}
-                      value={templateExercise.targetReps?.toString() || ""}
-                      onChangeText={(value) =>
-                        updateExercise(
-                          templateExercise.exerciseId,
-                          "targetReps",
-                          parseInt(value) || null
-                        )
-                      }
-                      keyboardType="numeric"
-                      placeholder="10"
-                      placeholderTextColor="#8E8E93"
-                    />
+                    <View style={styles.inputWithButtons}>
+                      <TouchableOpacity 
+                        style={[styles.incrementButton, styles.incrementButtonLeft]} 
+                        onPress={() => decrementReps(templateExercise.exerciseId)}
+                      >
+                        <Ionicons name="remove" size={16} color="#007AFF" />
+                      </TouchableOpacity>
+                      
+                      <TextInput
+                        style={[styles.exerciseInput, styles.inputWithButtonsField]}
+                        value={templateExercise.targetReps?.toString() || ""}
+                        onChangeText={(value) =>
+                          updateExercise(
+                            templateExercise.exerciseId,
+                            "targetReps",
+                            parseInt(value) || null
+                          )
+                        }
+                        keyboardType="numeric"
+                        placeholder="10"
+                        placeholderTextColor="#8E8E93"
+                      />
+                      
+                      <TouchableOpacity 
+                        style={[styles.incrementButton, styles.incrementButtonRight]} 
+                        onPress={() => incrementReps(templateExercise.exerciseId)}
+                      >
+                        <Ionicons name="add" size={16} color="#007AFF" />
+                      </TouchableOpacity>
+                    </View>
                   </View>
 
                   <View style={styles.exerciseInputGroup}>
@@ -649,6 +685,35 @@ const getStyles = (isDark: boolean) =>
       textAlign: "center",
       borderWidth: 1,
       borderColor: "#E5E5EA",
+    },
+    inputWithButtons: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    inputWithButtonsField: {
+      flex: 1,
+      borderLeftWidth: 0,
+      borderRightWidth: 0,
+      borderRadius: 0,
+    },
+    incrementButton: {
+      width: 32,
+      height: 38,
+      justifyContent: "center",
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: "#E5E5EA",
+      backgroundColor: "#F8F8F8",
+    },
+    incrementButtonLeft: {
+      borderTopLeftRadius: 6,
+      borderBottomLeftRadius: 6,
+      borderRightWidth: 0,
+    },
+    incrementButtonRight: {
+      borderTopRightRadius: 6,
+      borderBottomRightRadius: 6,
+      borderLeftWidth: 0,
     },
     // Modal styles
     modalContainer: {
