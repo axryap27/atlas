@@ -14,8 +14,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-
-const API_BASE_URL = "https://workout-tracker-production-9537.up.railway.app/api";
+import { supabaseApi } from "../../services/supabase-api";
 
 interface Exercise {
   id: number;
@@ -66,16 +65,7 @@ export default function CreateTemplate({ onBack, onTemplateCreated }: CreateTemp
   const loadExercises = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/exercises`);
-      const data = await response.json();
-      
-      // Check if response is an error object
-      if (data && data.code && data.message) {
-        console.warn('API returned error:', data.message);
-        setExercises([]);
-        return;
-      }
-      
+      const data = await supabaseApi.getExercises();
       setExercises(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Error loading exercises:", error);
@@ -102,7 +92,6 @@ export default function CreateTemplate({ onBack, onTemplateCreated }: CreateTemp
       exercise,
       targetSets: 3,
       targetReps: 10,
-      restTime: 60,
     };
 
     setTemplateExercises([...templateExercises, newTemplateExercise]);
@@ -145,9 +134,6 @@ export default function CreateTemplate({ onBack, onTemplateCreated }: CreateTemp
   };
 
   const saveTemplate = async () => {
-    console.log('=== SAVE TEMPLATE FUNCTION CALLED ===');
-    Alert.alert("Debug", "saveTemplate function started"); // Temporary debug alert
-    
     if (!templateName.trim()) {
       Alert.alert("Validation Error", "Please enter a template name");
       return;
@@ -164,47 +150,19 @@ export default function CreateTemplate({ onBack, onTemplateCreated }: CreateTemp
       const templateData = {
         name: templateName.trim(),
         description: templateDescription.trim(),
-        exercises: templateExercises.map((te) => ({
-          exerciseId: te.exerciseId,
-          targetSets: te.targetSets,
-          targetReps: te.targetReps,
-          targetWeight: te.targetWeight,
-          targetTime: te.targetTime,
-          restTime: te.restTime,
+        is_template: true,
+        exercises: templateExercises.map((te, index) => ({
+          exercise_id: te.exerciseId,
+          target_sets: te.targetSets,
+          target_reps: te.targetReps,  
+          target_weight: te.targetWeight,
+          target_time: te.targetTime,
+          exercise_order: index + 1,
           notes: te.notes,
         })),
       };
   
-      console.log('=== TEMPLATE SAVE DEBUG ===');
-      console.log('Sending template data:', JSON.stringify(templateData, null, 2));
-      console.log('API URL:', `${API_BASE_URL}/days/templates`);
-  
-      const response = await fetch(`${API_BASE_URL}/days/templates`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(templateData),
-      });
-  
-      console.log('Response status:', response.status);
-      
-      const responseText = await response.text();
-      console.log('Raw response:', responseText);
-      
-      let responseData;
-      try {
-        responseData = JSON.parse(responseText);
-      } catch (parseError) {
-        console.log('Failed to parse JSON response:', parseError);
-        responseData = responseText;
-      }
-      
-      console.log('Parsed response data:', responseData);
-  
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${JSON.stringify(responseData)}`);
-      }
+      const result = await supabaseApi.createWorkoutDay(templateData);
   
       Alert.alert("Success", "Template created successfully!", [
         {
@@ -216,77 +174,14 @@ export default function CreateTemplate({ onBack, onTemplateCreated }: CreateTemp
         },
       ]);
     } catch (error) {
-      console.log('=== FULL ERROR DETAILS ===');
-      console.error("Full error object:", error);
-      
-      // Handle TypeScript unknown error type
+      console.error("Error creating template:", error);
       const errorMessage = error instanceof Error ? error.message : String(error);
-      const errorStack = error instanceof Error ? error.stack : 'No stack trace';
-      
-      console.error("Error message:", errorMessage);
-      console.error("Error stack:", errorStack);
       Alert.alert("Error", `Failed to create template: ${errorMessage}`);
     } finally {
       setSaving(false);
     }
   };
 
-//   const saveTemplate = async () => {
-//     if (!templateName.trim()) {
-//       Alert.alert("Validation Error", "Please enter a template name");
-//       return;
-//     }
-
-//     if (templateExercises.length === 0) {
-//       Alert.alert("Validation Error", "Please add at least one exercise");
-//       return;
-//     }
-
-//     try {
-//       setSaving(true);
-
-//       const templateData = {
-//         name: templateName.trim(),
-//         description: templateDescription.trim(),
-//         exercises: templateExercises.map((te) => ({
-//           exerciseId: te.exerciseId,
-//           targetSets: te.targetSets,
-//           targetReps: te.targetReps,
-//           targetWeight: te.targetWeight,
-//           targetTime: te.targetTime,
-//           restTime: te.restTime,
-//           notes: te.notes,
-//         })),
-//       };
-
-//       const response = await fetch(`${API_BASE_URL}/days/templates`, {
-//         method: "POST",
-//         headers: {
-//           "Content-Type": "application/json",
-//         },
-//         body: JSON.stringify(templateData),
-//       });
-
-//       if (!response.ok) {
-//         throw new Error("Failed to create template");
-//       }
-
-//       Alert.alert("Success", "Template created successfully!", [
-//         {
-//           text: "OK",
-//           onPress: () => {
-//             onTemplateCreated();
-//             onBack();
-//           },
-//         },
-//       ]);
-//     } catch (error) {
-//       console.error("Error creating template:", error);
-//       Alert.alert("Error", "Failed to create template. Please try again.");
-//     } finally {
-//       setSaving(false);
-//     }
-//   };
 
   const filteredExercises = exercises.filter((exercise) =>
     exercise.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -432,23 +327,6 @@ export default function CreateTemplate({ onBack, onTemplateCreated }: CreateTemp
                     </View>
                   </View>
 
-                  <View style={styles.exerciseInputGroup}>
-                    <Text style={styles.exerciseInputLabel}>Rest (sec)</Text>
-                    <TextInput
-                      style={styles.exerciseInput}
-                      value={templateExercise.restTime?.toString() || ""}
-                      onChangeText={(value) =>
-                        updateExercise(
-                          templateExercise.exerciseId,
-                          "restTime",
-                          parseInt(value) || null
-                        )
-                      }
-                      keyboardType="numeric"
-                      placeholder="60"
-                      placeholderTextColor="#8E8E93"
-                    />
-                  </View>
                 </View>
               </View>
             ))
