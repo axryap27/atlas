@@ -1,8 +1,15 @@
 // app/services/supabase-api.ts
 import { supabase, Exercise, WorkoutDay, Session, SetLog, DayExercise } from '../../lib/supabase'
+import { authService } from './auth'
 
-// Default user ID for now (we'll implement auth later)
-const DEFAULT_USER_ID = 1
+// Get current user ID or throw error if not authenticated
+const getCurrentUserId = (): string => {
+  const user = authService.getCurrentUser()
+  if (!user) {
+    throw new Error('User not authenticated')
+  }
+  return user.id
+}
 
 export const supabaseApi = {
   // ===== EXERCISES =====
@@ -80,8 +87,9 @@ export const supabaseApi = {
 
   // ===== WORKOUT DAYS/TEMPLATES =====
   
-  async getWorkoutDays(userId: number = DEFAULT_USER_ID): Promise<WorkoutDay[]> {
-    console.log('🔍 SUPABASE DEBUG: Fetching workout days for user:', userId)
+  async getWorkoutDays(userId?: string): Promise<WorkoutDay[]> {
+    const actualUserId = userId || getCurrentUserId()
+    console.log('🔍 SUPABASE DEBUG: Fetching workout days for user:', actualUserId)
     
     const { data, error } = await supabase
       .from('workout_days')
@@ -92,7 +100,7 @@ export const supabaseApi = {
           exercise:exercises (*)
         )
       `)
-      .eq('user_id', userId)
+      .eq('user_id', actualUserId)
       .order('created_at', { ascending: false })
     
     if (error) {
@@ -119,7 +127,8 @@ export const supabaseApi = {
     return transformedData
   },
 
-  async getTemplates(userId: number = DEFAULT_USER_ID): Promise<WorkoutDay[]> {
+  async getTemplates(userId?: string): Promise<WorkoutDay[]> {
+    const actualUserId = userId || getCurrentUserId()
     const { data, error } = await supabase
       .from('workout_days')
       .select(`
@@ -129,7 +138,7 @@ export const supabaseApi = {
           exercise:exercises (*)
         )
       `)
-      .eq('user_id', userId)
+      .eq('user_id', actualUserId)
       .eq('is_template', true)
       .order('created_at', { ascending: false })
     
@@ -202,14 +211,15 @@ export const supabaseApi = {
       exercise_order?: number
       notes?: string
     }>
-  }, userId: number = DEFAULT_USER_ID): Promise<WorkoutDay> {
+  }, userId?: string): Promise<WorkoutDay> {
+    const actualUserId = userId || getCurrentUserId()
     // First create the workout day
     const { data: workoutDayData, error: workoutDayError } = await supabase
       .from('workout_days')
       .insert([{
         name: workoutDay.name,
         description: workoutDay.description,
-        user_id: userId,
+        user_id: actualUserId,
         is_template: workoutDay.is_template ?? true
       }])
       .select()
@@ -241,7 +251,7 @@ export const supabaseApi = {
     return this.getWorkoutDayById(workoutDayData.id)
   },
 
-  async deleteTemplate(id: number, userId: number = DEFAULT_USER_ID): Promise<void> {
+  async deleteTemplate(id: number, userId?: string): Promise<void> {
     const { error } = await supabase
       .from('workout_days')
       .delete()
@@ -257,8 +267,9 @@ export const supabaseApi = {
 
   // ===== SESSIONS =====
   
-  async getUserSessions(userId: number = DEFAULT_USER_ID, limit: number = 10): Promise<Session[]> {
-    console.log(`Fetching sessions for user ${userId} with limit ${limit}`)
+  async getUserSessions(userId?: string, limit: number = 10): Promise<Session[]> {
+    const actualUserId = userId || getCurrentUserId()
+    console.log(`Fetching sessions for user ${actualUserId} with limit ${limit}`)
     
     const { data, error } = await supabase
       .from('sessions')
@@ -270,7 +281,7 @@ export const supabaseApi = {
           exercise:exercises (*)
         )
       `)
-      .eq('user_id', userId)
+      .eq('user_id', actualUserId)
       .order('start_time', { ascending: false })
       .limit(limit)
     
@@ -282,6 +293,12 @@ export const supabaseApi = {
     // Transform exercise data to include camelCase properties
     const transformedData = data?.map((session: any) => ({
       ...session,
+      // Transform workout_day to workoutDay for frontend compatibility
+      workoutDay: session.workout_day ? {
+        ...session.workout_day,
+        createdAt: session.workout_day.created_at,
+        updatedAt: session.workout_day.updated_at
+      } : undefined,
       set_logs: session.set_logs?.map((setLog: any) => ({
         ...setLog,
         exercise: setLog.exercise ? {
@@ -318,6 +335,12 @@ export const supabaseApi = {
     // Transform exercise data to include camelCase properties
     const transformedData = {
       ...data,
+      // Transform workout_day to workoutDay for frontend compatibility
+      workoutDay: data.workout_day ? {
+        ...data.workout_day,
+        createdAt: data.workout_day.created_at,
+        updatedAt: data.workout_day.updated_at
+      } : undefined,
       set_logs: data.set_logs?.map((setLog: any) => ({
         ...setLog,
         exercise: setLog.exercise ? {
@@ -336,11 +359,12 @@ export const supabaseApi = {
     notes?: string
     location?: string
     body_weight?: number
-  }, userId: number = DEFAULT_USER_ID): Promise<Session> {
+  }, userId?: string): Promise<Session> {
+    const actualUserId = userId || getCurrentUserId()
     const { data, error } = await supabase
       .from('sessions')
       .insert([{
-        user_id: userId,
+        user_id: actualUserId,
         workout_day_id: sessionData.workout_day_id,
         notes: sessionData.notes,
         location: sessionData.location,
@@ -466,7 +490,7 @@ export const supabaseApi = {
 
   // ===== STATISTICS =====
   
-  async getUserStats(userId: number = DEFAULT_USER_ID): Promise<{
+  async getUserStats(userId?: string): Promise<{
     totalSessions: number
     totalDuration: number
     totalVolume: number
