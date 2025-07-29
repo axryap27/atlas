@@ -51,7 +51,7 @@ export default function AuthScreen() {
       } else if (isSignUp && result.data.user && !result.data.session) {
         Alert.alert(
           '✅ Account Created!',
-          'Your account has been created successfully. Please check your email and click the confirmation link to complete setup.\\n\\n⚠️ If the link opens to an error page, don\\'t worry - your account is still activated and you can sign in.',
+          'Your account has been created successfully. Please check your email and click the confirmation link to complete setup.\n\n⚠️ If the link opens to an error page, don\'t worry - your account is still activated and you can sign in.',
           [
             {
               text: 'Sign In Now',
@@ -80,7 +80,7 @@ export default function AuthScreen() {
         <View style={styles.content}>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.title}>Workout Tracker</Text>
+            <Text style={styles.title}>Atlas</Text>
             <Text style={styles.subtitle}>
               {isSignUp ? 'Create your account' : 'Welcome back'}
             </Text>
