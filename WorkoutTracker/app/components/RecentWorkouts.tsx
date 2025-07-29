@@ -36,7 +36,7 @@ interface RecentWorkoutsProps {
 const apiService = {
   getRecentSessions: async (): Promise<WorkoutSession[]> => {
     try {
-      const sessions = await supabaseApi.getUserSessions(1, 3); // Get last 3 sessions for user 1
+      const sessions = await supabaseApi.getUserSessions(undefined, 3); // Get last 3 sessions
       
       // Transform Supabase format to match existing interface
       return sessions.map(session => ({
