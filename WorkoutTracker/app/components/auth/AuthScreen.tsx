@@ -50,8 +50,18 @@ export default function AuthScreen() {
         )
       } else if (isSignUp && result.data.user && !result.data.session) {
         Alert.alert(
-          'Check Your Email',
-          'Please check your email for a confirmation link to complete your registration.'
+          '✅ Account Created!',
+          'Your account has been created successfully. Please check your email and click the confirmation link to complete setup.\\n\\n⚠️ If the link opens to an error page, don\\'t worry - your account is still activated and you can sign in.',
+          [
+            {
+              text: 'Sign In Now',
+              onPress: () => setIsSignUp(false)
+            },
+            {
+              text: 'OK',
+              style: 'default'
+            }
+          ]
         )
       }
     } catch (error) {
