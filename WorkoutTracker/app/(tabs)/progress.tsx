@@ -11,6 +11,8 @@ import {
   Modal,
   FlatList,
   Dimensions,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabaseApi } from '../services/supabase-api';
@@ -61,6 +63,7 @@ export default function ProgressScreen() {
       
     } catch (error) {
       console.error('Error loading progress data:', error);
+      Alert.alert('Error', 'Failed to load progress data. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -69,7 +72,11 @@ export default function ProgressScreen() {
   const loadVolumeData = async () => {
     try {
       // Get all sessions for selected templates
-      const sessions = await supabaseApi.getUserSessions(1, 50); // Get last 50 sessions
+      const sessions = await supabaseApi.getUserSessions(undefined, 50); // Get last 50 sessions
+      
+      console.log('🔍 PROGRESS DEBUG: Raw sessions:', sessions.length)
+      console.log('🔍 PROGRESS DEBUG: Selected templates:', selectedTemplates)
+      console.log('🔍 PROGRESS DEBUG: First session:', sessions[0])
       
       // Filter sessions by selected templates and calculate volume
       const volumeData: VolumeData[] = sessions
@@ -81,8 +88,17 @@ export default function ProgressScreen() {
         .map(session => {
           // Calculate total volume for this session
           const volume = session.set_logs?.reduce((total, setLog) => {
-            if (setLog.weight && setLog.reps) {
-              return total + (setLog.weight * setLog.reps);
+            if (setLog.reps) {
+              // For bodyweight exercises (weight = 0), use reps only
+              // For weighted exercises, use weight * reps
+              const weight = setLog.weight || 0;
+              if (weight === 0) {
+                // Bodyweight exercise - count reps only
+                return total + setLog.reps;
+              } else {
+                // Weighted exercise - count volume (weight * reps)
+                return total + (weight * setLog.reps);
+              }
             }
             return total;
           }, 0) || 0;
@@ -90,15 +106,17 @@ export default function ProgressScreen() {
           return {
             date: session.start_time,
             volume,
-            workoutName: session.workout_day?.name || 'Custom Workout',
+            workoutName: session.workoutDay?.name || 'Custom Workout',
             sessionId: session.id,
           };
         })
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
+      console.log('🔍 PROGRESS DEBUG: Final volume data:', volumeData)
       setVolumeData(volumeData);
     } catch (error) {
       console.error('Error loading volume data:', error);
+      Alert.alert('Error', 'Failed to load volume data. Please try again.');
     }
   };
 
@@ -248,6 +266,7 @@ export default function ProgressScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#007AFF" />
           <Text style={styles.loadingText}>Loading progress data...</Text>
         </View>
       </SafeAreaView>
