@@ -13,23 +13,8 @@ import {
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import RecentWorkouts from '../components/RecentWorkouts';
-
-// Updated imports to match your file structure
-const API_BASE_URL = "https://workout-tracker-production-9537.up.railway.app/api";
-
-// Simplified API service (inline)
-const apiService = {
-  getExercises: async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/exercises`);
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error("Error fetching exercises:", error);
-      throw error;
-    }
-  },
-};
+import { supabaseApi } from '../services/supabase-api';
+import { authService } from '../services/auth';
 
 // Simple types (inline)
 interface ExerciseData {
@@ -55,7 +40,7 @@ export default function HomeScreen() {
       setLoading(true);
       console.log('Starting to load dashboard data...');
       
-      const exercisesData = await apiService.getExercises();
+      const exercisesData = await supabaseApi.getExercises();
       
       console.log('Exercises data:', exercisesData);
       
@@ -74,6 +59,26 @@ export default function HomeScreen() {
 
   const startQuickWorkout = () => {
     router.push("/workout" as any);
+  };
+
+  const handleSignOut = async () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            const { error } = await authService.signOut();
+            if (error) {
+              Alert.alert('Error', 'Failed to sign out');
+            }
+          }
+        }
+      ]
+    );
   };
 
   const styles = getStyles(isDark);

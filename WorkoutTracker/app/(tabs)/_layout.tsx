@@ -1,10 +1,31 @@
 // app/(tabs)/_layout.tsx
 import { Tabs } from 'expo-router';
-import { useColorScheme } from 'react-native';
+import { useColorScheme, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { authService } from '../services/auth';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+
+  const handleSignOut = async () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            const { error } = await authService.signOut();
+            if (error) {
+              Alert.alert('Error', 'Failed to sign out');
+            }
+          }
+        }
+      ]
+    );
+  };
 
   return (
     <Tabs
@@ -32,6 +53,18 @@ export default function TabLayout() {
             <Ionicons name="home" size={size} color={color} />
           ),
           headerTitle: 'WorkoutTracker',
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={handleSignOut}
+              style={{ marginRight: 16 }}
+            >
+              <Ionicons 
+                name="log-out-outline" 
+                size={24} 
+                color={colorScheme === 'dark' ? '#FFFFFF' : '#000000'} 
+              />
+            </TouchableOpacity>
+          ),
         }}
       />
       <Tabs.Screen
