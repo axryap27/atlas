@@ -1,5 +1,5 @@
 // app/components/auth/AuthScreen.tsx
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
   View,
   Text,
@@ -11,6 +11,8 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Animated,
+  Image,
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { authService } from '../../services/auth'
@@ -21,6 +23,16 @@ export default function AuthScreen() {
   const [isSignUp, setIsSignUp] = useState(false)
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  
+  const fadeAnim = useRef(new Animated.Value(0)).current
+
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 600,
+      useNativeDriver: true,
+    }).start()
+  }, [])
 
   const handleAuth = async () => {
     if (!email || !password) {
@@ -77,9 +89,17 @@ export default function AuthScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <View style={styles.content}>
+        <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
           {/* Header */}
           <View style={styles.header}>
+            {/* Atlas Logo */}
+            <View style={styles.logoContainer}>
+              <Image 
+                source={require('../../assets/images/atlas-logo.png')}
+                style={styles.logo}
+                resizeMode="contain"
+              />
+            </View>
             <Text style={styles.title}>Atlas</Text>
             <Text style={styles.subtitle}>
               {isSignUp ? 'Create your account' : 'Welcome back'}
@@ -146,7 +166,7 @@ export default function AuthScreen() {
               </Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </Animated.View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   )
@@ -155,77 +175,124 @@ export default function AuthScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#F8FAFC',
   },
   keyboardView: {
     flex: 1,
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: 32,
     justifyContent: 'center',
+    maxWidth: 400,
+    alignSelf: 'center',
+    width: '100%',
   },
+  
+  // Header styles
   header: {
     alignItems: 'center',
-    marginBottom: 48,
+    marginBottom: 64,
   },
+  logoContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 28,
+    backgroundColor: 'transparent',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 32,
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  logo: {
+    width: 80,
+    height: 80,
+    borderRadius: 20,
+  },
+  
   title: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#000000',
+    fontSize: 36,
+    fontWeight: '600',
+    color: '#334155',
     marginBottom: 8,
+    letterSpacing: -0.5,
+    fontFamily: Platform.OS === 'ios' ? 'SF Pro Display' : 'sans-serif',
   },
   subtitle: {
     fontSize: 16,
-    color: '#8E8E93',
+    color: '#64748B',
+    fontWeight: '400',
+    textAlign: 'center',
   },
+  
+  // Form styles
   form: {
     marginBottom: 32,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#E5E5EA',
+    borderColor: '#E2E8F0',
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
   },
   input: {
     flex: 1,
     marginLeft: 12,
     fontSize: 16,
-    color: '#000000',
+    color: '#334155',
+    fontWeight: '400',
   },
   authButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#475569',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: 8,
+    shadowColor: '#475569',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   authButtonDisabled: {
-    backgroundColor: '#8E8E93',
+    backgroundColor: '#94A3B8',
+    shadowOpacity: 0,
   },
   authButtonText: {
-    color: 'white',
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },
+  
+  // Footer styles
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 32,
   },
   footerText: {
-    color: '#8E8E93',
-    fontSize: 14,
+    color: '#64748B',
+    fontSize: 15,
+    fontWeight: '400',
   },
   switchButton: {
-    color: '#007AFF',
-    fontSize: 14,
+    color: '#475569',
+    fontSize: 15,
     fontWeight: '600',
     marginLeft: 4,
   },
