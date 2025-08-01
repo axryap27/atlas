@@ -95,7 +95,7 @@ export default function AuthScreen() {
             {/* Atlas Logo */}
             <View style={styles.logoContainer}>
               <Image 
-                source={require('../../assets/images/atlas-logo.png')}
+                source={require('../../../assets/images/atlas-logo.png')}
                 style={styles.logo}
                 resizeMode="contain"
               />
@@ -195,23 +195,23 @@ const styles = StyleSheet.create({
     marginBottom: 64,
   },
   logoContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 28,
+    width: 120,
+    height: 120,
+    borderRadius: 35,
     backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 32,
     shadowColor: '#64748B',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowRadius: 16,
+    elevation: 8,
   },
   logo: {
-    width: 80,
-    height: 80,
-    borderRadius: 20,
+    width: 120,
+    height: 120,
+    borderRadius: 30,
   },
   
   title: {
