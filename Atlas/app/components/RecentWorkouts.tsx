@@ -18,7 +18,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 
 import { supabaseApi } from '../services/supabase-api';
-import { Session, SetLog, Exercise } from '../../lib/supabase';
+import { Session, SetLog, Exercise, WorkoutDay } from '../../lib/supabase';
 
 // Type aliases for backwards compatibility
 interface WorkoutSession extends Session {
@@ -84,6 +84,7 @@ export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, 
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
+  const [templates, setTemplates] = useState<WorkoutDay[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [animatingOut, setAnimatingOut] = useState<number[]>([]);
@@ -108,10 +109,19 @@ export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, 
   const loadRecentSessions = async () => {
     try {
       setLoading(true);
+      
+      // Load templates first
+      const templatesData = await supabaseApi.getTemplates();
+      setTemplates(templatesData);
+      console.log('🏠 Templates loaded for recent workouts:', templatesData.map(t => `${t.id}: ${t.name}`));
+      
       const recentSessions = await apiService.getRecentSessions();
       
       // Debug: Log the session data to see what we're getting
-      console.log('Recent sessions data:', JSON.stringify(recentSessions, null, 2));
+      console.log('🏠 Recent sessions count:', recentSessions.length);
+      recentSessions.forEach(session => {
+        console.log(`🏠 Session ${session.id}: workout_day_id=${session.workout_day_id}, workoutDay=${session.workoutDay?.name}`);
+      });
       
       // Initialize animation values for new sessions
       recentSessions.forEach(session => {
@@ -204,6 +214,39 @@ export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, 
       .slice(0, 3);
     
     return [...new Set(muscleGroups)];
+  };
+
+  const getWorkoutName = (session: WorkoutSession) => {
+    console.log(`🏠 DEBUG getWorkoutName: sessionId=${session.id}, workout_day_id=${session.workout_day_id}, templates.length=${templates.length}`);
+    
+    // Look up template name manually using workout_day_id
+    if (session.workout_day_id) {
+      const template = templates.find(t => t.id === session.workout_day_id);
+      if (template) {
+        console.log(`🏠 Session ${session.id}: workout_day_id=${session.workout_day_id}, resolved name=${template.name}`);
+        return template.name;
+      } else {
+        console.log(`🏠 Session ${session.id}: workout_day_id=${session.workout_day_id}, template not found in ${templates.length} templates`);
+        return `Template ${session.workout_day_id}`;
+      }
+    }
+    
+    // For Quick Workouts, try to categorize based on exercises
+    const muscleGroups = getTopMuscleGroups(session);
+    const stats = getWorkoutStats(session);
+    
+    console.log(`🏠 Session ${session.id}: Quick Workout - muscle groups: ${muscleGroups.join(',')}, volume: ${stats.volume}`);
+    
+    // Simple categorization logic based on muscle groups or volume
+    if (muscleGroups.some(group => group?.toLowerCase().includes('back') || group?.toLowerCase().includes('lats'))) {
+      return "Pull Workout";
+    } else if (muscleGroups.some(group => group?.toLowerCase().includes('chest') || group?.toLowerCase().includes('shoulder'))) {
+      return "Push Workout";
+    } else if (muscleGroups.some(group => group?.toLowerCase().includes('legs') || group?.toLowerCase().includes('quad'))) {
+      return "Leg Workout";
+    }
+    
+    return "Custom Workout";
   };
 
   const handleDeleteAllSessions = async () => {
@@ -535,7 +578,7 @@ export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, 
                 <View style={styles.cardHeader}>
                   <View style={styles.cardTitleContainer}>
                     <Text style={styles.cardTitle}>
-                      {session.workoutDay?.name || "Custom Workout"}
+                      {templates.length > 0 ? getWorkoutName(session) : (session.workoutDay?.name || "Loading...")}
                     </Text>
                     <Text style={styles.cardDate}>
                       {formatDate(session.startTime)} • {formatTime(session.startTime)}
