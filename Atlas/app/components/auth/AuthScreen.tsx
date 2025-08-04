@@ -19,6 +19,7 @@ import { authService } from '../../services/auth'
 
 export default function AuthScreen() {
   const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [isSignUp, setIsSignUp] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -35,9 +36,20 @@ export default function AuthScreen() {
   }, [])
 
   const handleAuth = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields')
-      return
+    if (isSignUp) {
+      if (!email || !username || !password) {
+        Alert.alert('Error', 'Please fill in all fields')
+        return
+      }
+      if (username.length < 3) {
+        Alert.alert('Error', 'Username must be at least 3 characters')
+        return
+      }
+    } else {
+      if (!email || !password) {
+        Alert.alert('Error', 'Please fill in all fields')
+        return
+      }
     }
 
     if (password.length < 6) {
@@ -50,7 +62,7 @@ export default function AuthScreen() {
     try {
       let result
       if (isSignUp) {
-        result = await authService.signUp(email, password)
+        result = await authService.signUp(email, password, username)
       } else {
         result = await authService.signIn(email, password)
       }
@@ -98,6 +110,12 @@ export default function AuthScreen() {
                 source={require('../../../assets/images/atlas-logo.png')}
                 style={styles.logo}
                 resizeMode="contain"
+                onError={(error) => {
+                  console.log('Logo failed to load:', error);
+                }}
+                onLoad={() => {
+                  console.log('Logo loaded successfully');
+                }}
               />
             </View>
             <Text style={styles.title}>Atlas</Text>
@@ -120,6 +138,21 @@ export default function AuthScreen() {
                 autoComplete="email"
               />
             </View>
+
+            {/* Username field - only show during sign up */}
+            {isSignUp && (
+              <View style={styles.inputContainer}>
+                <Ionicons name="person-outline" size={20} color="#8E8E93" />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Username"
+                  value={username}
+                  onChangeText={setUsername}
+                  autoCapitalize="none"
+                  autoComplete="username"
+                />
+              </View>
+            )}
 
             <View style={styles.inputContainer}>
               <Ionicons name="lock-closed-outline" size={20} color="#8E8E93" />
@@ -198,7 +231,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 35,
-    backgroundColor: 'transparent',
+    backgroundColor: '#F8FAFC', // Light background to see if logo is there
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 32,
@@ -207,6 +240,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 16,
     elevation: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0', // Border to see the container
   },
   logo: {
     width: 120,
