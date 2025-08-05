@@ -65,16 +65,22 @@ class AuthService {
     return this.currentState
   }
 
-  // Sign up with email and password
-  async signUp(email: string, password: string) {
+  // Sign up with email, password, and username
+  async signUp(email: string, password: string, username?: string) {
     const { data, error } = await supabase.auth.signUp({
       email,
-      password
+      password,
+      options: {
+        data: {
+          username: username,
+          display_name: username
+        }
+      }
     })
     return { data, error }
   }
 
-  // Sign in with email and password
+  // Sign in with email and password (for now, username login can be added later)
   async signIn(email: string, password: string) {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
@@ -92,6 +98,11 @@ class AuthService {
   // Get current user
   getCurrentUser() {
     return this.currentState.user
+  }
+
+  // Get current username
+  getCurrentUsername() {
+    return this.currentState.user?.user_metadata?.username || null
   }
 
   // Check if user is authenticated
