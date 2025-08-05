@@ -66,21 +66,27 @@ export default function ProgressScreen() {
     loadData();
   }, []);
 
-  // Refresh templates when screen comes into focus (in case new templates were created)
+  // Refresh data when screen comes into focus (in case workouts were deleted or templates were created)
   useFocusEffect(
     React.useCallback(() => {
-      const refreshTemplates = async () => {
+      const refreshData = async () => {
         try {
           const templatesData = await supabaseApi.getTemplates();
           setTemplates(templatesData);
           console.log('🔄 Refreshed templates on focus:', templatesData.length);
+          
+          // Also refresh volume data if templates are selected
+          if (selectedTemplates.length > 0) {
+            loadVolumeData();
+            console.log('🔄 Refreshed volume data on focus');
+          }
         } catch (error) {
-          console.error('Error refreshing templates:', error);
+          console.error('Error refreshing data:', error);
         }
       };
       
-      refreshTemplates();
-    }, [])
+      refreshData();
+    }, [selectedTemplates])
   );
 
   useEffect(() => {
