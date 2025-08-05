@@ -41,10 +41,17 @@ export default function HomeScreen() {
   const [exercises, setExercises] = useState<ExerciseData[]>([]);
   const [volumeData, setVolumeData] = useState<VolumeData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
     loadDashboardData();
   }, []);
+
+  const handleWorkoutDeleted = () => {
+    // Refresh both the dashboard data and trigger recent workouts refresh
+    loadDashboardData();
+    setRefreshTrigger(prev => prev + 1);
+  };
 
   const loadDashboardData = async () => {
     try {
@@ -318,6 +325,8 @@ export default function HomeScreen() {
             // TODO: Navigate to workout details
           }}
           showDebugTools={false} // Disable debug tools in production
+          refreshTrigger={refreshTrigger}
+          onWorkoutDeleted={handleWorkoutDeleted}
         />
         
         {/* Spacer */}
