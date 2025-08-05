@@ -372,35 +372,126 @@ export default function ProgressScreen() {
     const maxVolume = getMaxVolume();
     const minVolume = Math.min(...volumeData.map(d => d.volume), 0);
 
-    // Create points for the line chart
-    const createLinePoints = () => {
-      return volumeData.map((data, index) => {
-        const x = (index / (volumeData.length - 1)) * (chartWidth - 40);
-        const normalizedValue = maxVolume > minVolume ? (data.volume - minVolume) / (maxVolume - minVolume) : 0.5;
-        const y = chartHeight - (normalizedValue * (chartHeight - 20));
-        // Use workoutDayId directly for color assignment
-        const color = data.workoutDayId ? 
-          getTemplateColor(data.workoutDayId) : 
-          '#007AFF'; // All Quick Workouts use blue
+    // Group data by template and create separate lines
+    const createTemplateLines = () => {
+      console.log('🔧 DEBUG: Starting template line creation');
+      console.log('🔧 DEBUG: volumeData:', volumeData.map(d => `${d.workoutName}(${d.workoutDayId}): ${d.volume}`));
+      
+      // Group data by workoutDayId (template) or workout type
+      const groupedData = new Map();
+      
+      volumeData.forEach((data, originalIndex) => {
+        let key;
         
-        console.log(`Point ${index}: workout=${data.workoutName}, workoutDayId=${data.workoutDayId}, color=${color}`);
+        if (data.workoutDayId) {
+          // Template workout - use template ID
+          key = data.workoutDayId;
+        } else {
+          // Quick workout - categorize by workout name (from muscle group logic)
+          if (data.workoutName.toLowerCase().includes('pull')) {
+            key = 'pull-workouts';
+          } else if (data.workoutName.toLowerCase().includes('push')) {
+            key = 'push-workouts';  
+          } else if (data.workoutName.toLowerCase().includes('leg')) {
+            key = 'leg-workouts';
+          } else {
+            key = 'other-workouts';
+          }
+        }
         
-        return { 
-          x: x + 20, 
-          y: y + 10, 
-          volume: data.volume, 
-          date: data.date,
-          workoutName: data.workoutName,
-          color 
-        };
+        if (!groupedData.has(key)) {
+          groupedData.set(key, []);
+        }
+        groupedData.get(key).push({ ...data, originalIndex });
+        console.log(`🔧 DEBUG: Added to group ${key}: ${data.workoutName} vol=${data.volume} date=${data.date}`);
       });
+      
+      console.log('🔧 DEBUG: Grouped data keys:', Array.from(groupedData.keys()));
+      groupedData.forEach((data, key) => {
+        console.log(`🔧 DEBUG: Group ${key} has ${data.length} items:`, data.map(d => `${d.volume}@${d.date.slice(0,10)}`));
+      });
+
+      // Create lines for each template
+      const templateLines = [];
+      
+      groupedData.forEach((templateData, key) => {
+        // Sort by date to ensure proper chronological order
+        templateData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        
+        let color, templateName;
+        
+        if (typeof key === 'number') {
+          // Template workout
+          color = getTemplateColor(key);
+          templateName = templates.find(t => t.id === key)?.name || `Template ${key}`;
+        } else {
+          // Categorized quick workout
+          switch (key) {
+            case 'pull-workouts':
+              color = '#FF3B30'; // Red for Pull
+              templateName = 'Pull Workouts';
+              break;
+            case 'push-workouts':
+              color = '#34C759'; // Green for Push
+              templateName = 'Push Workouts';
+              break;
+            case 'leg-workouts':
+              color = '#007AFF'; // Blue for Legs
+              templateName = 'Leg Workouts';
+              break;
+            default:
+              color = '#8E8E93'; // Grey for other
+              templateName = 'Other Workouts';
+          }
+        }
+        
+        // Create points for this template line using global chronological positioning
+        const points = templateData.map((data) => {
+          // Find the original index of this data point in the chronologically sorted volumeData
+          const globalIndex = volumeData.findIndex(vd => 
+            vd.date === data.date && vd.volume === data.volume && vd.sessionId === data.sessionId
+          );
+          
+          // Calculate x position based on global chronological order
+          const x = (globalIndex / Math.max(volumeData.length - 1, 1)) * (chartWidth - 40);
+          const normalizedValue = maxVolume > minVolume ? (data.volume - minVolume) / (maxVolume - minVolume) : 0.5;
+          const y = chartHeight - (normalizedValue * (chartHeight - 20));
+          
+          console.log(`🔧 DEBUG: Point for ${templateName}: globalIndex=${globalIndex}, x=${x}, vol=${data.volume}`);
+          
+          return {
+            x: x + 20,
+            y: y + 10,
+            volume: data.volume,
+            date: data.date,
+            workoutName: data.workoutName,
+            color,
+            globalIndex
+          };
+        });
+        
+        if (points.length > 0) {
+          templateLines.push({
+            templateId: key,
+            templateName,
+            color,
+            points,
+            dataCount: templateData.length
+          });
+        }
+        
+        console.log(`📈 Template Line: ${templateName} (${key}) - ${points.length} points, color: ${color}`);
+      });
+      
+      return templateLines;
     };
 
-    const points = createLinePoints();
+    const templateLines = createTemplateLines();
+    const totalDataPoints = templateLines.reduce((sum, line) => sum + line.dataCount, 0);
 
     return (
       <View style={styles.chartContainer}>
-        <Text style={styles.chartTitle}>Volume Progress</Text>
+        <Text style={styles.chartTitle}>Volume Progress by Template</Text>
         
         {/* Y-axis labels */}
         <View style={styles.yAxisLabels}>
@@ -411,7 +502,7 @@ export default function ProgressScreen() {
 
         {/* Chart area */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chartScrollView}>
-          <View style={[styles.chart, { width: Math.max(chartWidth, points.length * 60) }]}>
+          <View style={[styles.chart, { width: Math.max(chartWidth, totalDataPoints * 80) }]}>
             {/* Horizontal grid lines */}
             <View style={styles.gridLines}>
               <View style={[styles.gridLine, { top: 10 }]} />
@@ -419,82 +510,84 @@ export default function ProgressScreen() {
               <View style={[styles.gridLine, { top: chartHeight + 10 }]} />
             </View>
 
-            {/* Line chart */}
+            {/* Template Lines */}
             <View style={styles.lineContainer}>
-              {/* Connecting lines */}
-              {points.map((point, index) => {
-                if (index >= points.length - 1) return null;
-                
-                const nextPoint = points[index + 1];
-                const distance = Math.sqrt(
-                  Math.pow(nextPoint.x - point.x, 2) + Math.pow(nextPoint.y - point.y, 2)
-                );
-                const angle = Math.atan2(nextPoint.y - point.y, nextPoint.x - point.x) * (180 / Math.PI);
-                
-                console.log(`Line ${index}: from ${point.workoutName} (${point.color}) to ${nextPoint.workoutName} (${nextPoint.color})`);
-                
-                return (
-                  <View
-                    key={`line-${index}`}
-                    style={[
-                      {
-                        position: 'absolute',
-                        left: point.x,
-                        top: point.y,
-                        width: distance,
-                        height: 3,
-                        backgroundColor: point.color,
-                        borderRadius: 1.5,
-                        transform: [{ rotate: `${angle}deg` }],
-                        transformOrigin: 'left center',
-                      },
-                    ]}
-                  />
-                );
-              })}
-              
-              {/* Data points */}
-              {points.map((point, index) => (
-                <View key={`point-${index}`}>
-                  <View
-                    style={[
-                      styles.dataPoint,
-                      {
-                        position: 'absolute',
-                        left: point.x - 5,
-                        top: point.y - 5,
-                        backgroundColor: point.color,
-                        borderColor: '#FFFFFF',
-                      },
-                    ]}
-                  />
-                  {/* Date labels */}
-                  <Text
-                    style={[
-                      styles.dateLabel,
-                      {
-                        position: 'absolute',
-                        left: point.x - 20,
-                        top: chartHeight + 25,
-                      },
-                    ]}
-                  >
-                    {formatDate(point.date)}
-                  </Text>
-                  {/* Volume labels */}
-                  <Text
-                    style={[
-                      styles.volumeLabel,
-                      {
-                        position: 'absolute',
-                        left: point.x - 15,
-                        top: point.y - 25,
-                        color: point.color,
-                      },
-                    ]}
-                  >
-                    {Math.round(point.volume).toLocaleString()}
-                  </Text>
+              {templateLines.map((templateLine, templateIndex) => (
+                <View key={`template-${templateLine.templateId}`}>
+                  {/* Connecting lines for this template */}
+                  {templateLine.points.map((point, pointIndex) => {
+                    if (pointIndex >= templateLine.points.length - 1) return null;
+                    
+                    const nextPoint = templateLine.points[pointIndex + 1];
+                    const distance = Math.sqrt(
+                      Math.pow(nextPoint.x - point.x, 2) + Math.pow(nextPoint.y - point.y, 2)
+                    );
+                    const angle = Math.atan2(nextPoint.y - point.y, nextPoint.x - point.x) * (180 / Math.PI);
+                    
+                    return (
+                      <View
+                        key={`line-${templateIndex}-${pointIndex}`}
+                        style={[
+                          {
+                            position: 'absolute',
+                            left: point.x,
+                            top: point.y,
+                            width: distance,
+                            height: 3,
+                            backgroundColor: templateLine.color,
+                            borderRadius: 1.5,
+                            transform: [{ rotate: `${angle}deg` }],
+                            transformOrigin: 'left center',
+                          },
+                        ]}
+                      />
+                    );
+                  })}
+                  
+                  {/* Data points for this template */}
+                  {templateLine.points.map((point, pointIndex) => (
+                    <View key={`point-${templateIndex}-${pointIndex}`}>
+                      <View
+                        style={[
+                          styles.dataPoint,
+                          {
+                            position: 'absolute',
+                            left: point.x - 5,
+                            top: point.y - 5,
+                            backgroundColor: templateLine.color,
+                            borderColor: '#FFFFFF',
+                          },
+                        ]}
+                      />
+                      {/* Date labels */}
+                      <Text
+                        style={[
+                          styles.dateLabel,
+                          {
+                            position: 'absolute',
+                            left: point.x - 20,
+                            top: chartHeight + 25,
+                          },
+                        ]}
+                      >
+                        {formatDate(point.date)}
+                      </Text>
+                      {/* Volume labels */}
+                      <Text
+                        style={[
+                          styles.volumeLabel,
+                          {
+                            position: 'absolute',
+                            left: point.x - 15,
+                            top: point.y - 25,
+                            color: templateLine.color,
+                          },
+                        ]}
+                      >
+                        {Math.round(point.volume).toLocaleString()}
+                      </Text>
+                    </View>
+                  ))}
                 </View>
               ))}
             </View>

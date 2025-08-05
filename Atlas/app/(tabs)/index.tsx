@@ -284,7 +284,12 @@ export default function HomeScreen() {
       >
         {/* Welcome Section */}
         <View style={styles.welcomeSection}>
-          <Text style={styles.welcomeTitle}>Ready to Train?</Text>
+          <Text style={styles.welcomeTitle}>
+            {authService.getCurrentUsername() ? 
+              `Welcome back, ${authService.getCurrentUsername()}!` : 
+              'Ready to Train?'
+            }
+          </Text>
           <Text style={styles.welcomeSubtitle}>
             {exercises.length} exercises available
           </Text>
