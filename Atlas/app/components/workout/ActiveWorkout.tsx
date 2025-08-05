@@ -103,6 +103,8 @@ export default function ActiveWorkout({
   onBack,
   templateId
 }: ActiveWorkoutProps) {
+  console.log('🔧 ActiveWorkout started with templateId:', templateId);
+  
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   
@@ -148,8 +150,10 @@ export default function ActiveWorkout({
 
   const ensureSession = async () => {
     if (!currentSession) {
+      console.log('🔧 Creating session with templateId:', templateId);
       const session = await apiService.createSession(templateId);
       if (session) {
+        console.log('🔧 Session created successfully:', session);
         setCurrentSession(session);
         return session;
       }
