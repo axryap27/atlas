@@ -43,7 +43,7 @@ interface WorkoutTemplate {
 }
 
 interface TemplatesProps {
-  onNavigate: (screen: WorkoutScreen, exercises?: Exercise[]) => void;
+  onNavigate: (screen: WorkoutScreen, exercises?: Exercise[], templateId?: number) => void;
   onBack: () => void;
   needsRefresh?: boolean;
   onRefreshed?: () => void;
@@ -125,7 +125,8 @@ export default function Templates({ onNavigate, onBack, needsRefresh, onRefreshe
       notes: dayExercise.notes || "",
     }));
 
-    onNavigate('active', templateExercises);
+    console.log('🔧 Templates.tsx: Starting template with ID:', template.id);
+    onNavigate('active', templateExercises, template.id);
   };
 
   const handleCreateTemplate = () => {
