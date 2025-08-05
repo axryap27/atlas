@@ -139,13 +139,19 @@ export default function ProgressScreen() {
         .filter(session => {
           const isCompleted = !!session.end_time;
           
-          // If no templates are selected or session has no template, show all completed workouts
-          if (selectedTemplates.length === 0 || !session.workout_day_id) {
-            console.log(`🔍 Session ${session.id}: Quick workout, isCompleted=${isCompleted}`);
-            return isCompleted;
+          // If no templates are selected, show no data
+          if (selectedTemplates.length === 0) {
+            console.log(`🔍 Session ${session.id}: No templates selected, filtering out`);
+            return false;
           }
           
-          // If templates are selected, only show matching template workouts
+          // If session has no template (Quick Workout), don't show it when filtering by templates
+          if (!session.workout_day_id) {
+            console.log(`🔍 Session ${session.id}: Quick workout, filtering out when templates selected`);
+            return false;
+          }
+          
+          // Only show sessions from selected templates
           const isSelectedTemplate = selectedTemplates.includes(session.workout_day_id);
           console.log(`🔍 Session ${session.id}: Template workout, isSelectedTemplate=${isSelectedTemplate}, isCompleted=${isCompleted}`);
           
@@ -458,16 +464,24 @@ export default function ProgressScreen() {
             vd.date === data.date && vd.volume === data.volume && vd.sessionId === data.sessionId
           );
           
-          // Calculate x position based on global chronological order
-          const x = (globalIndex / Math.max(volumeData.length - 1, 1)) * (chartWidth - 40);
-          const normalizedValue = maxVolume > minVolume ? (data.volume - minVolume) / (maxVolume - minVolume) : 0.5;
-          const y = chartHeight - (normalizedValue * (chartHeight - 20));
+          // Calculate accurate positioning
+          const chartPadding = 20;
+          const availableWidth = chartWidth - 80 - (chartPadding * 2); // Account for margins and padding
+          const availableHeight = chartHeight - (chartPadding * 2);
           
-          console.log(`🔧 DEBUG: Point for ${templateName}: globalIndex=${globalIndex}, x=${x}, vol=${data.volume}`);
+          // X position based on global chronological order
+          const x = (globalIndex / Math.max(volumeData.length - 1, 1)) * availableWidth;
+          
+          // Y position with accurate scaling
+          const normalizedValue = maxVolume > minVolume ? 
+            (data.volume - minVolume) / (maxVolume - minVolume) : 0.5;
+          const y = availableHeight - (normalizedValue * availableHeight);
+          
+          console.log(`🔧 DEBUG: Point for ${templateName}: vol=${data.volume}, normalized=${normalizedValue.toFixed(3)}, y=${y.toFixed(1)}`);
           
           return {
-            x: x + 20,
-            y: y + 10,
+            x: x + chartPadding,
+            y: y + chartPadding,
             volume: data.volume,
             date: data.date,
             workoutName: data.workoutName,
@@ -507,13 +521,12 @@ export default function ProgressScreen() {
         </View>
 
         {/* Chart area */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chartScrollView}>
-          <View style={[styles.chart, { width: Math.max(chartWidth, totalDataPoints * 80) }]}>
+        <View style={[styles.chart, { width: chartWidth }]}>
             {/* Horizontal grid lines */}
             <View style={styles.gridLines}>
-              <View style={[styles.gridLine, { top: 10 }]} />
-              <View style={[styles.gridLine, { top: chartHeight * 0.5 + 10 }]} />
-              <View style={[styles.gridLine, { top: chartHeight + 10 }]} />
+              <View style={[styles.gridLine, { top: 20 }]} />
+              <View style={[styles.gridLine, { top: chartHeight * 0.5 + 20 }]} />
+              <View style={[styles.gridLine, { top: chartHeight + 20 }]} />
             </View>
 
             {/* Template Lines */}
@@ -539,9 +552,10 @@ export default function ProgressScreen() {
                             left: point.x,
                             top: point.y,
                             width: distance,
-                            height: 3,
+                            height: 2.5,
                             backgroundColor: templateLine.color,
-                            borderRadius: 1.5,
+                            borderRadius: 1.25,
+                            opacity: 0.9,
                             transform: [{ rotate: `${angle}deg` }],
                             transformOrigin: 'left center',
                           },
@@ -558,8 +572,8 @@ export default function ProgressScreen() {
                           styles.dataPoint,
                           {
                             position: 'absolute',
-                            left: point.x - 5,
-                            top: point.y - 5,
+                            left: point.x - 4,
+                            top: point.y - 4,
                             backgroundColor: templateLine.color,
                             borderColor: '#FFFFFF',
                           },
@@ -597,8 +611,7 @@ export default function ProgressScreen() {
                 </View>
               ))}
             </View>
-          </View>
-        </ScrollView>
+        </View>
       </View>
     );
   };
@@ -925,9 +938,14 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   },
   chartContainer: {
     backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: isDark ? 0.3 : 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   emptyChart: {
     height: 200,
@@ -947,10 +965,12 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     marginTop: 4,
   },
   chartTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '700',
     color: isDark ? '#FFFFFF' : '#000000',
-    marginBottom: 16,
+    marginBottom: 20,
+    textAlign: 'center',
+    letterSpacing: 0.5,
   },
   yAxisLabels: {
     position: 'absolute',
@@ -961,14 +981,14 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     width: 50,
   },
   yAxisLabel: {
-    fontSize: 12,
-    color: '#8E8E93',
+    fontSize: 11,
+    fontWeight: '500',
+    color: isDark ? '#8E8E93' : '#6D6D70',
     textAlign: 'right',
-  },
-  chartScrollView: {
-    marginLeft: 60,
+    fontVariant: ['tabular-nums'],
   },
   chart: {
+    marginLeft: 60,
     height: chartHeight + 60,
     position: 'relative',
   },
@@ -983,7 +1003,8 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     left: 0,
     right: 0,
     height: 1,
-    backgroundColor: '#E5E5EA',
+    backgroundColor: isDark ? '#2C2C2E' : '#F2F2F7',
+    opacity: 0.6,
   },
   lineContainer: {
     position: 'absolute',
@@ -997,15 +1018,16 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     backgroundColor: 'transparent', // Allow inline backgroundColor to override
   },
   dataPoint: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     borderWidth: 2,
+    borderColor: isDark ? '#1C1C1E' : '#FFFFFF',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 3,
+    shadowOpacity: isDark ? 0.4 : 0.2,
+    shadowRadius: 3,
+    elevation: 4,
   },
   dateLabel: {
     fontSize: 10,
