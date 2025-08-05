@@ -42,18 +42,25 @@ export type { Exercise, Set, TemplateExercise, WorkoutTemplate };
 export default function WorkoutScreen() {
   const [currentScreen, setCurrentScreen] = useState<WorkoutScreen>("start");
   const [selectedExercises, setSelectedExercises] = useState<Exercise[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<number | undefined>();
   const [templatesNeedRefresh, setTemplatesNeedRefresh] = useState(false);
 
-  const handleNavigate = (screen: WorkoutScreen, exercises?: Exercise[]) => {
+  const handleNavigate = (screen: WorkoutScreen, exercises?: Exercise[], templateId?: number) => {
+    console.log('🔧 workout.tsx: handleNavigate called with templateId:', templateId);
     setCurrentScreen(screen);
     if (exercises) {
       setSelectedExercises(exercises);
+    }
+    if (templateId !== undefined) {
+      setSelectedTemplateId(templateId);
+      console.log('🔧 workout.tsx: selectedTemplateId set to:', templateId);
     }
   };
 
   const handleBackToStart = () => {
     setCurrentScreen("start");
     setSelectedExercises([]);
+    setSelectedTemplateId(undefined);
   };
 
   const handleBackToTemplates = () => {
@@ -95,11 +102,13 @@ export default function WorkoutScreen() {
       );
 
     case "active":
+      console.log('🔧 workout.tsx: Rendering ActiveWorkout with templateId:', selectedTemplateId);
       return (
         <ActiveWorkout
           initialExercises={selectedExercises}
           onNavigate={handleNavigate}
           onBack={handleBackToStart}
+          templateId={selectedTemplateId}
         />
       );
 
