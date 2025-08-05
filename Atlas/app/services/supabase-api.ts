@@ -426,15 +426,53 @@ export const supabaseApi = {
   },
 
   async deleteSession(id: number): Promise<void> {
-    const { error } = await supabase
+    const userId = getCurrentUserId()
+    
+    // Get the session being deleted to find its start_time
+    const { data: sessionToDelete } = await supabase
+      .from('sessions')
+      .select('start_time, user_id')
+      .eq('id', id)
+      .single()
+    
+    if (!sessionToDelete) {
+      throw new Error('Session not found')
+    }
+    
+    // Verify user owns this session
+    if (sessionToDelete.user_id !== userId) {
+      throw new Error('Unauthorized: Cannot delete session belonging to another user')
+    }
+    
+    // Delete the session (cascade will handle set_logs)
+    const { error: deleteError } = await supabase
       .from('sessions')
       .delete()
       .eq('id', id)
     
+    if (deleteError) {
+      console.error('Error deleting session:', deleteError)
+      throw deleteError
+    }
+    
+    console.log(`✅ Successfully deleted session ${id} and all related data`)
+  },
+
+  async deleteAllSessions(userId?: string): Promise<void> {
+    const actualUserId = userId || getCurrentUserId()
+    
+    // Delete all sessions for the user (cascade will handle set_logs)
+    const { error } = await supabase
+      .from('sessions')
+      .delete()
+      .eq('user_id', actualUserId)
+    
     if (error) {
-      console.error('Error deleting session:', error)
+      console.error('Error deleting all sessions:', error)
       throw error
     }
+    
+    console.log(`✅ Successfully deleted all sessions and related data for user ${actualUserId}`)
   },
 
   // ===== SET LOGS =====
