@@ -31,6 +31,7 @@ interface RecentWorkoutsProps {
   onViewWorkout?: (sessionId: number) => void;
   showDebugTools?: boolean; // Add debug prop
   refreshTrigger?: number; // Add prop to trigger refresh from outside
+  onWorkoutDeleted?: () => void; // Callback when workout is deleted
 }
 
 const apiService = {
@@ -63,15 +64,7 @@ const apiService = {
 
   deleteAllSessions: async (): Promise<boolean> => {
     try {
-      // Get all sessions first
-      const sessions = await supabaseApi.getUserSessions(1, 1000); // Get all sessions
-      
-      // Delete each session
-      const deletePromises = sessions.map(session => 
-        supabaseApi.deleteSession(session.id)
-      );
-
-      await Promise.all(deletePromises);
+      await supabaseApi.deleteAllSessions();
       return true;
     } catch (error) {
       console.error('Error deleting all sessions:', error);
@@ -80,7 +73,7 @@ const apiService = {
   },
 };
 
-export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, refreshTrigger }: RecentWorkoutsProps) {
+export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, refreshTrigger, onWorkoutDeleted }: RecentWorkoutsProps) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
@@ -263,6 +256,8 @@ export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, 
             const success = await apiService.deleteAllSessions();
             if (success) {
               setSessions([]);
+              // Notify parent component that workouts were deleted
+              onWorkoutDeleted?.();
               Alert.alert("Success", "All workout sessions deleted");
             } else {
               Alert.alert("Error", "Failed to delete all sessions");
@@ -413,6 +408,8 @@ export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, 
                   setSessions(prev => prev.filter(s => s.id !== sessionId));
                   delete animationRefs.current[sessionId];
                   delete swipeAnimationRefs.current[sessionId];
+                  // Notify parent component that a workout was deleted
+                  onWorkoutDeleted?.();
                 } else {
                   // If delete failed, restore the session
                   if (animationRefs.current[sessionId]) {
