@@ -252,11 +252,13 @@ export const supabaseApi = {
   },
 
   async deleteTemplate(id: number, userId?: string): Promise<void> {
+    const currentUserId = userId || getCurrentUserId()
+    
     const { error } = await supabase
       .from('workout_days')
       .delete()
       .eq('id', id)
-      .eq('user_id', userId)
+      .eq('user_id', currentUserId)
       .eq('is_template', true)
     
     if (error) {
