@@ -441,6 +441,9 @@ export default function ProgressScreen() {
 
     const maxVolume = getMaxVolume();
     const minVolume = Math.min(...volumeData.map((d) => d.volume), 0);
+    
+    // Get all unique dates for x-axis positioning
+    const uniqueDates = [...new Set(volumeData.map(d => d.date.split('T')[0]))].sort();
 
     // Group data by template and create separate lines
     const createTemplateLines = () => {
@@ -513,7 +516,7 @@ export default function ProgressScreen() {
             }
           }
 
-          // Create points for this template line using global chronological positioning
+          // Create points for this template line using date-based positioning
           const points: ChartPoint[] = templateData.map(
             (data: VolumeData): ChartPoint => {
               // Find the original index of this data point in the chronologically sorted volumeData
@@ -529,9 +532,11 @@ export default function ProgressScreen() {
               const availableWidth = chartWidth - 80 - chartPadding * 2; // Account for margins and padding
               const availableHeight = chartHeight - chartPadding * 2;
 
-              // X position based on global chronological order
+              // X position based on date index (same date = same x position)
+              const dateOnly = data.date.split('T')[0];
+              const dateIndex = uniqueDates.indexOf(dateOnly);
               const x =
-                (globalIndex / Math.max(volumeData.length - 1, 1)) *
+                (dateIndex / Math.max(uniqueDates.length - 1, 1)) *
                 availableWidth;
 
               // Y position with accurate scaling
@@ -680,19 +685,6 @@ export default function ProgressScreen() {
                       }}
                       activeOpacity={0.7}
                     />
-                    {/* Date labels */}
-                    <Text
-                      style={[
-                        styles.dateLabel,
-                        {
-                          position: "absolute",
-                          left: point.x - 20,
-                          top: chartHeight + 25,
-                        },
-                      ]}
-                    >
-                      {formatDate(point.date)}
-                    </Text>
                     {/* Volume labels - only show for selected point */}
                     {selectedDataPoint && 
                      selectedDataPoint.templateIndex === templateIndex &&
@@ -715,6 +707,31 @@ export default function ProgressScreen() {
                 ))}
               </View>
             ))}
+          </View>
+          
+          {/* Date labels - show once per unique date */}
+          <View style={styles.dateLabelsContainer}>
+            {uniqueDates.map((dateString, index) => {
+              const chartPadding = 20;
+              const availableWidth = chartWidth - 80 - chartPadding * 2;
+              const x = (index / Math.max(uniqueDates.length - 1, 1)) * availableWidth;
+              
+              return (
+                <Text
+                  key={dateString}
+                  style={[
+                    styles.dateLabel,
+                    {
+                      position: "absolute",
+                      left: x + chartPadding - 20,
+                      top: chartHeight + 25,
+                    },
+                  ]}
+                >
+                  {formatDate(dateString + 'T00:00:00')}
+                </Text>
+              );
+            })}
           </View>
         </View>
       </View>
@@ -1154,6 +1171,11 @@ const getStyles = (isDark: boolean) =>
       position: "absolute",
       width: "100%",
       height: "100%",
+    },
+    dateLabelsContainer: {
+      position: "absolute",
+      width: "100%",
+      height: 40,
     },
     lineSegment: {
       height: 3,
