@@ -100,6 +100,10 @@ export default function ProgressScreen() {
           setTemplates(templatesData);
           console.log("🔄 Refreshed templates on focus:", templatesData.length);
 
+          // Remove deleted templates from selectedTemplates
+          const currentTemplateIds = templatesData.map(t => t.id);
+          setSelectedTemplates(prev => prev.filter(id => currentTemplateIds.includes(id)));
+
           // Also refresh volume data if templates are selected
           if (selectedTemplates.length > 0) {
             loadVolumeData();
