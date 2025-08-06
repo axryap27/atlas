@@ -110,12 +110,6 @@ export default function AuthScreen() {
                 source={require('../../../assets/images/atlas-logo.png')}
                 style={styles.logo}
                 resizeMode="contain"
-                onError={(error) => {
-                  console.log('Logo failed to load:', error);
-                }}
-                onLoad={() => {
-                  console.log('Logo loaded successfully');
-                }}
               />
             </View>
             <Text style={styles.title}>Atlas</Text>

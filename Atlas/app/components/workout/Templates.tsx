@@ -125,7 +125,6 @@ export default function Templates({ onNavigate, onBack, needsRefresh, onRefreshe
       notes: dayExercise.notes || "",
     }));
 
-    console.log('🔧 Templates.tsx: Starting template with ID:', template.id);
     onNavigate('active', templateExercises, template.id);
   };
 

@@ -106,15 +106,9 @@ export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, 
       // Load templates first
       const templatesData = await supabaseApi.getTemplates();
       setTemplates(templatesData);
-      console.log('🏠 Templates loaded for recent workouts:', templatesData.map(t => `${t.id}: ${t.name}`));
       
       const recentSessions = await apiService.getRecentSessions();
       
-      // Debug: Log the session data to see what we're getting
-      console.log('🏠 Recent sessions count:', recentSessions.length);
-      recentSessions.forEach(session => {
-        console.log(`🏠 Session ${session.id}: workout_day_id=${session.workout_day_id}, workoutDay=${session.workoutDay?.name}`);
-      });
       
       // Initialize animation values for new sessions
       recentSessions.forEach(session => {
@@ -210,16 +204,13 @@ export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, 
   };
 
   const getWorkoutName = (session: WorkoutSession) => {
-    console.log(`🏠 DEBUG getWorkoutName: sessionId=${session.id}, workout_day_id=${session.workout_day_id}, templates.length=${templates.length}`);
     
     // Look up template name manually using workout_day_id
     if (session.workout_day_id) {
       const template = templates.find(t => t.id === session.workout_day_id);
       if (template) {
-        console.log(`🏠 Session ${session.id}: workout_day_id=${session.workout_day_id}, resolved name=${template.name}`);
         return template.name;
       } else {
-        console.log(`🏠 Session ${session.id}: workout_day_id=${session.workout_day_id}, template not found in ${templates.length} templates`);
         return `Template ${session.workout_day_id}`;
       }
     }
@@ -227,8 +218,6 @@ export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, 
     // For Quick Workouts, try to categorize based on exercises
     const muscleGroups = getTopMuscleGroups(session);
     const stats = getWorkoutStats(session);
-    
-    console.log(`🏠 Session ${session.id}: Quick Workout - muscle groups: ${muscleGroups.join(',')}, volume: ${stats.volume}`);
     
     // Simple categorization logic based on muscle groups or volume
     if (muscleGroups.some(group => group?.toLowerCase().includes('back') || group?.toLowerCase().includes('lats'))) {

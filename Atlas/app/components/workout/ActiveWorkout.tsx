@@ -74,7 +74,6 @@ const apiService = {
   finishSession: async (sessionId: number) => {
     try {
       await supabaseApi.completeSession(sessionId);
-      console.log('Session completed successfully');
     } catch (error) {
       console.error('Error finishing session:', error);
     }
@@ -90,7 +89,6 @@ const apiService = {
       };
       
       await supabaseApi.logSet(sessionId, setData);
-      console.log('Set logged successfully');
     } catch (error) {
       console.error('Error logging set:', error);
     }
@@ -103,7 +101,6 @@ export default function ActiveWorkout({
   onBack,
   templateId
 }: ActiveWorkoutProps) {
-  console.log('🔧 ActiveWorkout started with templateId:', templateId);
   
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
@@ -150,10 +147,8 @@ export default function ActiveWorkout({
 
   const ensureSession = async () => {
     if (!currentSession) {
-      console.log('🔧 Creating session with templateId:', templateId);
       const session = await apiService.createSession(templateId);
       if (session) {
-        console.log('🔧 Session created successfully:', session);
         setCurrentSession(session);
         return session;
       }
@@ -165,10 +160,6 @@ export default function ActiveWorkout({
     try {
       setLoading(true);
       const exercisesData = await apiService.getExercises();
-      
-      console.log('🎯 ACTIVE WORKOUT: Loaded exercises count:', exercisesData.length);
-      console.log('🎯 ACTIVE WORKOUT: First 3 exercises muscle groups:', 
-        exercisesData.slice(0, 3).map(e => `${e.name}: ${e.muscleGroup}`));
       
       setAvailableExercises(exercisesData);
     } catch (error) {
