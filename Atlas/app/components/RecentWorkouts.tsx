@@ -427,7 +427,7 @@ export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color="#84CC16" />
         <Text style={styles.loadingText}>Loading recent workouts...</Text>
       </View>
     );
@@ -445,11 +445,11 @@ export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, 
             <Ionicons 
               name={allWorkoutsHidden ? "eye-off" : "eye"} 
               size={20} 
-              color="#007AFF" 
+              color="#84CC16" 
             />
           </TouchableOpacity>
           <TouchableOpacity onPress={handleRefresh} style={styles.headerButton}>
-            <Ionicons name="refresh" size={20} color="#007AFF" />
+            <Ionicons name="refresh" size={20} color="#84CC16" />
           </TouchableOpacity>
           {showDebugTools && (
             <TouchableOpacity onPress={handleDeleteAllSessions} style={styles.deleteButton}>
@@ -484,7 +484,7 @@ export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, 
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              tintColor="#007AFF"
+              tintColor="#84CC16"
             />
           }
         >
@@ -649,6 +649,7 @@ export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, 
 const getStyles = (isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: isDark ? '#2A2A2A' : '#F8FAFC',
   },
   header: {
     flexDirection: 'row',
@@ -657,12 +658,12 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
+    borderBottomColor: isDark ? '#334155' : '#E5E5EA',
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#000000',
+    color: isDark ? '#F1F5F9' : '#334155',
   },
   headerActions: {
     flexDirection: 'row',
@@ -683,7 +684,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
-    color: '#8E8E93',
+    color: isDark ? '#94A3B8' : '#64748B',
     marginTop: 12,
   },
   emptyState: {
@@ -696,13 +697,13 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   emptyStateTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#8E8E93',
+    color: isDark ? '#94A3B8' : '#64748B',
     marginTop: 16,
     marginBottom: 8,
   },
   emptyStateSubtitle: {
     fontSize: 14,
-    color: '#8E8E93',
+    color: isDark ? '#94A3B8' : '#64748B',
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -745,7 +746,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     zIndex: 2,
   },
   workoutCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: isDark ? '#334155' : '#FFFFFF',
     borderRadius: 12,
     padding: 16,
     shadowColor: '#000000',
@@ -766,17 +767,17 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   cardTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#000000',
+    color: isDark ? '#F1F5F9' : '#334155',
     marginBottom: 4,
   },
   cardDate: {
     fontSize: 14,
-    color: '#8E8E93',
+    color: isDark ? '#94A3B8' : '#64748B',
   },
   durationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F2F2F7',
+    backgroundColor: isDark ? '#334155' : '#F8FAFC',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
@@ -785,7 +786,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   durationText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#8E8E93',
+    color: isDark ? '#94A3B8' : '#64748B',
   },
   statsContainer: {
     flexDirection: 'row',
@@ -800,12 +801,12 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   statValue: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#007AFF',
+    color: '#84CC16',
     marginBottom: 2,
   },
   statLabel: {
     fontSize: 12,
-    color: '#8E8E93',
+    color: isDark ? '#94A3B8' : '#64748B',
     textAlign: 'center',
   },
   muscleGroupsContainer: {
@@ -815,7 +816,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     marginBottom: 12,
   },
   muscleGroupTag: {
-    backgroundColor: '#E3F2FD',
+    backgroundColor: isDark ? '#2A2A2A' : '#F0FDF4',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
@@ -823,7 +824,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   muscleGroupText: {
     fontSize: 12,
     fontWeight: '500',
-    color: '#007AFF',
+    color: '#84CC16',
   },
   statusContainer: {
     flexDirection: 'row',
@@ -831,7 +832,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     alignItems: 'center',
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: '#F2F2F7',
+    borderTopColor: isDark ? '#2A2A2A' : '#F8FAFC',
   },
   statusLeft: {
     flex: 1,
@@ -849,7 +850,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   statusCompletedText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#34C759',
+    color: '#65A30D',
   },
   statusIncomplete: {
     flexDirection: 'row',

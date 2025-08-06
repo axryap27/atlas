@@ -545,7 +545,7 @@ export default function ActiveWorkout({
         <View style={styles.header}>
           <View style={styles.headerTop}>
             <TouchableOpacity onPress={handleEndWorkout} style={styles.backButton}>
-              <Ionicons name="chevron-back" size={24} color="#007AFF" />
+              <Ionicons name="chevron-back" size={24} color="#84CC16" />
               <Text style={styles.backText}>End Workout</Text>
             </TouchableOpacity>
             
@@ -580,7 +580,7 @@ export default function ActiveWorkout({
           style={styles.addExerciseButton} 
           onPress={() => setShowExercisePicker(true)}
         >
-          <Ionicons name="add" size={24} color="#007AFF" />
+          <Ionicons name="add" size={24} color="#84CC16" />
           <Text style={styles.addExerciseText}>Add Exercise</Text>
         </TouchableOpacity>
 
@@ -680,7 +680,7 @@ export default function ActiveWorkout({
                             style={[styles.incrementButton, styles.incrementButtonLeft]} 
                             onPress={() => handleRepsDecrement(exercise.id, set.id)}
                           >
-                            <Ionicons name="remove" size={16} color="#007AFF" />
+                            <Ionicons name="remove" size={16} color="#84CC16" />
                           </TouchableOpacity>
                           
                           <TextInput
@@ -697,7 +697,7 @@ export default function ActiveWorkout({
                             style={[styles.incrementButton, styles.incrementButtonRight]} 
                             onPress={() => handleRepsIncrement(exercise.id, set.id)}
                           >
-                            <Ionicons name="add" size={16} color="#007AFF" />
+                            <Ionicons name="add" size={16} color="#84CC16" />
                           </TouchableOpacity>
                         </View>
                         
@@ -709,7 +709,7 @@ export default function ActiveWorkout({
                             <Ionicons 
                               name={set.completed ? "checkmark" : "ellipse-outline"} 
                               size={20} 
-                              color={set.completed ? "#FFFFFF" : "#007AFF"} 
+                              color={set.completed ? "#FFFFFF" : "#84CC16"} 
                             />
                           </TouchableOpacity>
 
@@ -728,7 +728,7 @@ export default function ActiveWorkout({
                       style={styles.addSetButton}
                       onPress={() => handleAddSet(exercise.id)}
                     >
-                      <Ionicons name="add" size={20} color="#007AFF" />
+                      <Ionicons name="add" size={20} color="#84CC16" />
                       <Text style={styles.addSetButtonText}>Add Set</Text>
                     </TouchableOpacity>
                       </>
@@ -826,7 +826,7 @@ export default function ActiveWorkout({
                     <Text style={styles.exercisePickerName}>{exercise.name}</Text>
                     <Text style={styles.exercisePickerMuscle}>{exercise.muscleGroup || "Unknown"}</Text>
                   </View>
-                  <Ionicons name="add-circle" size={24} color="#007AFF" />
+                  <Ionicons name="add-circle" size={24} color="#84CC16" />
                 </TouchableOpacity>
               ))
             ) : (
@@ -847,7 +847,7 @@ export default function ActiveWorkout({
 const getStyles = (isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F2F2F7",
+    backgroundColor: isDark ? '#2A2A2A' : '#F8FAFC',
   },
   scrollView: {
     flex: 1,

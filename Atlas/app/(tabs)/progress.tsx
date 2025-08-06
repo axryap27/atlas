@@ -402,7 +402,7 @@ export default function ProgressScreen() {
     ) {
       color = "#34C759"; // Green for Push
     } else if (templateName.includes("leg") || templateName.includes("squat")) {
-      color = "#007AFF"; // Blue for Legs
+      color = "#84CC16"; // Green for Legs
     } else {
       // Fallback to position-based colors for other templates
       const colors = [
@@ -425,7 +425,7 @@ export default function ProgressScreen() {
     if (volumeData.length === 0) {
       return (
         <View style={[styles.chartContainer, styles.emptyChart]}>
-          <Ionicons name="analytics-outline" size={48} color="#C7C7CC" />
+          <Ionicons name="analytics-outline" size={48} color="#94A3B8" />
           <Text style={styles.emptyChartText}>No workout data available</Text>
           <Text style={styles.emptyChartSubtext}>
             Complete some workouts to see your progress
@@ -507,11 +507,11 @@ export default function ProgressScreen() {
                 templateName = "Push Workouts";
                 break;
               case "leg-workouts":
-                color = "#007AFF"; // Blue for Legs
+                color = "#84CC16"; // Green for Legs
                 templateName = "Leg Workouts";
                 break;
               default:
-                color = "#8E8E93"; // Grey for other
+                color = "#94A3B8"; // Grey for other
                 templateName = "Other Workouts";
             }
           }
@@ -775,7 +775,7 @@ export default function ProgressScreen() {
                 }}
                 style={styles.refreshButton}
               >
-                <Ionicons name="refresh" size={20} color="#007AFF" />
+                <Ionicons name="refresh" size={20} color="#84CC16" />
               </TouchableOpacity>
             </View>
             <TouchableOpacity onPress={() => setShowTemplateSelector(false)}>
@@ -807,7 +807,7 @@ export default function ProgressScreen() {
                   <Ionicons
                     name={isSelected ? "checkmark-circle" : "ellipse-outline"}
                     size={24}
-                    color={isSelected ? "#007AFF" : "#C7C7CC"}
+                    color={isSelected ? "#84CC16" : "#94A3B8"}
                   />
                 </TouchableOpacity>
               );
@@ -830,7 +830,7 @@ export default function ProgressScreen() {
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => setShowTemplateStats(false)}>
-              <Ionicons name="arrow-back" size={24} color="#007AFF" />
+              <Ionicons name="arrow-back" size={24} color="#84CC16" />
             </TouchableOpacity>
             <Text style={styles.modalTitle}>
               {selectedTemplateStats.templateName}
@@ -964,7 +964,7 @@ export default function ProgressScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
+          <ActivityIndicator size="large" color="#84CC16" />
           <Text style={styles.loadingText}>Loading progress data...</Text>
         </View>
       </SafeAreaView>
@@ -985,7 +985,7 @@ export default function ProgressScreen() {
             activeOpacity={0.7}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Ionicons name="filter" size={16} color="#007AFF" />
+            <Ionicons name="filter" size={16} color="#84CC16" />
             <Text style={styles.filterButtonText}>
               {selectedTemplates.length === 0
                 ? "Select workouts to view"
@@ -1060,7 +1060,7 @@ const getStyles = (isDark: boolean) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: isDark ? "#000000" : "#F2F2F7",
+      backgroundColor: isDark ? "#2A2A2A" : "#F8FAFC",
     },
     scrollView: {
       flex: 1,
@@ -1073,7 +1073,7 @@ const getStyles = (isDark: boolean) =>
     },
     loadingText: {
       fontSize: 16,
-      color: isDark ? "#FFFFFF" : "#8E8E93",
+      color: isDark ? "#94A3B8" : "#64748B",
     },
     filterContainer: {
       marginBottom: 20,
@@ -1081,7 +1081,7 @@ const getStyles = (isDark: boolean) =>
     filterButton: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+      backgroundColor: isDark ? "#334155" : "#FFFFFF",
       paddingHorizontal: 16,
       paddingVertical: 12,
       borderRadius: 8,
@@ -1095,10 +1095,10 @@ const getStyles = (isDark: boolean) =>
     },
     filterButtonText: {
       fontSize: 16,
-      color: "#007AFF",
+      color: "#84CC16",
     },
     chartContainer: {
-      backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+      backgroundColor: isDark ? "#334155" : "#FFFFFF",
       borderRadius: 16,
       padding: 20,
       marginBottom: 24,
@@ -1116,19 +1116,19 @@ const getStyles = (isDark: boolean) =>
     emptyChartText: {
       fontSize: 18,
       fontWeight: "600",
-      color: "#8E8E93",
+      color: "#94A3B8",
       marginTop: 12,
     },
     emptyChartSubtext: {
       fontSize: 14,
-      color: "#8E8E93",
+      color: "#94A3B8",
       textAlign: "center",
       marginTop: 4,
     },
     chartTitle: {
       fontSize: 20,
       fontWeight: "700",
-      color: isDark ? "#FFFFFF" : "#000000",
+      color: isDark ? "#F1F5F9" : "#334155",
       marginBottom: 20,
       textAlign: "center",
       letterSpacing: 0.5,
@@ -1144,7 +1144,7 @@ const getStyles = (isDark: boolean) =>
     yAxisLabel: {
       fontSize: 11,
       fontWeight: "500",
-      color: isDark ? "#8E8E93" : "#6D6D70",
+      color: isDark ? "#94A3B8" : "#64748B",
       textAlign: "right",
       fontVariant: ["tabular-nums"],
     },
@@ -1164,7 +1164,7 @@ const getStyles = (isDark: boolean) =>
       left: 0,
       right: 0,
       height: 1,
-      backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
+      backgroundColor: isDark ? "#475569" : "#E2E8F0",
       opacity: 0.6,
     },
     lineContainer: {
@@ -1188,7 +1188,7 @@ const getStyles = (isDark: boolean) =>
       height: 8,
       borderRadius: 4,
       borderWidth: 2,
-      borderColor: isDark ? "#1C1C1E" : "#FFFFFF",
+      borderColor: isDark ? "#334155" : "#FFFFFF",
       shadowColor: "#000000",
       shadowOffset: { width: 0, height: 1 },
       shadowOpacity: isDark ? 0.4 : 0.2,
@@ -1197,7 +1197,7 @@ const getStyles = (isDark: boolean) =>
     },
     dateLabel: {
       fontSize: 10,
-      color: "#8E8E93",
+      color: "#94A3B8",
       textAlign: "center",
       width: 40,
       transform: [{ rotate: "-45deg" }],
@@ -1212,7 +1212,7 @@ const getStyles = (isDark: boolean) =>
       paddingVertical: 2,
     },
     legend: {
-      backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+      backgroundColor: isDark ? "#334155" : "#FFFFFF",
       borderRadius: 12,
       padding: 16,
       marginBottom: 20,
@@ -1220,7 +1220,7 @@ const getStyles = (isDark: boolean) =>
     legendTitle: {
       fontSize: 16,
       fontWeight: "600",
-      color: isDark ? "#FFFFFF" : "#000000",
+      color: isDark ? "#F1F5F9" : "#334155",
       marginBottom: 12,
     },
     legendItem: {
@@ -1236,10 +1236,10 @@ const getStyles = (isDark: boolean) =>
     },
     legendText: {
       fontSize: 14,
-      color: isDark ? "#FFFFFF" : "#000000",
+      color: isDark ? "#F1F5F9" : "#334155",
     },
     statsContainer: {
-      backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+      backgroundColor: isDark ? "#334155" : "#FFFFFF",
       borderRadius: 12,
       padding: 16,
       marginBottom: 20,
@@ -1247,7 +1247,7 @@ const getStyles = (isDark: boolean) =>
     statsTitle: {
       fontSize: 16,
       fontWeight: "600",
-      color: isDark ? "#FFFFFF" : "#000000",
+      color: isDark ? "#F1F5F9" : "#334155",
       marginBottom: 16,
     },
     statsGrid: {
@@ -1260,17 +1260,17 @@ const getStyles = (isDark: boolean) =>
     statValue: {
       fontSize: 24,
       fontWeight: "bold",
-      color: "#007AFF",
+      color: "#84CC16",
       marginBottom: 4,
     },
     statLabel: {
       fontSize: 12,
-      color: "#8E8E93",
+      color: "#94A3B8",
       textAlign: "center",
     },
     modalContainer: {
       flex: 1,
-      backgroundColor: isDark ? "#000000" : "#F2F2F7",
+      backgroundColor: isDark ? "#2A2A2A" : "#F8FAFC",
     },
     modalHeader: {
       flexDirection: "row",
@@ -1288,19 +1288,19 @@ const getStyles = (isDark: boolean) =>
     modalTitle: {
       fontSize: 18,
       fontWeight: "bold",
-      color: isDark ? "#FFFFFF" : "#000000",
+      color: isDark ? "#F1F5F9" : "#334155",
     },
     refreshButton: {
       padding: 4,
     },
     doneButton: {
       fontSize: 16,
-      color: "#007AFF",
+      color: "#84CC16",
       fontWeight: "600",
     },
     selectAllButton: {
       fontSize: 16,
-      color: "#007AFF",
+      color: "#84CC16",
       fontWeight: "600",
     },
     templateItem: {
@@ -1308,7 +1308,7 @@ const getStyles = (isDark: boolean) =>
       justifyContent: "space-between",
       alignItems: "center",
       padding: 16,
-      backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+      backgroundColor: isDark ? "#334155" : "#FFFFFF",
       borderBottomWidth: 1,
       borderBottomColor: "#E5E5EA",
     },
@@ -1324,7 +1324,7 @@ const getStyles = (isDark: boolean) =>
     },
     templateName: {
       fontSize: 16,
-      color: isDark ? "#FFFFFF" : "#000000",
+      color: isDark ? "#F1F5F9" : "#334155",
     },
     statsModalContent: {
       flex: 1,
@@ -1336,12 +1336,12 @@ const getStyles = (isDark: boolean) =>
     statsSectionTitle: {
       fontSize: 18,
       fontWeight: "600",
-      color: isDark ? "#FFFFFF" : "#000000",
+      color: isDark ? "#F1F5F9" : "#334155",
       marginBottom: 16,
     },
     statCard: {
       flex: 1,
-      backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+      backgroundColor: isDark ? "#334155" : "#FFFFFF",
       borderRadius: 8,
       padding: 12,
       alignItems: "center",
@@ -1355,16 +1355,16 @@ const getStyles = (isDark: boolean) =>
     statCardValue: {
       fontSize: 18,
       fontWeight: "bold",
-      color: "#007AFF",
+      color: "#84CC16",
       marginBottom: 4,
     },
     statCardLabel: {
       fontSize: 12,
-      color: "#8E8E93",
+      color: "#94A3B8",
       textAlign: "center",
     },
     exerciseStatsCard: {
-      backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+      backgroundColor: isDark ? "#334155" : "#FFFFFF",
       borderRadius: 8,
       padding: 16,
       marginBottom: 12,
@@ -1377,7 +1377,7 @@ const getStyles = (isDark: boolean) =>
     exerciseStatsName: {
       fontSize: 16,
       fontWeight: "600",
-      color: isDark ? "#FFFFFF" : "#000000",
+      color: isDark ? "#F1F5F9" : "#334155",
       marginBottom: 12,
     },
     exerciseStatsRow: {
@@ -1391,12 +1391,12 @@ const getStyles = (isDark: boolean) =>
     exerciseStatValue: {
       fontSize: 14,
       fontWeight: "bold",
-      color: "#007AFF",
+      color: "#84CC16",
       marginBottom: 2,
     },
     exerciseStatLabel: {
       fontSize: 10,
-      color: "#8E8E93",
+      color: "#94A3B8",
       textAlign: "center",
     },
   });

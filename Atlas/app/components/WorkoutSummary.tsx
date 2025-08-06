@@ -175,7 +175,7 @@ export default function WorkoutSummary({ sessionId, onBack }: WorkoutSummaryProp
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
+          <ActivityIndicator size="large" color="#84CC16" />
           <Text style={styles.loadingText}>Loading workout details...</Text>
         </View>
       </SafeAreaView>
@@ -207,7 +207,7 @@ export default function WorkoutSummary({ sessionId, onBack }: WorkoutSummaryProp
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={onBack} style={styles.headerBack}>
-            <Ionicons name="chevron-back" size={24} color="#007AFF" />
+            <Ionicons name="chevron-back" size={24} color="#84CC16" />
             <Text style={styles.headerBackText}>Back</Text>
           </TouchableOpacity>
         </View>
@@ -369,7 +369,7 @@ export default function WorkoutSummary({ sessionId, onBack }: WorkoutSummaryProp
 const getStyles = (isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F2F2F7",
+    backgroundColor: isDark ? '#2A2A2A' : '#F8FAFC',
   },
   loadingContainer: {
     flex: 1,
@@ -378,7 +378,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
-    color: '#8E8E93',
+    color: isDark ? '#94A3B8' : '#64748B',
     marginTop: 12,
   },
   errorContainer: {
@@ -396,12 +396,12 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   },
   errorSubtitle: {
     fontSize: 16,
-    color: '#8E8E93',
+    color: isDark ? '#94A3B8' : '#64748B',
     textAlign: 'center',
     marginBottom: 24,
   },
   backButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#84CC16',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
@@ -424,7 +424,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   },
   headerBackText: {
     fontSize: 16,
-    color: '#007AFF',
+    color: '#84CC16',
     marginLeft: 4,
   },
   titleSection: {
@@ -434,17 +434,17 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   workoutTitle: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#000000',
+    color: isDark ? '#F1F5F9' : '#334155',
     marginBottom: 8,
   },
   workoutDate: {
     fontSize: 16,
-    color: '#8E8E93',
+    color: isDark ? '#94A3B8' : '#64748B',
     marginBottom: 8,
   },
   workoutDescription: {
     fontSize: 14,
-    color: '#6D6D70',
+    color: isDark ? '#94A3B8' : '#64748B',
     fontStyle: 'italic',
   },
   statusSection: {
@@ -464,7 +464,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   statusCompletedText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#34C759',
+    color: '#65A30D',
   },
   statusIncomplete: {
     flexDirection: 'row',
@@ -482,7 +482,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     color: '#FF9500',
   },
   summaryCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: isDark ? '#334155' : '#FFFFFF',
     marginHorizontal: 16,
     marginBottom: 16,
     padding: 16,
@@ -496,7 +496,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   summaryTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#000000',
+    color: isDark ? '#F1F5F9' : '#334155',
     marginBottom: 16,
   },
   summaryStats: {
@@ -510,12 +510,12 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   summaryStatValue: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#007AFF',
+    color: '#84CC16',
     marginBottom: 4,
   },
   summaryStatLabel: {
     fontSize: 12,
-    color: '#8E8E93',
+    color: isDark ? '#94A3B8' : '#64748B',
     textAlign: 'center',
   },
   exercisesSection: {
@@ -524,11 +524,11 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   exercisesSectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#000000',
+    color: isDark ? '#F1F5F9' : '#334155',
     marginBottom: 16,
   },
   exerciseCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: isDark ? '#334155' : '#FFFFFF',
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
@@ -550,12 +550,12 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   exerciseName: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#000000',
+    color: isDark ? '#F1F5F9' : '#334155',
     marginBottom: 4,
   },
   exerciseMuscle: {
     fontSize: 14,
-    color: '#8E8E93',
+    color: isDark ? '#94A3B8' : '#64748B',
     textTransform: 'capitalize',
   },
   exerciseVolume: {
@@ -564,11 +564,11 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   exerciseVolumeValue: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#007AFF',
+    color: '#84CC16',
   },
   exerciseVolumeLabel: {
     fontSize: 12,
-    color: '#8E8E93',
+    color: isDark ? '#94A3B8' : '#64748B',
   },
   setsTable: {
     marginTop: 8,
@@ -584,7 +584,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontWeight: '600',
-    color: '#8E8E93',
+    color: isDark ? '#94A3B8' : '#64748B',
     textAlign: 'center',
   },
   setsTableRow: {
@@ -596,11 +596,11 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   setsTableCell: {
     flex: 1,
     fontSize: 14,
-    color: '#000000',
+    color: isDark ? '#F1F5F9' : '#334155',
     textAlign: 'center',
   },
   additionalInfoCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: isDark ? '#334155' : '#FFFFFF',
     marginHorizontal: 16,
     marginBottom: 32,
     padding: 16,
@@ -614,7 +614,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   additionalInfoTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#000000',
+    color: isDark ? '#F1F5F9' : '#334155',
     marginBottom: 16,
   },
   additionalInfoItem: {
@@ -625,7 +625,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   },
   additionalInfoText: {
     fontSize: 14,
-    color: '#000000',
+    color: isDark ? '#F1F5F9' : '#334155',
     flex: 1,
   },
 });

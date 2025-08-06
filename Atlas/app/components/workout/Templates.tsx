@@ -161,7 +161,7 @@ export default function Templates({ onNavigate, onBack, needsRefresh, onRefreshe
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <TouchableOpacity onPress={onBack} style={styles.backButton}>
-            <Ionicons name="chevron-back" size={24} color="#007AFF" />
+            <Ionicons name="chevron-back" size={24} color="#84CC16" />
             <Text style={styles.backText}>Back</Text>
           </TouchableOpacity>
         </View>
@@ -174,7 +174,7 @@ export default function Templates({ onNavigate, onBack, needsRefresh, onRefreshe
       <ScrollView style={styles.templatesScrollView}>
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#007AFF" />
+            <ActivityIndicator size="large" color="#84CC16" />
             <Text style={styles.loadingText}>Loading your templates...</Text>
           </View>
         ) : templates.length > 0 ? (
@@ -230,7 +230,7 @@ export default function Templates({ onNavigate, onBack, needsRefresh, onRefreshe
           style={styles.createTemplateButton}
           onPress={handleCreateTemplate}
         >
-          <Ionicons name="add" size={24} color="#007AFF" />
+          <Ionicons name="add" size={24} color="#84CC16" />
           <Text style={styles.createTemplateText}>Create New Template</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -241,7 +241,7 @@ export default function Templates({ onNavigate, onBack, needsRefresh, onRefreshe
 const getStyles = (isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F2F2F7", // Light background
+    backgroundColor: isDark ? '#2A2A2A' : '#F8FAFC',
   },
   header: {
     padding: 16,
@@ -258,18 +258,18 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   },
   backText: {
     fontSize: 16,
-    color: "#007AFF",
+    color: "#84CC16",
     marginLeft: 4,
   },
   workoutTitle: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#000000", // Dark text
+    color: isDark ? '#F1F5F9' : '#334155',
     marginBottom: 8,
   },
   progressText: {
     fontSize: 16,
-    color: "#6D6D70", // Light theme secondary
+    color: isDark ? '#94A3B8' : '#64748B',
   },
   templatesScrollView: {
     flex: 1,
@@ -282,7 +282,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
-    color: "#8E8E93",
+    color: isDark ? '#94A3B8' : '#64748B',
     marginTop: 12,
   },
   emptyState: {
@@ -293,18 +293,18 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   emptyStateText: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#000000",
+    color: isDark ? '#F1F5F9' : '#334155',
     marginTop: 16,
     marginBottom: 8,
   },
   emptyStateSubtext: {
     fontSize: 14,
-    color: "#8E8E93",
+    color: isDark ? '#94A3B8' : '#64748B',
     textAlign: "center",
     lineHeight: 20,
   },
   templateCard: {
-    backgroundColor: "#FFFFFF", // White cards
+    backgroundColor: isDark ? '#334155' : '#FFFFFF',
     borderRadius: 12,
     marginBottom: 12,
     shadowColor: "#000000",
@@ -323,7 +323,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 16,
     borderLeftWidth: 1,
-    borderLeftColor: "#F2F2F7",
+    borderLeftColor: isDark ? '#2A2A2A' : '#F8FAFC',
   },
   deleteButton: {
     padding: 8,
@@ -336,19 +336,19 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   templateName: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#000000", // Dark text
+    color: isDark ? '#F1F5F9' : '#334155',
     marginBottom: 4,
   },
   templateDescription: {
     fontSize: 14,
-    color: "#6D6D70", // Light theme secondary
+    color: isDark ? '#94A3B8' : '#64748B',
   },
   templateExercises: {
     marginBottom: 12,
   },
   templateExerciseList: {
     fontSize: 14,
-    color: "#6D6D70", // Light theme secondary
+    color: isDark ? '#94A3B8' : '#64748B',
     lineHeight: 20,
   },
   templateFooter: {
@@ -358,18 +358,18 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   },
   templateStats: {
     fontSize: 12,
-    color: "#8E8E93", // Light theme tertiary
+    color: isDark ? '#94A3B8' : '#64748B',
   },
   createTemplateButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: isDark ? '#334155' : '#FFFFFF',
     borderRadius: 12,
     padding: 20,
     marginBottom: 20,
     borderWidth: 2,
-    borderColor: "#007AFF",
+    borderColor: "#84CC16",
     borderStyle: "dashed",
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 1 },
@@ -379,7 +379,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   },
   createTemplateText: {
     fontSize: 16,
-    color: "#007AFF",
+    color: "#84CC16",
     fontWeight: "600",
     marginLeft: 8,
   },

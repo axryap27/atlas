@@ -107,12 +107,12 @@ export default function AuthScreen() {
             {/* Atlas Logo */}
             <View style={styles.logoContainer}>
               <Image 
-                source={require('../../../assets/images/atlas-logo.png')}
+                source={require('../../../assets/images/atlas-logo2.png')}
                 style={styles.logo}
                 resizeMode="contain"
               />
             </View>
-            <Text style={styles.title}>Atlas</Text>
+            <Text style={styles.title}>atlas</Text>
             <Text style={styles.subtitle}>
               {isSignUp ? 'Create your account' : 'Welcome back'}
             </Text>
@@ -244,18 +244,19 @@ const styles = StyleSheet.create({
   },
   
   title: {
-    fontSize: 36,
-    fontWeight: '600',
+    fontSize: 40,
+    fontWeight: '500',
     color: '#334155',
     marginBottom: 8,
-    letterSpacing: -0.5,
-    fontFamily: Platform.OS === 'ios' ? 'SF Pro Display' : 'sans-serif',
+    fontFamily: Platform.OS === 'ios' ? 'Futura' : 'sans-serif-black',
+    textTransform: 'lowercase',
   },
   subtitle: {
     fontSize: 16,
     color: '#64748B',
     fontWeight: '400',
     textAlign: 'center',
+    fontFamily: Platform.OS === 'ios' ? 'Futura' : 'sans-serif-black',
   },
   
   // Form styles
@@ -286,12 +287,12 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
   authButton: {
-    backgroundColor: '#475569',
+    backgroundColor: '#84CC16',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
     marginTop: 8,
-    shadowColor: '#475569',
+    shadowColor: '#84CC16',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -320,7 +321,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
   switchButton: {
-    color: '#475569',
+    color: '#84CC16',
     fontSize: 15,
     fontWeight: '600',
     marginLeft: 4,
