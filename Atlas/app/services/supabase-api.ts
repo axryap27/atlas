@@ -15,7 +15,6 @@ export const supabaseApi = {
   // ===== EXERCISES =====
   
   async getExercises(): Promise<Exercise[]> {
-    console.log('🔍 SUPABASE: Fetching exercises...')
     
     const { data, error } = await supabase
       .from('exercises')
@@ -35,19 +34,10 @@ export const supabaseApi = {
         createdAt: exercise.created_at
       }
       
-      // Debug first exercise in detail
-      if (exercise.name === 'Arnold Press') {
-        console.log('🚨 ARNOLD PRESS DEBUG:')
-        console.log('  Original exercise:', JSON.stringify(exercise, null, 2))
-        console.log('  muscle_group value:', exercise.muscle_group)
-        console.log('  Transformed muscleGroup:', result.muscleGroup)
-      }
       
       return result
     }) || []
     
-    console.log(`✅ SUPABASE: Loaded ${transformedData.length} exercises`)
-    console.log('🔍 First 3 muscle groups:', transformedData.slice(0, 3).map(e => `${e.name}:${e.muscleGroup}`))
     
     return transformedData
   },
@@ -89,7 +79,6 @@ export const supabaseApi = {
   
   async getWorkoutDays(userId?: string): Promise<WorkoutDay[]> {
     const actualUserId = userId || getCurrentUserId()
-    console.log('🔍 SUPABASE DEBUG: Fetching workout days for user:', actualUserId)
     
     const { data, error } = await supabase
       .from('workout_days')
@@ -108,8 +97,6 @@ export const supabaseApi = {
       throw error
     }
     
-    console.log('✅ SUPABASE SUCCESS: Fetched workout days:', data?.length, 'templates')
-    console.log('🔍 Workout days:', data?.map(wd => ({ id: wd.id, name: wd.name, is_template: wd.is_template })))
     
     // Transform exercise data to include camelCase properties
     const transformedData = data?.map((workoutDay: any) => ({
@@ -271,7 +258,6 @@ export const supabaseApi = {
   
   async getUserSessions(userId?: string, limit: number = 10): Promise<Session[]> {
     const actualUserId = userId || getCurrentUserId()
-    console.log(`Fetching sessions for user ${actualUserId} with limit ${limit}`)
     
     const { data, error } = await supabase
       .from('sessions')
@@ -311,7 +297,6 @@ export const supabaseApi = {
       }))
     })) || []
     
-    console.log('Supabase sessions response:', JSON.stringify(transformedData, null, 2))
     return transformedData
   },
 
@@ -457,7 +442,6 @@ export const supabaseApi = {
       throw deleteError
     }
     
-    console.log(`✅ Successfully deleted session ${id} and all related data`)
   },
 
   async deleteAllSessions(userId?: string): Promise<void> {
@@ -474,7 +458,6 @@ export const supabaseApi = {
       throw error
     }
     
-    console.log(`✅ Successfully deleted all sessions and related data for user ${actualUserId}`)
   },
 
   // ===== SET LOGS =====
@@ -490,7 +473,6 @@ export const supabaseApi = {
     rpe?: number
     notes?: string
   }): Promise<SetLog> {
-    console.log('Logging set with data:', setData)
     
     // Check if exercise exists
     const { data: exerciseExists } = await supabase
@@ -499,7 +481,6 @@ export const supabaseApi = {
       .eq('id', setData.exercise_id)
       .single()
     
-    console.log('Exercise exists check:', exerciseExists)
     
     if (!exerciseExists) {
       console.error(`Exercise ID ${setData.exercise_id} not found in database`)
@@ -507,7 +488,6 @@ export const supabaseApi = {
       const { data: allExercises } = await supabase
         .from('exercises')
         .select('id, name')
-      console.log('All available exercises:', allExercises)
       throw new Error(`Exercise ID ${setData.exercise_id} not found`)
     }
     
