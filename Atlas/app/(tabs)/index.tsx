@@ -56,11 +56,9 @@ export default function HomeScreen() {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      console.log('Starting to load dashboard data...');
       
       // Load exercises
       const exercisesData = await supabaseApi.getExercises();
-      console.log('Exercises data:', exercisesData);
       
       if (Array.isArray(exercisesData)) {
         setExercises(exercisesData);
@@ -321,7 +319,6 @@ export default function HomeScreen() {
         {/* Recent Workouts */}
         <RecentWorkouts 
           onViewWorkout={(sessionId) => {
-            console.log('View workout:', sessionId);
             // TODO: Navigate to workout details
           }}
           showDebugTools={false} // Disable debug tools in production

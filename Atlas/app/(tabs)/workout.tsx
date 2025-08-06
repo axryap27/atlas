@@ -46,14 +46,12 @@ export default function WorkoutScreen() {
   const [templatesNeedRefresh, setTemplatesNeedRefresh] = useState(false);
 
   const handleNavigate = (screen: WorkoutScreen, exercises?: Exercise[], templateId?: number) => {
-    console.log('🔧 workout.tsx: handleNavigate called with templateId:', templateId);
     setCurrentScreen(screen);
     if (exercises) {
       setSelectedExercises(exercises);
     }
     if (templateId !== undefined) {
       setSelectedTemplateId(templateId);
-      console.log('🔧 workout.tsx: selectedTemplateId set to:', templateId);
     }
   };
 
@@ -102,7 +100,6 @@ export default function WorkoutScreen() {
       );
 
     case "active":
-      console.log('🔧 workout.tsx: Rendering ActiveWorkout with templateId:', selectedTemplateId);
       return (
         <ActiveWorkout
           initialExercises={selectedExercises}

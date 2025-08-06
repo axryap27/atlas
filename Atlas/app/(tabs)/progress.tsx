@@ -98,7 +98,6 @@ export default function ProgressScreen() {
         try {
           const templatesData = await supabaseApi.getTemplates();
           setTemplates(templatesData);
-          console.log("🔄 Refreshed templates on focus:", templatesData.length);
 
           // Remove deleted templates from selectedTemplates
           const currentTemplateIds = templatesData.map(t => t.id);
@@ -107,7 +106,6 @@ export default function ProgressScreen() {
           // Also refresh volume data if templates are selected
           if (selectedTemplates.length > 0) {
             loadVolumeData();
-            console.log("🔄 Refreshed volume data on focus");
           }
         } catch (error) {
           console.error("Error refreshing data:", error);
@@ -139,10 +137,6 @@ export default function ProgressScreen() {
 
       // Load templates
       const templatesData = await supabaseApi.getTemplates();
-      console.log(
-        "📋 Templates loaded:",
-        templatesData.map((t) => `${t.id}: ${t.name}`)
-      );
       setTemplates(templatesData);
 
       // Select all templates by default
@@ -161,53 +155,25 @@ export default function ProgressScreen() {
       // Get all sessions for selected templates
       const sessions = await supabaseApi.getUserSessions(undefined, 50); // Get last 50 sessions
 
-      console.log("🔍 PROGRESS DEBUG: Raw sessions:", sessions.length);
-      console.log("🔍 PROGRESS DEBUG: Selected templates:", selectedTemplates);
-      if (sessions.length > 0) {
-        console.log("🔍 PROGRESS DEBUG: First session:", sessions[0]);
-        console.log("🔍 PROGRESS DEBUG: All sessions:", sessions);
-      } else {
-        console.log(
-          "🔍 PROGRESS DEBUG: No sessions found - should show empty state"
-        );
-      }
 
       // Filter sessions by selected templates and calculate volume
-      console.log("🔍 PROGRESS DEBUG: Filtering sessions...");
-      console.log(
-        "🔍 PROGRESS DEBUG: Sessions with workout_day_id:",
-        sessions.filter((s) => s.workout_day_id).length
-      );
-      console.log(
-        "🔍 PROGRESS DEBUG: Sessions with end_time:",
-        sessions.filter((s) => s.end_time).length
-      );
 
       const filteredSessions = sessions.filter((session) => {
         const isCompleted = !!session.end_time;
 
         // If no templates are selected, show no data
         if (selectedTemplates.length === 0) {
-          console.log(
-            `🔍 Session ${session.id}: No templates selected, filtering out`
-          );
           return false;
         }
 
         // If session has no template (Quick Workout), don't show it when filtering by templates
         if (!session.workout_day_id) {
-          console.log(
-            `🔍 Session ${session.id}: Quick workout, filtering out when templates selected`
-          );
           return false;
         }
 
         // Only show sessions from selected templates
         const isSelectedTemplate = selectedTemplates.includes(
           session.workout_day_id
-        );
-        console.log(
-          `🔍 Session ${session.id}: Template workout, isSelectedTemplate=${isSelectedTemplate}, isCompleted=${isCompleted}`
         );
 
         return isSelectedTemplate && isCompleted;
@@ -239,9 +205,6 @@ export default function ProgressScreen() {
               `Template ${session.workout_day_id}`
             : "Custom Workout";
 
-          console.log(
-            `📊 Session ${session.id}: workout_day_id=${session.workout_day_id}, workoutDay.name=${session.workout_day?.name}, resolved name=${templateName}`
-          );
 
           return {
             date: session.start_time,
@@ -255,7 +218,6 @@ export default function ProgressScreen() {
           (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
         );
 
-      console.log("🔍 PROGRESS DEBUG: Final volume data:", volumeData);
       setVolumeData(volumeData);
     } catch (error) {
       console.error("Error loading volume data:", error);
@@ -455,15 +417,10 @@ export default function ProgressScreen() {
       color = colors[index % colors.length];
     }
 
-    console.log(
-      `🎨 Color for template ${templateId} (${template?.name}): ${color}`
-    );
     return color;
   };
 
   const renderChart = () => {
-    console.log("🔍 RENDER CHART: volumeData.length =", volumeData.length);
-    console.log("🔍 RENDER CHART: volumeData =", volumeData);
 
     if (volumeData.length === 0) {
       return (
@@ -487,13 +444,6 @@ export default function ProgressScreen() {
 
     // Group data by template and create separate lines
     const createTemplateLines = () => {
-      console.log("🔧 DEBUG: Starting template line creation");
-      console.log(
-        "🔧 DEBUG: volumeData:",
-        volumeData.map(
-          (d) => `${d.workoutName}(${d.workoutDayId}): ${d.volume}`
-        )
-      );
 
       // Group data by workoutDayId (template) or workout type
       const groupedData = new Map();
@@ -521,21 +471,8 @@ export default function ProgressScreen() {
           groupedData.set(key, []);
         }
         groupedData.get(key).push({ ...data, originalIndex });
-        console.log(
-          `🔧 DEBUG: Added to group ${key}: ${data.workoutName} vol=${data.volume} date=${data.date}`
-        );
       });
 
-      console.log(
-        "🔧 DEBUG: Grouped data keys:",
-        Array.from(groupedData.keys())
-      );
-      groupedData.forEach((data, key) => {
-        console.log(
-          `🔧 DEBUG: Group ${key} has ${data.length} items:`,
-          data.map((d: VolumeData) => `${d.volume}@${d.date.slice(0, 10)}`)
-        );
-      });
 
       // Create lines for each template
       const templateLines: TemplateLine[] = [];
@@ -604,11 +541,6 @@ export default function ProgressScreen() {
                   : 0.5;
               const y = availableHeight - normalizedValue * availableHeight;
 
-              console.log(
-                `🔧 DEBUG: Point for ${templateName}: vol=${
-                  data.volume
-                }, normalized=${normalizedValue.toFixed(3)}, y=${y.toFixed(1)}`
-              );
 
               return {
                 x: x + chartPadding,
@@ -632,9 +564,6 @@ export default function ProgressScreen() {
             });
           }
 
-          console.log(
-            `📈 Template Line: ${templateName} (${key}) - ${points.length} points, color: ${color}`
-          );
         }
       );
 
@@ -793,12 +722,6 @@ export default function ProgressScreen() {
   };
 
   const renderTemplateSelector = () => {
-    console.log(
-      "Rendering template selector, visible:",
-      showTemplateSelector,
-      "templates:",
-      templates.length
-    );
     return (
       <Modal
         visible={showTemplateSelector}
@@ -829,10 +752,6 @@ export default function ProgressScreen() {
                   try {
                     const templatesData = await supabaseApi.getTemplates();
                     setTemplates(templatesData);
-                    console.log(
-                      "🔄 Manual refresh - templates loaded:",
-                      templatesData.length
-                    );
                   } catch (error) {
                     console.error("Error refreshing templates:", error);
                   }
@@ -1035,12 +954,6 @@ export default function ProgressScreen() {
     );
   }
 
-  console.log("Rendering progress screen:", {
-    templatesLength: templates.length,
-    selectedTemplatesLength: selectedTemplates.length,
-    showTemplateSelector,
-    volumeDataLength: volumeData.length,
-  });
 
   return (
     <SafeAreaView style={styles.container}>
@@ -1050,10 +963,6 @@ export default function ProgressScreen() {
           <TouchableOpacity
             style={styles.filterButton}
             onPress={() => {
-              console.log(
-                "Filter button pressed, templates count:",
-                templates.length
-              );
               setShowTemplateSelector(true);
             }}
             activeOpacity={0.7}
