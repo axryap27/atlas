@@ -1,5 +1,5 @@
 // app/(tabs)/progress.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -13,13 +13,13 @@ import {
   Dimensions,
   Alert,
   ActivityIndicator,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
-import { supabaseApi } from '../services/supabase-api';
-import { Session, WorkoutDay } from '../../lib/supabase';
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
+import { supabaseApi } from "../services/supabase-api";
+import { Session, WorkoutDay } from "../../lib/supabase";
 
-const { width: screenWidth } = Dimensions.get('window');
+const { width: screenWidth } = Dimensions.get("window");
 const chartWidth = screenWidth - 40;
 const chartHeight = 200;
 
@@ -50,17 +50,42 @@ interface TemplateStats {
   }>;
 }
 
+interface ChartPoint {
+  x: number;
+  y: number;
+  volume: number;
+  date: string;
+  workoutName: string;
+  color: string;
+  globalIndex: number;
+}
+
+interface TemplateLine {
+  templateId: string | number;
+  templateName: string;
+  color: string;
+  points: ChartPoint[];
+  dataCount: number;
+}
+
 export default function ProgressScreen() {
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-  
+  const isDark = colorScheme === "dark";
+
   const [volumeData, setVolumeData] = useState<VolumeData[]>([]);
   const [templates, setTemplates] = useState<WorkoutDay[]>([]);
   const [selectedTemplates, setSelectedTemplates] = useState<number[]>([]);
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   const [showTemplateStats, setShowTemplateStats] = useState(false);
-  const [selectedTemplateStats, setSelectedTemplateStats] = useState<TemplateStats | null>(null);
+  const [selectedTemplateStats, setSelectedTemplateStats] =
+    useState<TemplateStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedDataPoint, setSelectedDataPoint] = useState<{
+    sessionId: number;
+    templateIndex: number;
+    pointIndex: number;
+  } | null>(null);
+  const [volumeTimer, setVolumeTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     loadData();
@@ -73,18 +98,18 @@ export default function ProgressScreen() {
         try {
           const templatesData = await supabaseApi.getTemplates();
           setTemplates(templatesData);
-          console.log('🔄 Refreshed templates on focus:', templatesData.length);
-          
+          console.log("🔄 Refreshed templates on focus:", templatesData.length);
+
           // Also refresh volume data if templates are selected
           if (selectedTemplates.length > 0) {
             loadVolumeData();
-            console.log('🔄 Refreshed volume data on focus');
+            console.log("🔄 Refreshed volume data on focus");
           }
         } catch (error) {
-          console.error('Error refreshing data:', error);
+          console.error("Error refreshing data:", error);
         }
       };
-      
+
       refreshData();
     }, [selectedTemplates])
   );
@@ -95,22 +120,33 @@ export default function ProgressScreen() {
     }
   }, [selectedTemplates]);
 
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (volumeTimer) {
+        clearTimeout(volumeTimer);
+      }
+    };
+  }, [volumeTimer]);
+
   const loadData = async () => {
     try {
       setLoading(true);
-      
+
       // Load templates
       const templatesData = await supabaseApi.getTemplates();
-      console.log('📋 Templates loaded:', templatesData.map(t => `${t.id}: ${t.name}`));
+      console.log(
+        "📋 Templates loaded:",
+        templatesData.map((t) => `${t.id}: ${t.name}`)
+      );
       setTemplates(templatesData);
-      
+
       // Select all templates by default
-      const allTemplateIds = templatesData.map(t => t.id);
+      const allTemplateIds = templatesData.map((t) => t.id);
       setSelectedTemplates(allTemplateIds);
-      
     } catch (error) {
-      console.error('Error loading progress data:', error);
-      Alert.alert('Error', 'Failed to load progress data. Please try again.');
+      console.error("Error loading progress data:", error);
+      Alert.alert("Error", "Failed to load progress data. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -120,67 +156,88 @@ export default function ProgressScreen() {
     try {
       // Get all sessions for selected templates
       const sessions = await supabaseApi.getUserSessions(undefined, 50); // Get last 50 sessions
-      
-      console.log('🔍 PROGRESS DEBUG: Raw sessions:', sessions.length)
-      console.log('🔍 PROGRESS DEBUG: Selected templates:', selectedTemplates)
+
+      console.log("🔍 PROGRESS DEBUG: Raw sessions:", sessions.length);
+      console.log("🔍 PROGRESS DEBUG: Selected templates:", selectedTemplates);
       if (sessions.length > 0) {
-        console.log('🔍 PROGRESS DEBUG: First session:', sessions[0])
-        console.log('🔍 PROGRESS DEBUG: All sessions:', sessions)
+        console.log("🔍 PROGRESS DEBUG: First session:", sessions[0]);
+        console.log("🔍 PROGRESS DEBUG: All sessions:", sessions);
       } else {
-        console.log('🔍 PROGRESS DEBUG: No sessions found - should show empty state')
+        console.log(
+          "🔍 PROGRESS DEBUG: No sessions found - should show empty state"
+        );
       }
-      
+
       // Filter sessions by selected templates and calculate volume
-      console.log('🔍 PROGRESS DEBUG: Filtering sessions...')
-      console.log('🔍 PROGRESS DEBUG: Sessions with workout_day_id:', sessions.filter(s => s.workout_day_id).length)
-      console.log('🔍 PROGRESS DEBUG: Sessions with end_time:', sessions.filter(s => s.end_time).length)
-      
-      const volumeData: VolumeData[] = sessions
-        .filter(session => {
-          const isCompleted = !!session.end_time;
-          
-          // If no templates are selected, show no data
-          if (selectedTemplates.length === 0) {
-            console.log(`🔍 Session ${session.id}: No templates selected, filtering out`);
-            return false;
-          }
-          
-          // If session has no template (Quick Workout), don't show it when filtering by templates
-          if (!session.workout_day_id) {
-            console.log(`🔍 Session ${session.id}: Quick workout, filtering out when templates selected`);
-            return false;
-          }
-          
-          // Only show sessions from selected templates
-          const isSelectedTemplate = selectedTemplates.includes(session.workout_day_id);
-          console.log(`🔍 Session ${session.id}: Template workout, isSelectedTemplate=${isSelectedTemplate}, isCompleted=${isCompleted}`);
-          
-          return isSelectedTemplate && isCompleted;
-        })
-        .map(session => {
+      console.log("🔍 PROGRESS DEBUG: Filtering sessions...");
+      console.log(
+        "🔍 PROGRESS DEBUG: Sessions with workout_day_id:",
+        sessions.filter((s) => s.workout_day_id).length
+      );
+      console.log(
+        "🔍 PROGRESS DEBUG: Sessions with end_time:",
+        sessions.filter((s) => s.end_time).length
+      );
+
+      const filteredSessions = sessions.filter((session) => {
+        const isCompleted = !!session.end_time;
+
+        // If no templates are selected, show no data
+        if (selectedTemplates.length === 0) {
+          console.log(
+            `🔍 Session ${session.id}: No templates selected, filtering out`
+          );
+          return false;
+        }
+
+        // If session has no template (Quick Workout), don't show it when filtering by templates
+        if (!session.workout_day_id) {
+          console.log(
+            `🔍 Session ${session.id}: Quick workout, filtering out when templates selected`
+          );
+          return false;
+        }
+
+        // Only show sessions from selected templates
+        const isSelectedTemplate = selectedTemplates.includes(
+          session.workout_day_id
+        );
+        console.log(
+          `🔍 Session ${session.id}: Template workout, isSelectedTemplate=${isSelectedTemplate}, isCompleted=${isCompleted}`
+        );
+
+        return isSelectedTemplate && isCompleted;
+      });
+
+      const volumeData: VolumeData[] = filteredSessions
+        .map((session) => {
           // Calculate total volume for this session
-          const volume = session.set_logs?.reduce((total, setLog) => {
-            if (setLog.reps) {
-              // For bodyweight exercises (weight = 0), use reps only
-              // For weighted exercises, use weight * reps
-              const weight = setLog.weight || 0;
-              if (weight === 0) {
-                // Bodyweight exercise - count reps only
-                return total + setLog.reps;
-              } else {
-                // Weighted exercise - count volume (weight * reps)
-                return total + (weight * setLog.reps);
+          const volume =
+            session.set_logs?.reduce((total, setLog) => {
+              if (setLog.reps) {
+                // For bodyweight exercises (weight = 0), use reps only
+                // For weighted exercises, use weight * reps
+                const weight = setLog.weight || 0;
+                if (weight === 0) {
+                  // Bodyweight exercise - count reps only
+                  return total + setLog.reps;
+                } else {
+                  // Weighted exercise - count volume (weight * reps)
+                  return total + weight * setLog.reps;
+                }
               }
-            }
-            return total;
-          }, 0) || 0;
+              return total;
+            }, 0) || 0;
 
           // Look up template name manually using workout_day_id
-          const templateName = session.workout_day_id ? 
-            templates.find(t => t.id === session.workout_day_id)?.name || `Template ${session.workout_day_id}` :
-            'Custom Workout';
-          
-          console.log(`📊 Session ${session.id}: workout_day_id=${session.workout_day_id}, workoutDay.name=${session.workoutDay?.name}, resolved name=${templateName}`);
+          const templateName = session.workout_day_id
+            ? templates.find((t) => t.id === session.workout_day_id)?.name ||
+              `Template ${session.workout_day_id}`
+            : "Custom Workout";
+
+          console.log(
+            `📊 Session ${session.id}: workout_day_id=${session.workout_day_id}, workoutDay.name=${session.workout_day?.name}, resolved name=${templateName}`
+          );
 
           return {
             date: session.start_time,
@@ -188,36 +245,40 @@ export default function ProgressScreen() {
             workoutName: templateName,
             sessionId: session.id,
             workoutDayId: session.workout_day_id,
-          };
+          } as VolumeData;
         })
-        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        .sort(
+          (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+        );
 
-      console.log('🔍 PROGRESS DEBUG: Final volume data:', volumeData)
+      console.log("🔍 PROGRESS DEBUG: Final volume data:", volumeData);
       setVolumeData(volumeData);
     } catch (error) {
-      console.error('Error loading volume data:', error);
-      Alert.alert('Error', 'Failed to load volume data. Please try again.');
+      console.error("Error loading volume data:", error);
+      Alert.alert("Error", "Failed to load volume data. Please try again.");
     }
   };
 
   const toggleTemplate = (templateId: number) => {
-    setSelectedTemplates(prev => 
+    setSelectedTemplates((prev) =>
       prev.includes(templateId)
-        ? prev.filter(id => id !== templateId)
+        ? prev.filter((id) => id !== templateId)
         : [...prev, templateId]
     );
   };
 
-  const calculateTemplateStats = async (templateId: number): Promise<TemplateStats> => {
+  const calculateTemplateStats = async (
+    templateId: number
+  ): Promise<TemplateStats> => {
     try {
       // Get all sessions for this specific template
       const allSessions = await supabaseApi.getUserSessions(undefined, 100);
-      const templateSessions = allSessions.filter(session => 
-        session.workout_day_id === templateId && session.end_time
+      const templateSessions = allSessions.filter(
+        (session) => session.workout_day_id === templateId && session.end_time
       );
 
-      const template = templates.find(t => t.id === templateId);
-      const templateName = template?.name || 'Unknown Template';
+      const template = templates.find((t) => t.id === templateId);
+      const templateName = template?.name || "Unknown Template";
 
       if (templateSessions.length === 0) {
         return {
@@ -228,50 +289,64 @@ export default function ProgressScreen() {
           bestVolume: 0,
           totalVolume: 0,
           averageDuration: 0,
-          lastPerformed: '',
+          lastPerformed: "",
           volumeProgression: 0,
           exerciseBreakdown: [],
         };
       }
 
       // Calculate volume for each session
-      const sessionVolumes = templateSessions.map(session => {
-        const volume = session.set_logs?.reduce((total, setLog) => {
-          if (setLog.reps) {
-            const weight = setLog.weight || 0;
-            return weight === 0 ? total + setLog.reps : total + (weight * setLog.reps);
-          }
-          return total;
-        }, 0) || 0;
+      const sessionVolumes = templateSessions.map((session) => {
+        const volume =
+          session.set_logs?.reduce((total, setLog) => {
+            if (setLog.reps) {
+              const weight = setLog.weight || 0;
+              return weight === 0
+                ? total + setLog.reps
+                : total + weight * setLog.reps;
+            }
+            return total;
+          }, 0) || 0;
 
-        const duration = session.start_time && session.end_time ? 
-          (new Date(session.end_time).getTime() - new Date(session.start_time).getTime()) / (1000 * 60) : 0;
+        const duration =
+          session.start_time && session.end_time
+            ? (new Date(session.end_time).getTime() -
+                new Date(session.start_time).getTime()) /
+              (1000 * 60)
+            : 0;
 
         return { volume, duration, session };
       });
 
       // Calculate statistics
-      const volumes = sessionVolumes.map(s => s.volume);
-      const durations = sessionVolumes.map(s => s.duration).filter(d => d > 0);
-      
+      const volumes = sessionVolumes.map((s) => s.volume);
+      const durations = sessionVolumes
+        .map((s) => s.duration)
+        .filter((d) => d > 0);
+
       const totalVolume = volumes.reduce((sum, v) => sum + v, 0);
       const averageVolume = totalVolume / volumes.length;
       const bestVolume = Math.max(...volumes);
-      const averageDuration = durations.length > 0 ? durations.reduce((sum, d) => sum + d, 0) / durations.length : 0;
-      
+      const averageDuration =
+        durations.length > 0
+          ? durations.reduce((sum, d) => sum + d, 0) / durations.length
+          : 0;
+
       // Volume progression (first vs last session)
       const firstVolume = volumes[0];
       const lastVolume = volumes[volumes.length - 1];
-      const volumeProgression = firstVolume > 0 ? ((lastVolume - firstVolume) / firstVolume) * 100 : 0;
+      const volumeProgression =
+        firstVolume > 0 ? ((lastVolume - firstVolume) / firstVolume) * 100 : 0;
 
       // Last performed date
-      const lastPerformed = templateSessions[templateSessions.length - 1].start_time;
+      const lastPerformed =
+        templateSessions[templateSessions.length - 1].start_time;
 
       // Exercise breakdown
       const exerciseMap = new Map();
-      templateSessions.forEach(session => {
-        session.set_logs?.forEach(setLog => {
-          const exerciseName = setLog.exercise?.name || 'Unknown Exercise';
+      templateSessions.forEach((session) => {
+        session.set_logs?.forEach((setLog) => {
+          const exerciseName = setLog.exercise?.name || "Unknown Exercise";
           if (!exerciseMap.has(exerciseName)) {
             exerciseMap.set(exerciseName, {
               exerciseName,
@@ -280,7 +355,7 @@ export default function ProgressScreen() {
               totalReps: 0,
             });
           }
-          
+
           const exercise = exerciseMap.get(exerciseName);
           exercise.totalSets += 1;
           exercise.totalReps += setLog.reps || 0;
@@ -290,14 +365,22 @@ export default function ProgressScreen() {
         });
       });
 
-      const exerciseBreakdown = Array.from(exerciseMap.values()).map(exercise => ({
-        exerciseName: exercise.exerciseName,
-        totalSets: exercise.totalSets,
-        averageWeight: exercise.weights.length > 0 ? 
-          exercise.weights.reduce((sum, w) => sum + w, 0) / exercise.weights.length : 0,
-        bestWeight: exercise.weights.length > 0 ? Math.max(...exercise.weights) : 0,
-        totalReps: exercise.totalReps,
-      }));
+      const exerciseBreakdown = Array.from(exerciseMap.values()).map(
+        (exercise) => ({
+          exerciseName: exercise.exerciseName,
+          totalSets: exercise.totalSets,
+          averageWeight:
+            exercise.weights.length > 0
+              ? exercise.weights.reduce(
+                  (sum: number, w: number) => sum + w,
+                  0
+                ) / exercise.weights.length
+              : 0,
+          bestWeight:
+            exercise.weights.length > 0 ? Math.max(...exercise.weights) : 0,
+          totalReps: exercise.totalReps,
+        })
+      );
 
       return {
         templateId,
@@ -312,7 +395,7 @@ export default function ProgressScreen() {
         exerciseBreakdown,
       };
     } catch (error) {
-      console.error('Error calculating template stats:', error);
+      console.error("Error calculating template stats:", error);
       throw error;
     }
   };
@@ -324,48 +407,60 @@ export default function ProgressScreen() {
       setSelectedTemplateStats(stats);
       setShowTemplateStats(true);
     } catch (error) {
-      Alert.alert('Error', 'Failed to load template statistics');
+      Alert.alert("Error", "Failed to load template statistics");
     } finally {
       setLoading(false);
     }
   };
 
   const getMaxVolume = () => {
-    return Math.max(...volumeData.map(d => d.volume), 0);
+    return Math.max(...volumeData.map((d: VolumeData) => d.volume), 0);
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
   const getTemplateColor = (templateId: number) => {
-    const template = templates.find(t => t.id === templateId);
-    const templateName = template?.name?.toLowerCase() || '';
-    
+    const template = templates.find((t) => t.id === templateId);
+    const templateName = template?.name?.toLowerCase() || "";
+
     // Assign colors based on template name patterns
     let color;
-    if (templateName.includes('pull') || templateName.includes('back')) {
-      color = '#FF3B30'; // Red for Pull
-    } else if (templateName.includes('push') || templateName.includes('chest')) {
-      color = '#34C759'; // Green for Push  
-    } else if (templateName.includes('leg') || templateName.includes('squat')) {
-      color = '#007AFF'; // Blue for Legs
+    if (templateName.includes("pull") || templateName.includes("back")) {
+      color = "#FF3B30"; // Red for Pull
+    } else if (
+      templateName.includes("push") ||
+      templateName.includes("chest")
+    ) {
+      color = "#34C759"; // Green for Push
+    } else if (templateName.includes("leg") || templateName.includes("squat")) {
+      color = "#007AFF"; // Blue for Legs
     } else {
       // Fallback to position-based colors for other templates
-      const colors = ['#FF9500', '#AF52DE', '#FF2D92', '#00C7BE', '#FFD60A', '#BF5AF2'];
-      const index = templates.findIndex(t => t.id === templateId);
+      const colors = [
+        "#FF9500",
+        "#AF52DE",
+        "#FF2D92",
+        "#00C7BE",
+        "#FFD60A",
+        "#BF5AF2",
+      ];
+      const index = templates.findIndex((t) => t.id === templateId);
       color = colors[index % colors.length];
     }
-    
-    console.log(`🎨 Color for template ${templateId} (${template?.name}): ${color}`);
+
+    console.log(
+      `🎨 Color for template ${templateId} (${template?.name}): ${color}`
+    );
     return color;
   };
 
   const renderChart = () => {
-    console.log('🔍 RENDER CHART: volumeData.length =', volumeData.length);
-    console.log('🔍 RENDER CHART: volumeData =', volumeData);
-    
+    console.log("🔍 RENDER CHART: volumeData.length =", volumeData.length);
+    console.log("🔍 RENDER CHART: volumeData =", volumeData);
+
     if (volumeData.length === 0) {
       return (
         <View style={[styles.chartContainer, styles.emptyChart]}>
@@ -374,7 +469,9 @@ export default function ProgressScreen() {
           <Text style={styles.emptyChartSubtext}>
             Complete some workouts to see your progress
           </Text>
-          <Text style={[styles.emptyChartSubtext, { marginTop: 8, fontSize: 12 }]}>
+          <Text
+            style={[styles.emptyChartSubtext, { marginTop: 8, fontSize: 12 }]}
+          >
             Debug: {selectedTemplates.length} templates selected
           </Text>
         </View>
@@ -382,173 +479,221 @@ export default function ProgressScreen() {
     }
 
     const maxVolume = getMaxVolume();
-    const minVolume = Math.min(...volumeData.map(d => d.volume), 0);
+    const minVolume = Math.min(...volumeData.map((d) => d.volume), 0);
 
     // Group data by template and create separate lines
     const createTemplateLines = () => {
-      console.log('🔧 DEBUG: Starting template line creation');
-      console.log('🔧 DEBUG: volumeData:', volumeData.map(d => `${d.workoutName}(${d.workoutDayId}): ${d.volume}`));
-      
+      console.log("🔧 DEBUG: Starting template line creation");
+      console.log(
+        "🔧 DEBUG: volumeData:",
+        volumeData.map(
+          (d) => `${d.workoutName}(${d.workoutDayId}): ${d.volume}`
+        )
+      );
+
       // Group data by workoutDayId (template) or workout type
       const groupedData = new Map();
-      
+
       volumeData.forEach((data, originalIndex) => {
         let key;
-        
+
         if (data.workoutDayId) {
           // Template workout - use template ID
           key = data.workoutDayId;
         } else {
           // Quick workout - categorize by workout name (from muscle group logic)
-          if (data.workoutName.toLowerCase().includes('pull')) {
-            key = 'pull-workouts';
-          } else if (data.workoutName.toLowerCase().includes('push')) {
-            key = 'push-workouts';  
-          } else if (data.workoutName.toLowerCase().includes('leg')) {
-            key = 'leg-workouts';
+          if (data.workoutName.toLowerCase().includes("pull")) {
+            key = "pull-workouts";
+          } else if (data.workoutName.toLowerCase().includes("push")) {
+            key = "push-workouts";
+          } else if (data.workoutName.toLowerCase().includes("leg")) {
+            key = "leg-workouts";
           } else {
-            key = 'other-workouts';
+            key = "other-workouts";
           }
         }
-        
+
         if (!groupedData.has(key)) {
           groupedData.set(key, []);
         }
         groupedData.get(key).push({ ...data, originalIndex });
-        console.log(`🔧 DEBUG: Added to group ${key}: ${data.workoutName} vol=${data.volume} date=${data.date}`);
+        console.log(
+          `🔧 DEBUG: Added to group ${key}: ${data.workoutName} vol=${data.volume} date=${data.date}`
+        );
       });
-      
-      console.log('🔧 DEBUG: Grouped data keys:', Array.from(groupedData.keys()));
+
+      console.log(
+        "🔧 DEBUG: Grouped data keys:",
+        Array.from(groupedData.keys())
+      );
       groupedData.forEach((data, key) => {
-        console.log(`🔧 DEBUG: Group ${key} has ${data.length} items:`, data.map(d => `${d.volume}@${d.date.slice(0,10)}`));
+        console.log(
+          `🔧 DEBUG: Group ${key} has ${data.length} items:`,
+          data.map((d: VolumeData) => `${d.volume}@${d.date.slice(0, 10)}`)
+        );
       });
 
       // Create lines for each template
-      const templateLines = [];
-      
-      groupedData.forEach((templateData, key) => {
-        // Sort by date to ensure proper chronological order
-        templateData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-        
-        let color, templateName;
-        
-        if (typeof key === 'number') {
-          // Template workout
-          color = getTemplateColor(key);
-          templateName = templates.find(t => t.id === key)?.name || `Template ${key}`;
-        } else {
-          // Categorized quick workout
-          switch (key) {
-            case 'pull-workouts':
-              color = '#FF3B30'; // Red for Pull
-              templateName = 'Pull Workouts';
-              break;
-            case 'push-workouts':
-              color = '#34C759'; // Green for Push
-              templateName = 'Push Workouts';
-              break;
-            case 'leg-workouts':
-              color = '#007AFF'; // Blue for Legs
-              templateName = 'Leg Workouts';
-              break;
-            default:
-              color = '#8E8E93'; // Grey for other
-              templateName = 'Other Workouts';
-          }
-        }
-        
-        // Create points for this template line using global chronological positioning
-        const points = templateData.map((data) => {
-          // Find the original index of this data point in the chronologically sorted volumeData
-          const globalIndex = volumeData.findIndex(vd => 
-            vd.date === data.date && vd.volume === data.volume && vd.sessionId === data.sessionId
+      const templateLines: TemplateLine[] = [];
+
+      groupedData.forEach(
+        (templateData: VolumeData[], key: string | number) => {
+          // Sort by date to ensure proper chronological order
+          templateData.sort(
+            (a: VolumeData, b: VolumeData) =>
+              new Date(a.date).getTime() - new Date(b.date).getTime()
           );
-          
-          // Calculate accurate positioning
-          const chartPadding = 20;
-          const availableWidth = chartWidth - 80 - (chartPadding * 2); // Account for margins and padding
-          const availableHeight = chartHeight - (chartPadding * 2);
-          
-          // X position based on global chronological order
-          const x = (globalIndex / Math.max(volumeData.length - 1, 1)) * availableWidth;
-          
-          // Y position with accurate scaling
-          const normalizedValue = maxVolume > minVolume ? 
-            (data.volume - minVolume) / (maxVolume - minVolume) : 0.5;
-          const y = availableHeight - (normalizedValue * availableHeight);
-          
-          console.log(`🔧 DEBUG: Point for ${templateName}: vol=${data.volume}, normalized=${normalizedValue.toFixed(3)}, y=${y.toFixed(1)}`);
-          
-          return {
-            x: x + chartPadding,
-            y: y + chartPadding,
-            volume: data.volume,
-            date: data.date,
-            workoutName: data.workoutName,
-            color,
-            globalIndex
-          };
-        });
-        
-        if (points.length > 0) {
-          templateLines.push({
-            templateId: key,
-            templateName,
-            color,
-            points,
-            dataCount: templateData.length
-          });
+
+          let color, templateName;
+
+          if (typeof key === "number") {
+            // Template workout
+            color = getTemplateColor(key);
+            templateName =
+              templates.find((t) => t.id === key)?.name || `Template ${key}`;
+          } else {
+            // Categorized quick workout
+            switch (key) {
+              case "pull-workouts":
+                color = "#FF3B30"; // Red for Pull
+                templateName = "Pull Workouts";
+                break;
+              case "push-workouts":
+                color = "#34C759"; // Green for Push
+                templateName = "Push Workouts";
+                break;
+              case "leg-workouts":
+                color = "#007AFF"; // Blue for Legs
+                templateName = "Leg Workouts";
+                break;
+              default:
+                color = "#8E8E93"; // Grey for other
+                templateName = "Other Workouts";
+            }
+          }
+
+          // Create points for this template line using global chronological positioning
+          const points: ChartPoint[] = templateData.map(
+            (data: VolumeData): ChartPoint => {
+              // Find the original index of this data point in the chronologically sorted volumeData
+              const globalIndex = volumeData.findIndex(
+                (vd) =>
+                  vd.date === data.date &&
+                  vd.volume === data.volume &&
+                  vd.sessionId === data.sessionId
+              );
+
+              // Calculate accurate positioning
+              const chartPadding = 20;
+              const availableWidth = chartWidth - 80 - chartPadding * 2; // Account for margins and padding
+              const availableHeight = chartHeight - chartPadding * 2;
+
+              // X position based on global chronological order
+              const x =
+                (globalIndex / Math.max(volumeData.length - 1, 1)) *
+                availableWidth;
+
+              // Y position with accurate scaling
+              const normalizedValue =
+                maxVolume > minVolume
+                  ? (data.volume - minVolume) / (maxVolume - minVolume)
+                  : 0.5;
+              const y = availableHeight - normalizedValue * availableHeight;
+
+              console.log(
+                `🔧 DEBUG: Point for ${templateName}: vol=${
+                  data.volume
+                }, normalized=${normalizedValue.toFixed(3)}, y=${y.toFixed(1)}`
+              );
+
+              return {
+                x: x + chartPadding,
+                y: y + chartPadding,
+                volume: data.volume,
+                date: data.date,
+                workoutName: data.workoutName,
+                color,
+                globalIndex,
+              };
+            }
+          );
+
+          if (points.length > 0) {
+            templateLines.push({
+              templateId: key,
+              templateName,
+              color,
+              points,
+              dataCount: templateData.length,
+            });
+          }
+
+          console.log(
+            `📈 Template Line: ${templateName} (${key}) - ${points.length} points, color: ${color}`
+          );
         }
-        
-        console.log(`📈 Template Line: ${templateName} (${key}) - ${points.length} points, color: ${color}`);
-      });
-      
+      );
+
       return templateLines;
     };
 
     const templateLines = createTemplateLines();
-    const totalDataPoints = templateLines.reduce((sum, line) => sum + line.dataCount, 0);
+    const totalDataPoints = templateLines.reduce(
+      (sum, line) => sum + line.dataCount,
+      0
+    );
 
     return (
       <View style={styles.chartContainer}>
         <Text style={styles.chartTitle}>Volume Progress by Template</Text>
-        
+
         {/* Y-axis labels */}
         <View style={styles.yAxisLabels}>
-          <Text style={styles.yAxisLabel}>{Math.round(maxVolume).toLocaleString()}</Text>
-          <Text style={styles.yAxisLabel}>{Math.round((maxVolume + minVolume) * 0.5).toLocaleString()}</Text>
-          <Text style={styles.yAxisLabel}>{Math.round(minVolume).toLocaleString()}</Text>
+          <Text style={styles.yAxisLabel}>
+            {Math.round(maxVolume).toLocaleString()}
+          </Text>
+          <Text style={styles.yAxisLabel}>
+            {Math.round((maxVolume + minVolume) * 0.5).toLocaleString()}
+          </Text>
+          <Text style={styles.yAxisLabel}>
+            {Math.round(minVolume).toLocaleString()}
+          </Text>
         </View>
 
         {/* Chart area */}
         <View style={[styles.chart, { width: chartWidth }]}>
-            {/* Horizontal grid lines */}
-            <View style={styles.gridLines}>
-              <View style={[styles.gridLine, { top: 20 }]} />
-              <View style={[styles.gridLine, { top: chartHeight * 0.5 + 20 }]} />
-              <View style={[styles.gridLine, { top: chartHeight + 20 }]} />
-            </View>
+          {/* Horizontal grid lines */}
+          <View style={styles.gridLines}>
+            <View style={[styles.gridLine, { top: 20 }]} />
+            <View style={[styles.gridLine, { top: chartHeight * 0.5 + 20 }]} />
+            <View style={[styles.gridLine, { top: chartHeight + 20 }]} />
+          </View>
 
-            {/* Template Lines */}
-            <View style={styles.lineContainer}>
-              {templateLines.map((templateLine, templateIndex) => (
-                <View key={`template-${templateLine.templateId}`}>
-                  {/* Connecting lines for this template */}
-                  {templateLine.points.map((point, pointIndex) => {
-                    if (pointIndex >= templateLine.points.length - 1) return null;
-                    
+          {/* Template Lines */}
+          <View style={styles.lineContainer}>
+            {templateLines.map((templateLine, templateIndex) => (
+              <View key={`template-${templateLine.templateId}`}>
+                {/* Connecting lines for this template */}
+                {templateLine.points.map(
+                  (point: ChartPoint, pointIndex: number) => {
+                    if (pointIndex >= templateLine.points.length - 1)
+                      return null;
+
                     const nextPoint = templateLine.points[pointIndex + 1];
                     const distance = Math.sqrt(
-                      Math.pow(nextPoint.x - point.x, 2) + Math.pow(nextPoint.y - point.y, 2)
+                      Math.pow(nextPoint.x - point.x, 2) +
+                        Math.pow(nextPoint.y - point.y, 2)
                     );
-                    const angle = Math.atan2(nextPoint.y - point.y, nextPoint.x - point.x) * (180 / Math.PI);
-                    
+                    const angle =
+                      Math.atan2(nextPoint.y - point.y, nextPoint.x - point.x) *
+                      (180 / Math.PI);
+
                     return (
                       <View
                         key={`line-${templateIndex}-${pointIndex}`}
                         style={[
                           {
-                            position: 'absolute',
+                            position: "absolute",
                             left: point.x,
                             top: point.y,
                             width: distance,
@@ -557,47 +702,73 @@ export default function ProgressScreen() {
                             borderRadius: 1.25,
                             opacity: 0.9,
                             transform: [{ rotate: `${angle}deg` }],
-                            transformOrigin: 'left center',
+                            transformOrigin: "left center",
                           },
                         ]}
                       />
                     );
-                  })}
-                  
-                  {/* Data points for this template */}
-                  {templateLine.points.map((point, pointIndex) => (
-                    <View key={`point-${templateIndex}-${pointIndex}`}>
-                      <View
-                        style={[
-                          styles.dataPoint,
-                          {
-                            position: 'absolute',
-                            left: point.x - 4,
-                            top: point.y - 4,
-                            backgroundColor: templateLine.color,
-                            borderColor: '#FFFFFF',
-                          },
-                        ]}
-                      />
-                      {/* Date labels */}
-                      <Text
-                        style={[
-                          styles.dateLabel,
-                          {
-                            position: 'absolute',
-                            left: point.x - 20,
-                            top: chartHeight + 25,
-                          },
-                        ]}
-                      >
-                        {formatDate(point.date)}
-                      </Text>
-                      {/* Volume labels */}
+                  }
+                )}
+
+                {/* Data points for this template */}
+                {templateLine.points.map((point, pointIndex) => (
+                  <View key={`point-${templateIndex}-${pointIndex}`}>
+                    <TouchableOpacity
+                      style={[
+                        styles.dataPoint,
+                        {
+                          position: "absolute",
+                          left: point.x - 4,
+                          top: point.y - 4,
+                          backgroundColor: templateLine.color,
+                          borderColor: "#FFFFFF",
+                        },
+                      ]}
+                      onPress={() => {
+                        // Clear existing timer if any
+                        if (volumeTimer) {
+                          clearTimeout(volumeTimer);
+                        }
+                        
+                        // Show the volume for this point
+                        setSelectedDataPoint({
+                          sessionId: volumeData[point.globalIndex]?.sessionId || 0,
+                          templateIndex,
+                          pointIndex
+                        });
+                        
+                        // Set timer to hide after 3 seconds
+                        const newTimer = setTimeout(() => {
+                          setSelectedDataPoint(null);
+                          setVolumeTimer(null);
+                        }, 3000);
+                        
+                        setVolumeTimer(newTimer);
+                      }}
+                      activeOpacity={0.7}
+                    />
+                    {/* Date labels */}
+                    <Text
+                      style={[
+                        styles.dateLabel,
+                        {
+                          position: "absolute",
+                          left: point.x - 20,
+                          top: chartHeight + 25,
+                        },
+                      ]}
+                    >
+                      {formatDate(point.date)}
+                    </Text>
+                    {/* Volume labels - only show for selected point */}
+                    {selectedDataPoint && 
+                     selectedDataPoint.templateIndex === templateIndex &&
+                     selectedDataPoint.pointIndex === pointIndex && (
                       <Text
                         style={[
                           styles.volumeLabel,
                           {
-                            position: 'absolute',
+                            position: "absolute",
                             left: point.x - 15,
                             top: point.y - 25,
                             color: templateLine.color,
@@ -606,88 +777,104 @@ export default function ProgressScreen() {
                       >
                         {Math.round(point.volume).toLocaleString()}
                       </Text>
-                    </View>
-                  ))}
-                </View>
-              ))}
-            </View>
+                    )}
+                  </View>
+                ))}
+              </View>
+            ))}
+          </View>
         </View>
       </View>
     );
   };
 
   const renderTemplateSelector = () => {
-    console.log('Rendering template selector, visible:', showTemplateSelector, 'templates:', templates.length);
+    console.log(
+      "Rendering template selector, visible:",
+      showTemplateSelector,
+      "templates:",
+      templates.length
+    );
     return (
       <Modal
         visible={showTemplateSelector}
         animationType="slide"
         presentationStyle="pageSheet"
       >
-      <SafeAreaView style={styles.modalContainer}>
-        <View style={styles.modalHeader}>
-          <TouchableOpacity onPress={() => {
-            if (selectedTemplates.length === templates.length) {
-              setSelectedTemplates([]);
-            } else {
-              setSelectedTemplates(templates.map(t => t.id));
-            }
-          }}>
-            <Text style={styles.selectAllButton}>
-              {selectedTemplates.length === templates.length ? 'Deselect All' : 'Select All'}
-            </Text>
-          </TouchableOpacity>
-          <View style={styles.modalTitleContainer}>
-            <Text style={styles.modalTitle}>Select Workouts</Text>
-            <TouchableOpacity 
-              onPress={async () => {
-                try {
-                  const templatesData = await supabaseApi.getTemplates();
-                  setTemplates(templatesData);
-                  console.log('🔄 Manual refresh - templates loaded:', templatesData.length);
-                } catch (error) {
-                  console.error('Error refreshing templates:', error);
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity
+              onPress={() => {
+                if (selectedTemplates.length === templates.length) {
+                  setSelectedTemplates([]);
+                } else {
+                  setSelectedTemplates(templates.map((t) => t.id));
                 }
               }}
-              style={styles.refreshButton}
             >
-              <Ionicons name="refresh" size={20} color="#007AFF" />
+              <Text style={styles.selectAllButton}>
+                {selectedTemplates.length === templates.length
+                  ? "Deselect All"
+                  : "Select All"}
+              </Text>
+            </TouchableOpacity>
+            <View style={styles.modalTitleContainer}>
+              <Text style={styles.modalTitle}>Select Workouts</Text>
+              <TouchableOpacity
+                onPress={async () => {
+                  try {
+                    const templatesData = await supabaseApi.getTemplates();
+                    setTemplates(templatesData);
+                    console.log(
+                      "🔄 Manual refresh - templates loaded:",
+                      templatesData.length
+                    );
+                  } catch (error) {
+                    console.error("Error refreshing templates:", error);
+                  }
+                }}
+                style={styles.refreshButton}
+              >
+                <Ionicons name="refresh" size={20} color="#007AFF" />
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity onPress={() => setShowTemplateSelector(false)}>
+              <Text style={styles.doneButton}>Done</Text>
             </TouchableOpacity>
           </View>
-          <TouchableOpacity onPress={() => setShowTemplateSelector(false)}>
-            <Text style={styles.doneButton}>Done</Text>
-          </TouchableOpacity>
-        </View>
-        
-        <FlatList
-          data={templates}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item, index }) => {
-            const isSelected = selectedTemplates.includes(item.id);
-            const color = getTemplateColor(item.id);
-            
-            return (
-              <TouchableOpacity
-                style={styles.templateItem}
-                onPress={() => toggleTemplate(item.id)}
-              >
-                <View style={styles.templateItemLeft}>
-                  <View 
-                    style={[styles.templateColorDot, { backgroundColor: color }]} 
+
+          <FlatList
+            data={templates}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={({ item, index }) => {
+              const isSelected = selectedTemplates.includes(item.id);
+              const color = getTemplateColor(item.id);
+
+              return (
+                <TouchableOpacity
+                  style={styles.templateItem}
+                  onPress={() => toggleTemplate(item.id)}
+                >
+                  <View style={styles.templateItemLeft}>
+                    <View
+                      style={[
+                        styles.templateColorDot,
+                        { backgroundColor: color },
+                      ]}
+                    />
+                    <Text style={styles.templateName}>{item.name}</Text>
+                  </View>
+                  <Ionicons
+                    name={isSelected ? "checkmark-circle" : "ellipse-outline"}
+                    size={24}
+                    color={isSelected ? "#007AFF" : "#C7C7CC"}
                   />
-                  <Text style={styles.templateName}>{item.name}</Text>
-                </View>
-                <Ionicons
-                  name={isSelected ? "checkmark-circle" : "ellipse-outline"}
-                  size={24}
-                  color={isSelected ? "#007AFF" : "#C7C7CC"}
-                />
-              </TouchableOpacity>
-            );
-          }}
-        />
-      </SafeAreaView>
-    </Modal>
+                </TouchableOpacity>
+              );
+            }}
+          />
+        </SafeAreaView>
+      </Modal>
     );
   };
 
@@ -705,7 +892,9 @@ export default function ProgressScreen() {
             <TouchableOpacity onPress={() => setShowTemplateStats(false)}>
               <Ionicons name="arrow-back" size={24} color="#007AFF" />
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>{selectedTemplateStats.templateName}</Text>
+            <Text style={styles.modalTitle}>
+              {selectedTemplateStats.templateName}
+            </Text>
             <View style={{ width: 24 }} />
           </View>
 
@@ -715,23 +904,29 @@ export default function ProgressScreen() {
               <Text style={styles.statsSectionTitle}>Summary</Text>
               <View style={styles.statsGrid}>
                 <View style={styles.statCard}>
-                  <Text style={styles.statCardValue}>{selectedTemplateStats.totalSessions}</Text>
+                  <Text style={styles.statCardValue}>
+                    {selectedTemplateStats.totalSessions}
+                  </Text>
                   <Text style={styles.statCardLabel}>Sessions</Text>
                 </View>
                 <View style={styles.statCard}>
                   <Text style={styles.statCardValue}>
-                    {Math.round(selectedTemplateStats.averageVolume).toLocaleString()}
+                    {Math.round(
+                      selectedTemplateStats.averageVolume
+                    ).toLocaleString()}
                   </Text>
                   <Text style={styles.statCardLabel}>Avg Volume</Text>
                 </View>
                 <View style={styles.statCard}>
                   <Text style={styles.statCardValue}>
-                    {Math.round(selectedTemplateStats.bestVolume).toLocaleString()}
+                    {Math.round(
+                      selectedTemplateStats.bestVolume
+                    ).toLocaleString()}
                   </Text>
                   <Text style={styles.statCardLabel}>Best Volume</Text>
                 </View>
               </View>
-              
+
               <View style={styles.statsGrid}>
                 <View style={styles.statCard}>
                   <Text style={styles.statCardValue}>
@@ -740,20 +935,32 @@ export default function ProgressScreen() {
                   <Text style={styles.statCardLabel}>Avg Duration</Text>
                 </View>
                 <View style={styles.statCard}>
-                  <Text style={[
-                    styles.statCardValue,
-                    { color: selectedTemplateStats.volumeProgression >= 0 ? '#34C759' : '#FF3B30' }
-                  ]}>
-                    {selectedTemplateStats.volumeProgression >= 0 ? '+' : ''}{Math.round(selectedTemplateStats.volumeProgression)}%
+                  <Text
+                    style={[
+                      styles.statCardValue,
+                      {
+                        color:
+                          selectedTemplateStats.volumeProgression >= 0
+                            ? "#34C759"
+                            : "#FF3B30",
+                      },
+                    ]}
+                  >
+                    {selectedTemplateStats.volumeProgression >= 0 ? "+" : ""}
+                    {Math.round(selectedTemplateStats.volumeProgression)}%
                   </Text>
                   <Text style={styles.statCardLabel}>Progress</Text>
                 </View>
                 <View style={styles.statCard}>
                   <Text style={styles.statCardValue}>
-                    {selectedTemplateStats.lastPerformed ? 
-                      new Date(selectedTemplateStats.lastPerformed).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) 
-                      : 'N/A'
-                    }
+                    {selectedTemplateStats.lastPerformed
+                      ? new Date(
+                          selectedTemplateStats.lastPerformed
+                        ).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                        })
+                      : "N/A"}
                   </Text>
                   <Text style={styles.statCardLabel}>Last Done</Text>
                 </View>
@@ -763,33 +970,47 @@ export default function ProgressScreen() {
             {/* Exercise Breakdown */}
             <View style={styles.statsSection}>
               <Text style={styles.statsSectionTitle}>Exercise Breakdown</Text>
-              {selectedTemplateStats.exerciseBreakdown.map((exercise, index) => (
-                <View key={index} style={styles.exerciseStatsCard}>
-                  <Text style={styles.exerciseStatsName}>{exercise.exerciseName}</Text>
-                  <View style={styles.exerciseStatsRow}>
-                    <View style={styles.exerciseStatItem}>
-                      <Text style={styles.exerciseStatValue}>{exercise.totalSets}</Text>
-                      <Text style={styles.exerciseStatLabel}>Sets</Text>
-                    </View>
-                    <View style={styles.exerciseStatItem}>
-                      <Text style={styles.exerciseStatValue}>{exercise.totalReps}</Text>
-                      <Text style={styles.exerciseStatLabel}>Reps</Text>
-                    </View>
-                    <View style={styles.exerciseStatItem}>
-                      <Text style={styles.exerciseStatValue}>
-                        {exercise.averageWeight > 0 ? `${Math.round(exercise.averageWeight)}lbs` : '-'}
-                      </Text>
-                      <Text style={styles.exerciseStatLabel}>Avg Weight</Text>
-                    </View>
-                    <View style={styles.exerciseStatItem}>
-                      <Text style={styles.exerciseStatValue}>
-                        {exercise.bestWeight > 0 ? `${Math.round(exercise.bestWeight)}lbs` : '-'}
-                      </Text>
-                      <Text style={styles.exerciseStatLabel}>Best Weight</Text>
+              {selectedTemplateStats.exerciseBreakdown.map(
+                (exercise, index) => (
+                  <View key={index} style={styles.exerciseStatsCard}>
+                    <Text style={styles.exerciseStatsName}>
+                      {exercise.exerciseName}
+                    </Text>
+                    <View style={styles.exerciseStatsRow}>
+                      <View style={styles.exerciseStatItem}>
+                        <Text style={styles.exerciseStatValue}>
+                          {exercise.totalSets}
+                        </Text>
+                        <Text style={styles.exerciseStatLabel}>Sets</Text>
+                      </View>
+                      <View style={styles.exerciseStatItem}>
+                        <Text style={styles.exerciseStatValue}>
+                          {exercise.totalReps}
+                        </Text>
+                        <Text style={styles.exerciseStatLabel}>Reps</Text>
+                      </View>
+                      <View style={styles.exerciseStatItem}>
+                        <Text style={styles.exerciseStatValue}>
+                          {exercise.averageWeight > 0
+                            ? `${Math.round(exercise.averageWeight)}lbs`
+                            : "-"}
+                        </Text>
+                        <Text style={styles.exerciseStatLabel}>Avg Weight</Text>
+                      </View>
+                      <View style={styles.exerciseStatItem}>
+                        <Text style={styles.exerciseStatValue}>
+                          {exercise.bestWeight > 0
+                            ? `${Math.round(exercise.bestWeight)}lbs`
+                            : "-"}
+                        </Text>
+                        <Text style={styles.exerciseStatLabel}>
+                          Best Weight
+                        </Text>
+                      </View>
                     </View>
                   </View>
-                </View>
-              ))}
+                )
+              )}
             </View>
           </ScrollView>
         </SafeAreaView>
@@ -810,11 +1031,11 @@ export default function ProgressScreen() {
     );
   }
 
-  console.log('Rendering progress screen:', {
+  console.log("Rendering progress screen:", {
     templatesLength: templates.length,
     selectedTemplatesLength: selectedTemplates.length,
     showTemplateSelector,
-    volumeDataLength: volumeData.length
+    volumeDataLength: volumeData.length,
   });
 
   return (
@@ -825,7 +1046,10 @@ export default function ProgressScreen() {
           <TouchableOpacity
             style={styles.filterButton}
             onPress={() => {
-              console.log('Filter button pressed, templates count:', templates.length);
+              console.log(
+                "Filter button pressed, templates count:",
+                templates.length
+              );
               setShowTemplateSelector(true);
             }}
             activeOpacity={0.7}
@@ -833,8 +1057,11 @@ export default function ProgressScreen() {
           >
             <Ionicons name="filter" size={16} color="#007AFF" />
             <Text style={styles.filterButtonText}>
-              {selectedTemplates.length === 0 ? 'Select workouts to view' : 
-               `${selectedTemplates.length} workout${selectedTemplates.length !== 1 ? 's' : ''} selected`}
+              {selectedTemplates.length === 0
+                ? "Select workouts to view"
+                : `${selectedTemplates.length} workout${
+                    selectedTemplates.length !== 1 ? "s" : ""
+                  } selected`}
             </Text>
           </TouchableOpacity>
         </View>
@@ -847,14 +1074,14 @@ export default function ProgressScreen() {
           <View style={styles.legend}>
             <Text style={styles.legendTitle}>Workouts</Text>
             {templates
-              .filter(template => selectedTemplates.includes(template.id))
+              .filter((template) => selectedTemplates.includes(template.id))
               .map((template) => (
                 <View key={template.id} style={styles.legendItem}>
-                  <View 
+                  <View
                     style={[
-                      styles.legendColorDot, 
-                      { backgroundColor: getTemplateColor(template.id) }
-                    ]} 
+                      styles.legendColorDot,
+                      { backgroundColor: getTemplateColor(template.id) },
+                    ]}
                   />
                   <Text style={styles.legendText}>{template.name}</Text>
                 </View>
@@ -868,20 +1095,23 @@ export default function ProgressScreen() {
             <Text style={styles.statsTitle}>Summary</Text>
             <View style={styles.statsGrid}>
               <View style={styles.statItem}>
-                <Text style={styles.statValue}>
-                  {volumeData.length}
-                </Text>
+                <Text style={styles.statValue}>{volumeData.length}</Text>
                 <Text style={styles.statLabel}>Total Workouts</Text>
               </View>
               <View style={styles.statItem}>
                 <Text style={styles.statValue}>
-                  {Math.round(volumeData.reduce((sum, d) => sum + d.volume, 0) / volumeData.length).toLocaleString()}
+                  {Math.round(
+                    volumeData.reduce((sum, d) => sum + d.volume, 0) /
+                      volumeData.length
+                  ).toLocaleString()}
                 </Text>
                 <Text style={styles.statLabel}>Avg Volume</Text>
               </View>
               <View style={styles.statItem}>
                 <Text style={styles.statValue}>
-                  {Math.round(Math.max(...volumeData.map(d => d.volume))).toLocaleString()}
+                  {Math.round(
+                    Math.max(...volumeData.map((d) => d.volume))
+                  ).toLocaleString()}
                 </Text>
                 <Text style={styles.statLabel}>Best Volume</Text>
               </View>
@@ -896,341 +1126,342 @@ export default function ProgressScreen() {
   );
 }
 
-const getStyles = (isDark: boolean) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: isDark ? '#000000' : '#F2F2F7',
-  },
-  scrollView: {
-    flex: 1,
-    padding: 16,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    fontSize: 16,
-    color: isDark ? '#FFFFFF' : '#8E8E93',
-  },
-  filterContainer: {
-    marginBottom: 20,
-  },
-  filterButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 8,
-    gap: 8,
-    minHeight: 44, // Ensure minimum tappable area
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  filterButtonText: {
-    fontSize: 16,
-    color: '#007AFF',
-  },
-  chartContainer: {
-    backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 24,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: isDark ? 0.3 : 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  emptyChart: {
-    height: 200,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyChartText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#8E8E93',
-    marginTop: 12,
-  },
-  emptyChartSubtext: {
-    fontSize: 14,
-    color: '#8E8E93',
-    textAlign: 'center',
-    marginTop: 4,
-  },
-  chartTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: isDark ? '#FFFFFF' : '#000000',
-    marginBottom: 20,
-    textAlign: 'center',
-    letterSpacing: 0.5,
-  },
-  yAxisLabels: {
-    position: 'absolute',
-    left: 0,
-    top: 40,
-    height: chartHeight,
-    justifyContent: 'space-between',
-    width: 50,
-  },
-  yAxisLabel: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: isDark ? '#8E8E93' : '#6D6D70',
-    textAlign: 'right',
-    fontVariant: ['tabular-nums'],
-  },
-  chart: {
-    marginLeft: 60,
-    height: chartHeight + 60,
-    position: 'relative',
-  },
-  gridLines: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    height: chartHeight,
-  },
-  gridLine: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    height: 1,
-    backgroundColor: isDark ? '#2C2C2E' : '#F2F2F7',
-    opacity: 0.6,
-  },
-  lineContainer: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-  },
-  lineSegment: {
-    height: 3,
-    transformOrigin: 'left center',
-    borderRadius: 1.5,
-    backgroundColor: 'transparent', // Allow inline backgroundColor to override
-  },
-  dataPoint: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    borderWidth: 2,
-    borderColor: isDark ? '#1C1C1E' : '#FFFFFF',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: isDark ? 0.4 : 0.2,
-    shadowRadius: 3,
-    elevation: 4,
-  },
-  dateLabel: {
-    fontSize: 10,
-    color: '#8E8E93',
-    textAlign: 'center',
-    width: 40,
-    transform: [{ rotate: '-45deg' }],
-  },
-  volumeLabel: {
-    fontSize: 9,
-    fontWeight: '600',
-    textAlign: 'center',
-    width: 30,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 4,
-    paddingVertical: 2,
-  },
-  legend: {
-    backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-  },
-  legendTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: isDark ? '#FFFFFF' : '#000000',
-    marginBottom: 12,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  legendColorDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 12,
-  },
-  legendText: {
-    fontSize: 14,
-    color: isDark ? '#FFFFFF' : '#000000',
-  },
-  statsContainer: {
-    backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-  },
-  statsTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: isDark ? '#FFFFFF' : '#000000',
-    marginBottom: 16,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#007AFF',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#8E8E93',
-    textAlign: 'center',
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: isDark ? '#000000' : '#F2F2F7',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
-  },
-  modalTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: isDark ? '#FFFFFF' : '#000000',
-  },
-  refreshButton: {
-    padding: 4,
-  },
-  doneButton: {
-    fontSize: 16,
-    color: '#007AFF',
-    fontWeight: '600',
-  },
-  selectAllButton: {
-    fontSize: 16,
-    color: '#007AFF',
-    fontWeight: '600',
-  },
-  templateItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
-  },
-  templateItemLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  templateColorDot: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    marginRight: 12,
-  },
-  templateName: {
-    fontSize: 16,
-    color: isDark ? '#FFFFFF' : '#000000',
-  },
-  statsModalContent: {
-    flex: 1,
-    padding: 16,
-  },
-  statsSection: {
-    marginBottom: 24,
-  },
-  statsSectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: isDark ? '#FFFFFF' : '#000000',
-    marginBottom: 16,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-    borderRadius: 8,
-    padding: 12,
-    alignItems: 'center',
-    marginHorizontal: 4,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  statCardValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#007AFF',
-    marginBottom: 4,
-  },
-  statCardLabel: {
-    fontSize: 12,
-    color: '#8E8E93',
-    textAlign: 'center',
-  },
-  exerciseStatsCard: {
-    backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  exerciseStatsName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: isDark ? '#FFFFFF' : '#000000',
-    marginBottom: 12,
-  },
-  exerciseStatsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  exerciseStatItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  exerciseStatValue: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#007AFF',
-    marginBottom: 2,
-  },
-  exerciseStatLabel: {
-    fontSize: 10,
-    color: '#8E8E93',
-    textAlign: 'center',
-  },
-});
+const getStyles = (isDark: boolean) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: isDark ? "#000000" : "#F2F2F7",
+    },
+    scrollView: {
+      flex: 1,
+      padding: 16,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    loadingText: {
+      fontSize: 16,
+      color: isDark ? "#FFFFFF" : "#8E8E93",
+    },
+    filterContainer: {
+      marginBottom: 20,
+    },
+    filterButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderRadius: 8,
+      gap: 8,
+      minHeight: 44, // Ensure minimum tappable area
+      shadowColor: "#000000",
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.1,
+      shadowRadius: 2,
+      elevation: 2,
+    },
+    filterButtonText: {
+      fontSize: 16,
+      color: "#007AFF",
+    },
+    chartContainer: {
+      backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+      borderRadius: 16,
+      padding: 20,
+      marginBottom: 24,
+      shadowColor: "#000000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: isDark ? 0.3 : 0.1,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    emptyChart: {
+      height: 200,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    emptyChartText: {
+      fontSize: 18,
+      fontWeight: "600",
+      color: "#8E8E93",
+      marginTop: 12,
+    },
+    emptyChartSubtext: {
+      fontSize: 14,
+      color: "#8E8E93",
+      textAlign: "center",
+      marginTop: 4,
+    },
+    chartTitle: {
+      fontSize: 20,
+      fontWeight: "700",
+      color: isDark ? "#FFFFFF" : "#000000",
+      marginBottom: 20,
+      textAlign: "center",
+      letterSpacing: 0.5,
+    },
+    yAxisLabels: {
+      position: "absolute",
+      left: 0,
+      top: 40,
+      height: chartHeight,
+      justifyContent: "space-between",
+      width: 50,
+    },
+    yAxisLabel: {
+      fontSize: 11,
+      fontWeight: "500",
+      color: isDark ? "#8E8E93" : "#6D6D70",
+      textAlign: "right",
+      fontVariant: ["tabular-nums"],
+    },
+    chart: {
+      marginLeft: 60,
+      height: chartHeight + 60,
+      position: "relative",
+    },
+    gridLines: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      height: chartHeight,
+    },
+    gridLine: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      height: 1,
+      backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
+      opacity: 0.6,
+    },
+    lineContainer: {
+      position: "absolute",
+      width: "100%",
+      height: "100%",
+    },
+    lineSegment: {
+      height: 3,
+      transformOrigin: "left center",
+      borderRadius: 1.5,
+      backgroundColor: "transparent", // Allow inline backgroundColor to override
+    },
+    dataPoint: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      borderWidth: 2,
+      borderColor: isDark ? "#1C1C1E" : "#FFFFFF",
+      shadowColor: "#000000",
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: isDark ? 0.4 : 0.2,
+      shadowRadius: 3,
+      elevation: 4,
+    },
+    dateLabel: {
+      fontSize: 10,
+      color: "#8E8E93",
+      textAlign: "center",
+      width: 40,
+      transform: [{ rotate: "-45deg" }],
+    },
+    volumeLabel: {
+      fontSize: 9,
+      fontWeight: "600",
+      textAlign: "center",
+      width: 30,
+      backgroundColor: "rgba(255, 255, 255, 0.9)",
+      borderRadius: 4,
+      paddingVertical: 2,
+    },
+    legend: {
+      backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 20,
+    },
+    legendTitle: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: isDark ? "#FFFFFF" : "#000000",
+      marginBottom: 12,
+    },
+    legendItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 8,
+    },
+    legendColorDot: {
+      width: 12,
+      height: 12,
+      borderRadius: 6,
+      marginRight: 12,
+    },
+    legendText: {
+      fontSize: 14,
+      color: isDark ? "#FFFFFF" : "#000000",
+    },
+    statsContainer: {
+      backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 20,
+    },
+    statsTitle: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: isDark ? "#FFFFFF" : "#000000",
+      marginBottom: 16,
+    },
+    statsGrid: {
+      flexDirection: "row",
+      justifyContent: "space-around",
+    },
+    statItem: {
+      alignItems: "center",
+    },
+    statValue: {
+      fontSize: 24,
+      fontWeight: "bold",
+      color: "#007AFF",
+      marginBottom: 4,
+    },
+    statLabel: {
+      fontSize: 12,
+      color: "#8E8E93",
+      textAlign: "center",
+    },
+    modalContainer: {
+      flex: 1,
+      backgroundColor: isDark ? "#000000" : "#F2F2F7",
+    },
+    modalHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: "#E5E5EA",
+    },
+    modalTitleContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: "bold",
+      color: isDark ? "#FFFFFF" : "#000000",
+    },
+    refreshButton: {
+      padding: 4,
+    },
+    doneButton: {
+      fontSize: 16,
+      color: "#007AFF",
+      fontWeight: "600",
+    },
+    selectAllButton: {
+      fontSize: 16,
+      color: "#007AFF",
+      fontWeight: "600",
+    },
+    templateItem: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: 16,
+      backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+      borderBottomWidth: 1,
+      borderBottomColor: "#E5E5EA",
+    },
+    templateItemLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    templateColorDot: {
+      width: 16,
+      height: 16,
+      borderRadius: 8,
+      marginRight: 12,
+    },
+    templateName: {
+      fontSize: 16,
+      color: isDark ? "#FFFFFF" : "#000000",
+    },
+    statsModalContent: {
+      flex: 1,
+      padding: 16,
+    },
+    statsSection: {
+      marginBottom: 24,
+    },
+    statsSectionTitle: {
+      fontSize: 18,
+      fontWeight: "600",
+      color: isDark ? "#FFFFFF" : "#000000",
+      marginBottom: 16,
+    },
+    statCard: {
+      flex: 1,
+      backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+      borderRadius: 8,
+      padding: 12,
+      alignItems: "center",
+      marginHorizontal: 4,
+      shadowColor: "#000000",
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.1,
+      shadowRadius: 2,
+      elevation: 1,
+    },
+    statCardValue: {
+      fontSize: 18,
+      fontWeight: "bold",
+      color: "#007AFF",
+      marginBottom: 4,
+    },
+    statCardLabel: {
+      fontSize: 12,
+      color: "#8E8E93",
+      textAlign: "center",
+    },
+    exerciseStatsCard: {
+      backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+      borderRadius: 8,
+      padding: 16,
+      marginBottom: 12,
+      shadowColor: "#000000",
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.1,
+      shadowRadius: 2,
+      elevation: 1,
+    },
+    exerciseStatsName: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: isDark ? "#FFFFFF" : "#000000",
+      marginBottom: 12,
+    },
+    exerciseStatsRow: {
+      flexDirection: "row",
+      justifyContent: "space-around",
+    },
+    exerciseStatItem: {
+      alignItems: "center",
+      flex: 1,
+    },
+    exerciseStatValue: {
+      fontSize: 14,
+      fontWeight: "bold",
+      color: "#007AFF",
+      marginBottom: 2,
+    },
+    exerciseStatLabel: {
+      fontSize: 10,
+      color: "#8E8E93",
+      textAlign: "center",
+    },
+  });
