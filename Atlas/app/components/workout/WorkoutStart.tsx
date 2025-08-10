@@ -43,7 +43,7 @@ export default function WorkoutStart({ onNavigate }: WorkoutStartProps) {
             onPress={handleQuickStart}
           >
             <View style={styles.startOptionContent}>
-              <Ionicons name="flash" size={24} color="#007AFF" />
+              <Ionicons name="flash" size={24} color="#84CC16" />
               <View style={styles.startOptionText}>
                 <Text style={styles.startOptionTitle}>Quick Start</Text>
                 <Text style={styles.startOptionDescription}>
@@ -60,7 +60,7 @@ export default function WorkoutStart({ onNavigate }: WorkoutStartProps) {
             onPress={handleTemplates}
           >
             <View style={styles.startOptionContent}>
-              <Ionicons name="library" size={24} color="#007AFF" />
+              <Ionicons name="library" size={24} color="#84CC16" />
               <View style={styles.startOptionText}>
                 <Text style={styles.startOptionTitle}>Workout Templates</Text>
                 <Text style={styles.startOptionDescription}>
@@ -98,7 +98,7 @@ const getStyles = (isDark: boolean) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: "#F2F2F7", // Light background
+      backgroundColor: isDark ? "#1E293B" : "#F1F5F9",
     },
     scrollView: {
       flex: 1,
@@ -109,21 +109,21 @@ const getStyles = (isDark: boolean) =>
     startTitle: {
       fontSize: 32,
       fontWeight: "bold",
-      color: "#000000", // Dark text
+      color: isDark ? "#F1F5F9" : "#334155",
       marginBottom: 8,
     },
     startSubtitle: {
       fontSize: 16,
-      color: "#6D6D70", // Light theme subtitle
+      color: isDark ? "#94A3B8" : "#64748B",
       marginBottom: 32,
     },
     startOption: {
-      backgroundColor: "#FFFFFF", // White cards
+      backgroundColor: isDark ? "#334155" : "#FFFFFF",
       borderRadius: 12,
       marginBottom: 16,
-      shadowColor: "#000000",
+      shadowColor: isDark ? "#000000" : "#64748B",
       shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1, // Light shadow
+      shadowOpacity: 0.1,
       shadowRadius: 4,
       elevation: 3,
     },
@@ -142,14 +142,14 @@ const getStyles = (isDark: boolean) =>
     startOptionTitle: {
       fontSize: 18,
       fontWeight: "600",
-      color: "#000000", // Dark text
+      color: isDark ? "#F1F5F9" : "#334155",
       marginBottom: 4,
     },
     startOptionDescription: {
       fontSize: 14,
-      color: "#6D6D70", // Light theme description
+      color: isDark ? "#94A3B8" : "#64748B",
     },
     disabledText: {
-      color: "#8E8E93",
+      color: isDark ? "#64748B" : "#8E8E93",
     },
   });
