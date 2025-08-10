@@ -323,12 +323,12 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 16,
     borderLeftWidth: 1,
-    borderLeftColor: isDark ? '#2A2A2A' : '#F8FAFC',
+    borderLeftColor: isDark ? '#475569' : '#E2E8F0',
   },
   deleteButton: {
     padding: 8,
     borderRadius: 8,
-    backgroundColor: "#FFF2F2",
+    backgroundColor: isDark ? "#374151" : "#FEF2F2",
   },
   templateHeader: {
     marginBottom: 12,
