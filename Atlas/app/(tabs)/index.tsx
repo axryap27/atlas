@@ -228,7 +228,7 @@ const getStyles = (isDark: boolean) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: isDark ? "#2A2A2A" : "#F8FAFC",
+      backgroundColor: isDark ? "#1E293B" : "#F1F5F9",
     },
     scrollView: {
       flex: 1,
