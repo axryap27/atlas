@@ -30,19 +30,19 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#007AFF',
-        tabBarInactiveTintColor: '#8E8E93',
+        tabBarActiveTintColor: '#84CC16',
+        tabBarInactiveTintColor: colorScheme === 'dark' ? '#94A3B8' : '#64748B',
         tabBarStyle: {
-          backgroundColor: colorScheme === 'dark' ? '#1C1C1E' : '#F2F2F7',
+          backgroundColor: colorScheme === 'dark' ? '#334155' : '#FFFFFF',
           borderTopWidth: 0,
           height: 90,
           paddingBottom: 20,
           paddingTop: 10,
         },
         headerStyle: {
-          backgroundColor: colorScheme === 'dark' ? '#000000' : '#F2F2F7',
+          backgroundColor: colorScheme === 'dark' ? '#1E293B' : '#F1F5F9',
         },
-        headerTintColor: colorScheme === 'dark' ? '#FFFFFF' : '#000000',
+        headerTintColor: colorScheme === 'dark' ? '#F1F5F9' : '#334155',
       }}
     >
       <Tabs.Screen
@@ -61,7 +61,7 @@ export default function TabLayout() {
               <Ionicons 
                 name="log-out-outline" 
                 size={24} 
-                color={colorScheme === 'dark' ? '#FFFFFF' : '#000000'} 
+                color={colorScheme === 'dark' ? '#F1F5F9' : '#334155'} 
               />
             </TouchableOpacity>
           ),
