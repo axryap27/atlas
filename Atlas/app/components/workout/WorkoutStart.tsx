@@ -43,7 +43,7 @@ export default function WorkoutStart({ onNavigate }: WorkoutStartProps) {
             onPress={handleQuickStart}
           >
             <View style={styles.startOptionContent}>
-              <Ionicons name="flash" size={24} color="#84CC16" />
+              <Ionicons name="flash" size={24} color="#007AFF" />
               <View style={styles.startOptionText}>
                 <Text style={styles.startOptionTitle}>Quick Start</Text>
                 <Text style={styles.startOptionDescription}>
@@ -60,7 +60,7 @@ export default function WorkoutStart({ onNavigate }: WorkoutStartProps) {
             onPress={handleTemplates}
           >
             <View style={styles.startOptionContent}>
-              <Ionicons name="library" size={24} color="#84CC16" />
+              <Ionicons name="library" size={24} color="#007AFF" />
               <View style={styles.startOptionText}>
                 <Text style={styles.startOptionTitle}>Workout Templates</Text>
                 <Text style={styles.startOptionDescription}>
@@ -150,6 +150,6 @@ const getStyles = (isDark: boolean) =>
       color: isDark ? "#94A3B8" : "#64748B",
     },
     disabledText: {
-      color: isDark ? "#64748B" : "#8E8E93",
+      color: "#718096",
     },
   });

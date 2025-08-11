@@ -161,7 +161,7 @@ export default function Templates({ onNavigate, onBack, needsRefresh, onRefreshe
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <TouchableOpacity onPress={onBack} style={styles.backButton}>
-            <Ionicons name="chevron-back" size={24} color="#84CC16" />
+            <Ionicons name="chevron-back" size={24} color="#007AFF" />
             <Text style={styles.backText}>Back</Text>
           </TouchableOpacity>
         </View>
@@ -174,7 +174,7 @@ export default function Templates({ onNavigate, onBack, needsRefresh, onRefreshe
       <ScrollView style={styles.templatesScrollView}>
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#84CC16" />
+            <ActivityIndicator size="large" color="#007AFF" />
             <Text style={styles.loadingText}>Loading your templates...</Text>
           </View>
         ) : templates.length > 0 ? (
@@ -230,7 +230,7 @@ export default function Templates({ onNavigate, onBack, needsRefresh, onRefreshe
           style={styles.createTemplateButton}
           onPress={handleCreateTemplate}
         >
-          <Ionicons name="add" size={24} color="#84CC16" />
+          <Ionicons name="add" size={24} color="#007AFF" />
           <Text style={styles.createTemplateText}>Create New Template</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -241,7 +241,7 @@ export default function Templates({ onNavigate, onBack, needsRefresh, onRefreshe
 const getStyles = (isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: isDark ? '#2A2A2A' : '#F8FAFC',
+    backgroundColor: isDark ? '#1E293B' : '#F1F5F9',
   },
   header: {
     padding: 16,
@@ -258,7 +258,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   },
   backText: {
     fontSize: 16,
-    color: "#84CC16",
+    color: "#007AFF",
     marginLeft: 4,
   },
   workoutTitle: {
@@ -328,7 +328,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   deleteButton: {
     padding: 8,
     borderRadius: 8,
-    backgroundColor: isDark ? "#374151" : "#FEF2F2",
+    backgroundColor: "#4A5568",
   },
   templateHeader: {
     marginBottom: 12,
@@ -369,7 +369,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     padding: 20,
     marginBottom: 20,
     borderWidth: 2,
-    borderColor: "#84CC16",
+    borderColor: "#007AFF",
     borderStyle: "dashed",
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 1 },
@@ -379,7 +379,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   },
   createTemplateText: {
     fontSize: 16,
-    color: "#84CC16",
+    color: "#007AFF",
     fontWeight: "600",
     marginLeft: 8,
   },

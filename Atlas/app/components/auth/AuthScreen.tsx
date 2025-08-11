@@ -125,6 +125,7 @@ export default function AuthScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="Email"
+                placeholderTextColor="#8E8E93"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -140,6 +141,7 @@ export default function AuthScreen() {
                 <TextInput
                   style={styles.input}
                   placeholder="Username"
+                placeholderTextColor="#8E8E93"
                   value={username}
                   onChangeText={setUsername}
                   autoCapitalize="none"
@@ -153,6 +155,7 @@ export default function AuthScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="Password"
+                placeholderTextColor="#8E8E93"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}

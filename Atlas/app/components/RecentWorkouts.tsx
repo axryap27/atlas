@@ -777,7 +777,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   durationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: isDark ? '#334155' : '#F8FAFC',
+    backgroundColor: isDark ? '#334155' : '#FFFFFF',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
@@ -816,7 +816,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     marginBottom: 12,
   },
   muscleGroupTag: {
-    backgroundColor: isDark ? '#2A2A2A' : '#F0FDF4',
+    backgroundColor: isDark ? '#2A2A2A' : '#F8FAFC',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
