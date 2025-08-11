@@ -249,7 +249,7 @@ const getStyles = (isDark: boolean) =>
     welcomeTitle: {
       fontSize: 32,
       fontWeight: "400",
-      color: isDark ? "#F1F5F9" : "#334155",
+      color: isDark ? "#FFFFFF" : "#000000",
       marginBottom: 4,
       letterSpacing: 0,
       fontFamily: Platform.OS === 'ios' ? 'Futura' : 'sans-serif',
@@ -303,7 +303,7 @@ const getStyles = (isDark: boolean) =>
     sectionTitle: {
       fontSize: 22,
       fontWeight: "bold",
-      color: isDark ? "#F1F5F9" : "#334155",
+      color: isDark ? "#FFFFFF" : "#000000",
     },
     seeAllText: {
       fontSize: 16,
@@ -329,7 +329,7 @@ const getStyles = (isDark: boolean) =>
     calendarPlaceholderTitle: {
       fontSize: 18,
       fontWeight: "600",
-      color: isDark ? "#F1F5F9" : "#334155",
+      color: isDark ? "#FFFFFF" : "#000000",
       marginTop: 12,
       marginBottom: 8,
     },

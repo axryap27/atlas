@@ -1060,7 +1060,7 @@ const getStyles = (isDark: boolean) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: isDark ? "#1E293B" : "#F1F5F9",
+      backgroundColor: "#2D3748",
     },
     scrollView: {
       flex: 1,
@@ -1073,7 +1073,7 @@ const getStyles = (isDark: boolean) =>
     },
     loadingText: {
       fontSize: 16,
-      color: isDark ? "#94A3B8" : "#64748B",
+      color: "#CBD5E0",
     },
     filterContainer: {
       marginBottom: 20,
@@ -1081,7 +1081,7 @@ const getStyles = (isDark: boolean) =>
     filterButton: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: isDark ? "#334155" : "#FFFFFF",
+      backgroundColor: "#4A5568",
       paddingHorizontal: 16,
       paddingVertical: 12,
       borderRadius: 8,
@@ -1098,7 +1098,7 @@ const getStyles = (isDark: boolean) =>
       color: "#84CC16",
     },
     chartContainer: {
-      backgroundColor: isDark ? "#334155" : "#FFFFFF",
+      backgroundColor: "#4A5568",
       borderRadius: 16,
       padding: 20,
       marginBottom: 24,
@@ -1128,7 +1128,7 @@ const getStyles = (isDark: boolean) =>
     chartTitle: {
       fontSize: 20,
       fontWeight: "700",
-      color: isDark ? "#F1F5F9" : "#334155",
+      color: "#F1F5F9",
       marginBottom: 20,
       textAlign: "center",
       letterSpacing: 0.5,
@@ -1144,7 +1144,7 @@ const getStyles = (isDark: boolean) =>
     yAxisLabel: {
       fontSize: 11,
       fontWeight: "500",
-      color: isDark ? "#94A3B8" : "#64748B",
+      color: "#CBD5E0",
       textAlign: "right",
       fontVariant: ["tabular-nums"],
     },
@@ -1164,7 +1164,7 @@ const getStyles = (isDark: boolean) =>
       left: 0,
       right: 0,
       height: 1,
-      backgroundColor: isDark ? "#475569" : "#E2E8F0",
+      backgroundColor: "#718096",
       opacity: 0.6,
     },
     lineContainer: {
@@ -1212,7 +1212,7 @@ const getStyles = (isDark: boolean) =>
       paddingVertical: 2,
     },
     legend: {
-      backgroundColor: isDark ? "#334155" : "#FFFFFF",
+      backgroundColor: "#4A5568",
       borderRadius: 12,
       padding: 16,
       marginBottom: 20,
@@ -1220,7 +1220,7 @@ const getStyles = (isDark: boolean) =>
     legendTitle: {
       fontSize: 16,
       fontWeight: "600",
-      color: isDark ? "#F1F5F9" : "#334155",
+      color: "#F1F5F9",
       marginBottom: 12,
     },
     legendItem: {
@@ -1236,10 +1236,10 @@ const getStyles = (isDark: boolean) =>
     },
     legendText: {
       fontSize: 14,
-      color: isDark ? "#F1F5F9" : "#334155",
+      color: "#F1F5F9",
     },
     statsContainer: {
-      backgroundColor: isDark ? "#334155" : "#FFFFFF",
+      backgroundColor: "#4A5568",
       borderRadius: 12,
       padding: 16,
       marginBottom: 20,
@@ -1247,7 +1247,7 @@ const getStyles = (isDark: boolean) =>
     statsTitle: {
       fontSize: 16,
       fontWeight: "600",
-      color: isDark ? "#F1F5F9" : "#334155",
+      color: "#F1F5F9",
       marginBottom: 16,
     },
     statsGrid: {
@@ -1270,7 +1270,7 @@ const getStyles = (isDark: boolean) =>
     },
     modalContainer: {
       flex: 1,
-      backgroundColor: isDark ? "#2A2A2A" : "#F8FAFC",
+      backgroundColor: "#2D3748",
     },
     modalHeader: {
       flexDirection: "row",
@@ -1288,7 +1288,7 @@ const getStyles = (isDark: boolean) =>
     modalTitle: {
       fontSize: 18,
       fontWeight: "bold",
-      color: isDark ? "#F1F5F9" : "#334155",
+      color: "#F1F5F9",
     },
     refreshButton: {
       padding: 4,
@@ -1308,7 +1308,7 @@ const getStyles = (isDark: boolean) =>
       justifyContent: "space-between",
       alignItems: "center",
       padding: 16,
-      backgroundColor: isDark ? "#334155" : "#FFFFFF",
+      backgroundColor: "#4A5568",
       borderBottomWidth: 1,
       borderBottomColor: "#E5E5EA",
     },
@@ -1324,7 +1324,7 @@ const getStyles = (isDark: boolean) =>
     },
     templateName: {
       fontSize: 16,
-      color: isDark ? "#F1F5F9" : "#334155",
+      color: "#F1F5F9",
     },
     statsModalContent: {
       flex: 1,
@@ -1336,12 +1336,12 @@ const getStyles = (isDark: boolean) =>
     statsSectionTitle: {
       fontSize: 18,
       fontWeight: "600",
-      color: isDark ? "#F1F5F9" : "#334155",
+      color: "#F1F5F9",
       marginBottom: 16,
     },
     statCard: {
       flex: 1,
-      backgroundColor: isDark ? "#334155" : "#FFFFFF",
+      backgroundColor: "#4A5568",
       borderRadius: 8,
       padding: 12,
       alignItems: "center",
@@ -1364,7 +1364,7 @@ const getStyles = (isDark: boolean) =>
       textAlign: "center",
     },
     exerciseStatsCard: {
-      backgroundColor: isDark ? "#334155" : "#FFFFFF",
+      backgroundColor: "#4A5568",
       borderRadius: 8,
       padding: 16,
       marginBottom: 12,
@@ -1377,7 +1377,7 @@ const getStyles = (isDark: boolean) =>
     exerciseStatsName: {
       fontSize: 16,
       fontWeight: "600",
-      color: isDark ? "#F1F5F9" : "#334155",
+      color: "#F1F5F9",
       marginBottom: 12,
     },
     exerciseStatsRow: {
