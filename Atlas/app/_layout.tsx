@@ -10,22 +10,25 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
-    // Add any custom fonts here if needed
+    // Load Ionicons font for icons
+    'Ionicons': require('@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/Ionicons.ttf'),
   });
 
   useEffect(() => {
-    // Hide splash screen after a short delay to ensure everything is loaded
-    const timer = setTimeout(() => {
+    // Hide splash screen when fonts are loaded OR after timeout
+    if (fontsLoaded) {
       SplashScreen.hideAsync();
-    }, 1000);
+    } else {
+      // Fallback timeout to prevent indefinite loading
+      const timer = setTimeout(() => {
+        SplashScreen.hideAsync();
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [fontsLoaded]);
 
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Don't block rendering on font loading for now
-  // if (!fontsLoaded) {
-  //   return null;
-  // }
+  // Don't block rendering - let the app load even without fonts
+  // Icons might be missing briefly but app will be functional
 
   return (
     <AuthProvider>
