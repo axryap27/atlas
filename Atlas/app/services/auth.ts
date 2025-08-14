@@ -77,76 +77,11 @@ class AuthService {
         }
       }
     })
-
-    // If signup successful and we have a user, create/update profile
-    if (!error && data.user && username) {
-      try {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .upsert({
-            id: data.user.id,
-            username: username,
-            email: email,
-            display_name: username
-          })
-        
-        if (profileError) {
-          console.error('Failed to create profile:', profileError)
-        }
-      } catch (profileError) {
-        console.error('Error creating profile:', profileError)
-      }
-    }
-
     return { data, error }
   }
 
-  // Helper function to check if input is email or username
-  private isEmail(input: string): boolean {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return emailRegex.test(input)
-  }
-
-  // Get email from username by checking user profiles table
-  private async getEmailFromUsername(username: string): Promise<string | null> {
-    try {
-      // First try to find user by username in a profiles table if it exists
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('email, user_id')
-        .eq('username', username)
-        .single()
-      
-      if (!profileError && profileData) {
-        return profileData.email
-      }
-      
-      // If no profiles table, we'll need to return null and let the user know
-      console.log('Username lookup not available - user should use email')
-      return null
-    } catch (error) {
-      console.log('Username lookup failed:', error)
-      return null
-    }
-  }
-
-  // Sign in with email/username and password
-  async signIn(emailOrUsername: string, password: string) {
-    let email = emailOrUsername
-
-    // If input is not an email, try to get email from username
-    if (!this.isEmail(emailOrUsername)) {
-      const foundEmail = await this.getEmailFromUsername(emailOrUsername)
-      if (foundEmail) {
-        email = foundEmail
-      } else {
-        return { 
-          data: null, 
-          error: { message: 'Username not found. Please check your username or use your email address.' }
-        }
-      }
-    }
-
+  // Sign in with email and password (for now, username login can be added later)
+  async signIn(email: string, password: string) {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password

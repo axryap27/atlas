@@ -18,7 +18,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { authService } from '../../services/auth'
 
 export default function AuthScreen() {
-  const [emailOrUsername, setEmailOrUsername] = useState('')
+  const [email, setEmail] = useState('')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [isSignUp, setIsSignUp] = useState(false)
@@ -37,7 +37,7 @@ export default function AuthScreen() {
 
   const handleAuth = async () => {
     if (isSignUp) {
-      if (!emailOrUsername || !username || !password) {
+      if (!email || !username || !password) {
         Alert.alert('Error', 'Please fill in all fields')
         return
       }
@@ -45,14 +45,8 @@ export default function AuthScreen() {
         Alert.alert('Error', 'Username must be at least 3 characters')
         return
       }
-      // Check if emailOrUsername is actually an email for signup
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      if (!emailRegex.test(emailOrUsername)) {
-        Alert.alert('Error', 'Please enter a valid email address for sign up')
-        return
-      }
     } else {
-      if (!emailOrUsername || !password) {
+      if (!email || !password) {
         Alert.alert('Error', 'Please fill in all fields')
         return
       }
@@ -68,11 +62,9 @@ export default function AuthScreen() {
     try {
       let result
       if (isSignUp) {
-        // For signup, emailOrUsername should be email
-        result = await authService.signUp(emailOrUsername, password, username)
+        result = await authService.signUp(email, password, username)
       } else {
-        // For signin, emailOrUsername can be either email or username
-        result = await authService.signIn(emailOrUsername, password)
+        result = await authService.signIn(email, password)
       }
 
       if (result.error) {
@@ -132,13 +124,13 @@ export default function AuthScreen() {
               <Ionicons name="mail-outline" size={20} color="#8E8E93" />
               <TextInput
                 style={styles.input}
-                placeholder={isSignUp ? "Email" : "Email or Username"}
+                placeholder="Email"
                 placeholderTextColor="#8E8E93"
-                value={emailOrUsername}
-                onChangeText={setEmailOrUsername}
-                keyboardType={isSignUp ? "email-address" : "default"}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
                 autoCapitalize="none"
-                autoComplete={isSignUp ? "email" : "username"}
+                autoComplete="email"
               />
             </View>
 
