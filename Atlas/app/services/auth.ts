@@ -113,7 +113,7 @@ class AuthService {
       // First try to find user by username in a profiles table if it exists
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('email, user_id')
+        .select('email, id')
         .eq('username', username)
         .single()
       
