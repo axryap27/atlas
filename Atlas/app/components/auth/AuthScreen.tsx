@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#334155',
     marginBottom: 8,
-    fontFamily: Platform.OS === 'ios' ? 'Futura' : 'sans-serif-black',
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
     textTransform: 'lowercase',
   },
   subtitle: {
@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
     color: '#64748B',
     fontWeight: '400',
     textAlign: 'center',
-    fontFamily: Platform.OS === 'ios' ? 'Futura' : 'sans-serif-black',
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
   },
   
   // Form styles
@@ -296,6 +296,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#334155',
     fontWeight: '400',
+  },
+  showPasswordText: {
+    fontSize: 14,
+    color: '#007AFF',
+    fontWeight: '500',
   },
   authButton: {
     backgroundColor: '#84CC16',

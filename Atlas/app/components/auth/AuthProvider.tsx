@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
     fontWeight: Platform.OS === 'ios' ? '400' : '900',
     color: '#334155',
     marginBottom: 32,
-    fontFamily: Platform.OS === 'ios' ? 'Avenir-Light' : 'sans-serif-thin',
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
     textTransform: 'lowercase',
   },
   spinner: {
