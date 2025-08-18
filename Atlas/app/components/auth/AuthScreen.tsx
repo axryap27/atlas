@@ -112,7 +112,7 @@ export default function AuthScreen() {
                 resizeMode="contain"
               />
             </View>
-            <Text style={styles.title}>Atlas</Text>
+            <Text style={styles.title}>atlas</Text>
             <Text style={styles.subtitle}>
               {isSignUp ? 'Create your account' : 'Welcome back'}
             </Text>
@@ -124,12 +124,12 @@ export default function AuthScreen() {
               <Ionicons name="mail-outline" size={20} color="#8E8E93" />
               <TextInput
                 style={styles.input}
-                placeholder="Email"
+                placeholder={isSignUp ? "Email" : "Email or Username"}
                 value={email}
                 onChangeText={setEmail}
-                keyboardType="email-address"
+                keyboardType={isSignUp ? "email-address" : "default"}
                 autoCapitalize="none"
-                autoComplete="email"
+                autoComplete={isSignUp ? "email" : "username"}
               />
             </View>
 
