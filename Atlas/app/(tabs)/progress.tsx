@@ -587,15 +587,48 @@ export default function ProgressScreen() {
 
         {/* Y-axis labels */}
         <View style={styles.yAxisLabels}>
-          <Text style={styles.yAxisLabel}>
-            {Math.round(maxVolume).toLocaleString()}
-          </Text>
-          <Text style={styles.yAxisLabel}>
-            {Math.round((maxVolume + minVolume) * 0.5).toLocaleString()}
-          </Text>
-          <Text style={styles.yAxisLabel}>
-            {Math.round(minVolume).toLocaleString()}
-          </Text>
+          {(() => {
+            const chartPadding = 20;
+            const availableHeight = chartHeight - chartPadding * 2;
+            
+            // Calculate y positions using the SAME math as data points
+            const maxNormalizedValue = 1; // max volume
+            const midNormalizedValue = 0.5; // mid volume
+            const minNormalizedValue = 0; // min volume
+            
+            const maxY = availableHeight - maxNormalizedValue * availableHeight + chartPadding;
+            const midY = availableHeight - midNormalizedValue * availableHeight + chartPadding;
+            const minY = availableHeight - minNormalizedValue * availableHeight + chartPadding;
+            
+            return (
+              <>
+                {/* Top label (max volume) */}
+                <Text style={[styles.yAxisLabel, { 
+                  position: 'absolute', 
+                  top: maxY - 8, // offset by half text height for center alignment
+                  lineHeight: 16
+                }]}>
+                  {Math.round(maxVolume).toLocaleString()}
+                </Text>
+                {/* Middle label */}
+                <Text style={[styles.yAxisLabel, { 
+                  position: 'absolute', 
+                  top: midY - 8, // offset by half text height for center alignment
+                  lineHeight: 16
+                }]}>
+                  {Math.round((maxVolume + minVolume) * 0.5).toLocaleString()}
+                </Text>
+                {/* Bottom label (min volume) */}
+                <Text style={[styles.yAxisLabel, { 
+                  position: 'absolute', 
+                  top: minY - 8, // offset by half text height for center alignment
+                  lineHeight: 16
+                }]}>
+                  {Math.round(minVolume).toLocaleString()}
+                </Text>
+              </>
+            );
+          })()}
         </View>
 
         {/* Chart area */}
@@ -1138,7 +1171,6 @@ const getStyles = (isDark: boolean) =>
       left: 0,
       top: 40,
       height: chartHeight,
-      justifyContent: "space-between",
       width: 50,
     },
     yAxisLabel: {
