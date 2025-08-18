@@ -80,13 +80,36 @@ class AuthService {
     return { data, error }
   }
 
-  // Sign in with email and password (for now, username login can be added later)
-  async signIn(email: string, password: string) {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    })
-    return { data, error }
+  // Sign in with email/username and password
+  async signIn(emailOrUsername: string, password: string) {
+    // Check if the input is an email (contains @) or username
+    const isEmail = emailOrUsername.includes('@')
+    
+    if (isEmail) {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: emailOrUsername,
+        password
+      })
+      return { data, error }
+    } else {
+      // For username login, use RPC function to get email
+      try {
+        const { data: email, error: rpcError } = await supabase
+          .rpc('get_user_email_by_username', { username_input: emailOrUsername })
+        
+        if (rpcError || !email) {
+          return { data: null, error: { message: 'Username not found' } }
+        }
+        
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email,
+          password
+        })
+        return { data, error }
+      } catch (error) {
+        return { data: null, error: { message: 'Error looking up username' } }
+      }
+    }
   }
 
   // Sign out
@@ -108,6 +131,14 @@ class AuthService {
   // Check if user is authenticated
   isAuthenticated() {
     return !!this.currentState.user
+  }
+
+  // Update user profile (including username)
+  async updateProfile(updates: { username?: string; display_name?: string }) {
+    const { data, error } = await supabase.auth.updateUser({
+      data: updates
+    })
+    return { data, error }
   }
 }
 
