@@ -1,11 +1,14 @@
 // app/(tabs)/workout.tsx - Main Workout Router
 import React, { useState } from "react";
+import { View, Text, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import WorkoutStart from "../components/workout/WorkoutStart";
 import Templates from "../components/workout/Templates";
 import CreateTemplate from "../components/workout/CreateTemplate";
 import ActiveWorkout from "../components/workout/ActiveWorkout";
+import RecentWorkouts from "../components/RecentWorkouts";
 
-export type WorkoutScreen = "start" | "templates" | "createTemplate" | "active";
+export type WorkoutScreen = "start" | "templates" | "createTemplate" | "active" | "recent";
 
 // Using your existing interfaces
 interface Set {
@@ -107,6 +110,35 @@ export default function WorkoutScreen() {
           onBack={handleBackToStart}
           templateId={selectedTemplateId}
         />
+      );
+
+    case "recent":
+      return (
+        <View style={{ flex: 1, backgroundColor: '#F2F2F7' }}>
+          <View style={{ 
+            flexDirection: 'row', 
+            alignItems: 'center', 
+            paddingHorizontal: 16, 
+            paddingTop: 16, 
+            paddingBottom: 8,
+            backgroundColor: '#F2F2F7'
+          }}>
+            <TouchableOpacity 
+              onPress={handleBackToStart}
+              style={{ marginRight: 16, padding: 8 }}
+            >
+              <Ionicons name="arrow-back" size={24} color="#007AFF" />
+            </TouchableOpacity>
+            <Text style={{ fontSize: 18, fontWeight: '600', color: '#000000' }}>Recent Workouts</Text>
+          </View>
+          <RecentWorkouts
+            showHeader={false}
+            onViewWorkout={(sessionId) => {
+              // Handle viewing workout session details
+              console.log('View workout session:', sessionId);
+            }}
+          />
+        </View>
       );
 
     default:
