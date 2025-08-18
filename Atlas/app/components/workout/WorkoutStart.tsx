@@ -28,6 +28,10 @@ export default function WorkoutStart({ onNavigate }: WorkoutStartProps) {
     onNavigate("templates");
   };
 
+  const handleRecentWorkouts = () => {
+    onNavigate("recent");
+  };
+
   const styles = getStyles(isDark);
 
   return (
@@ -71,21 +75,22 @@ export default function WorkoutStart({ onNavigate }: WorkoutStartProps) {
             </View>
           </TouchableOpacity>
 
-          {/* Recent Workouts (Coming Soon) */}
-          <TouchableOpacity style={[styles.startOption, styles.disabledOption]}>
+          {/* Recent Workouts */}
+          <TouchableOpacity
+            style={styles.startOption}
+            onPress={handleRecentWorkouts}
+          >
             <View style={styles.startOptionContent}>
-              <Ionicons name="time" size={24} color="#8E8E93" />
+              <Ionicons name="time" size={24} color="#007AFF" />
               <View style={styles.startOptionText}>
-                <Text style={[styles.startOptionTitle, styles.disabledText]}>
+                <Text style={styles.startOptionTitle}>
                   Recent Workouts
                 </Text>
-                <Text
-                  style={[styles.startOptionDescription, styles.disabledText]}
-                >
-                  Coming soon - repeat previous workouts
+                <Text style={styles.startOptionDescription}>
+                  View and repeat previous workouts
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color="#8E8E93" />
+              <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
             </View>
           </TouchableOpacity>
         </View>
