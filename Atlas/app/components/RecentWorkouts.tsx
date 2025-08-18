@@ -32,6 +32,7 @@ interface RecentWorkoutsProps {
   showDebugTools?: boolean; // Add debug prop
   refreshTrigger?: number; // Add prop to trigger refresh from outside
   onWorkoutDeleted?: () => void; // Callback when workout is deleted
+  showHeader?: boolean; // Control whether to show the header
 }
 
 const apiService = {
@@ -73,7 +74,7 @@ const apiService = {
   },
 };
 
-export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, refreshTrigger, onWorkoutDeleted }: RecentWorkoutsProps) {
+export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, refreshTrigger, onWorkoutDeleted, showHeader = true }: RecentWorkoutsProps) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
@@ -435,29 +436,31 @@ export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, 
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Recent Workouts</Text>
-        <View style={styles.headerActions}>
-          <TouchableOpacity 
-            onPress={() => setAllWorkoutsHidden(!allWorkoutsHidden)} 
-            style={styles.headerButton}
-          >
-            <Ionicons 
-              name={allWorkoutsHidden ? "eye-off" : "eye"} 
-              size={20} 
-              color="#007AFF" 
-            />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleRefresh} style={styles.headerButton}>
-            <Ionicons name="refresh" size={20} color="#007AFF" />
-          </TouchableOpacity>
-          {showDebugTools && (
-            <TouchableOpacity onPress={handleDeleteAllSessions} style={styles.deleteButton}>
-              <Ionicons name="trash" size={20} color="#FF3B30" />
+      {showHeader && (
+        <View style={styles.header}>
+          <Text style={styles.title}>Recent Workouts</Text>
+          <View style={styles.headerActions}>
+            <TouchableOpacity 
+              onPress={() => setAllWorkoutsHidden(!allWorkoutsHidden)} 
+              style={styles.headerButton}
+            >
+              <Ionicons 
+                name={allWorkoutsHidden ? "eye-off" : "eye"} 
+                size={20} 
+                color="#007AFF" 
+              />
             </TouchableOpacity>
-          )}
+            <TouchableOpacity onPress={handleRefresh} style={styles.headerButton}>
+              <Ionicons name="refresh" size={20} color="#007AFF" />
+            </TouchableOpacity>
+            {showDebugTools && (
+              <TouchableOpacity onPress={handleDeleteAllSessions} style={styles.deleteButton}>
+                <Ionicons name="trash" size={20} color="#FF3B30" />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
-      </View>
+      )}
 
       {sessions.length === 0 || allWorkoutsHidden ? (
         <View style={styles.emptyState}>
