@@ -1,4 +1,4 @@
-import React, { useState, useImperativeHandle, forwardRef } from 'react';
+import React, { useState, useImperativeHandle, forwardRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
   Modal,
 } from 'react-native';
 import { GestureHandlerRootView, PanGestureHandler, State } from 'react-native-gesture-handler';
+import { supabaseApi } from '../services/supabase-api';
+import { Session } from '../../lib/supabase';
 
 interface CalendarProps {
   onDateSelect?: (date: string) => void;
@@ -68,30 +70,58 @@ const Calendar = forwardRef<CalendarRef, CalendarProps>(({ onDateSelect }, ref) 
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   
-  const [currentDate, setCurrentDate] = useState(new Date(2025, 7, 16)); // August 2025
+  const [currentDate, setCurrentDate] = useState(new Date()); // Current date
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [showFullMonth, setShowFullMonth] = useState(false);
   const [modalTranslateY, setModalTranslateY] = useState(0);
   const [showWorkoutDetails, setShowWorkoutDetails] = useState(false);
   const [selectedWorkoutDate, setSelectedWorkoutDate] = useState<string | null>(null);
-
-  // Mock workout data - replace with actual data
-  const workoutDates = new Set(['2025-08-12', '2025-08-14', '2025-08-16', '2025-08-18', '2025-08-20']);
+  const [workoutSessions, setWorkoutSessions] = useState<Session[]>([]);
+  const [workoutDates, setWorkoutDates] = useState<Set<string>>(new Set());
   
-  // Mock workout details - replace with actual data
-  const workoutDetails: { [key: string]: { name: string; exercises: string[] }[] } = {
-    '2025-08-16': [
-      { name: 'Morning Push', exercises: ['Push-ups', 'Bench Press', 'Shoulder Press'] },
-      { name: 'Afternoon Pull', exercises: ['Pull-ups', 'Rows', 'Lat Pulldowns'] },
-      { name: 'Evening Legs', exercises: ['Squats', 'Deadlifts', 'Lunges'] }
-    ]
+  // Load workout sessions on component mount
+  useEffect(() => {
+    loadWorkoutSessions();
+  }, []);
+
+  const loadWorkoutSessions = async () => {
+    try {
+      const sessions = await supabaseApi.getUserSessions();
+      setWorkoutSessions(sessions);
+      
+      // Create a set of dates that have workouts
+      const dates = new Set<string>();
+      sessions.forEach(session => {
+        const date = new Date(session.start_time);
+        const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        dates.add(dateString);
+      });
+      setWorkoutDates(dates);
+    } catch (error) {
+      console.error('Error loading workout sessions:', error);
+      // Fallback to empty data on error
+      setWorkoutSessions([]);
+      setWorkoutDates(new Set());
+    }
+  };
+
+  // Get workout details for a specific date
+  const getWorkoutDetailsForDate = (dateString: string) => {
+    return workoutSessions.filter(session => {
+      const sessionDate = new Date(session.start_time);
+      const sessionDateString = `${sessionDate.getFullYear()}-${String(sessionDate.getMonth() + 1).padStart(2, '0')}-${String(sessionDate.getDate()).padStart(2, '0')}`;
+      return sessionDateString === dateString;
+    }).map(session => ({
+      name: session.workout_day?.name || 'Workout Session',
+      exercises: session.set_logs?.map(setLog => setLog.exercise?.name).filter((name): name is string => Boolean(name)) || []
+    }));
   };
 
   useImperativeHandle(ref, () => ({
     showFullMonth: () => setShowFullMonth(true)
   }));
 
-  const today = new Date(2025, 7, 16); // August 16, 2025
+  const today = new Date(); // Today's actual date
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
 
@@ -319,7 +349,7 @@ const Calendar = forwardRef<CalendarRef, CalendarProps>(({ onDateSelect }, ref) 
         </View>
 
         {/* Workouts for Selected Date */}
-        {selectedWorkoutDate && workoutDetails[selectedWorkoutDate] && (
+        {selectedWorkoutDate && getWorkoutDetailsForDate(selectedWorkoutDate).length > 0 && (
           <View style={styles.workoutsSection}>
             <Text style={styles.workoutsSectionTitle}>
               Workouts - {new Date(selectedWorkoutDate).toLocaleDateString('en-US', { 
@@ -329,7 +359,7 @@ const Calendar = forwardRef<CalendarRef, CalendarProps>(({ onDateSelect }, ref) 
               })}
             </Text>
             <View style={styles.workoutsList}>
-              {workoutDetails[selectedWorkoutDate].map((workout, index) => (
+              {getWorkoutDetailsForDate(selectedWorkoutDate).map((workout, index) => (
                 <View key={index} style={styles.workoutItem}>
                   <Text style={styles.workoutName}>{workout.name}</Text>
                   <View style={styles.exercisesList}>
