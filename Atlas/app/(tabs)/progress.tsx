@@ -583,7 +583,7 @@ export default function ProgressScreen() {
 
     return (
       <View style={styles.chartContainer}>
-        <Text style={styles.chartTitle}>Volume Progress by Template</Text>
+        <Text style={styles.chartTitle}>Volume Progress</Text>
 
         {/* Y-axis labels */}
         <View style={styles.yAxisLabels}>
@@ -591,41 +591,51 @@ export default function ProgressScreen() {
             const chartPadding = 20;
             const availableHeight = chartHeight - chartPadding * 2;
             
-            // Calculate y positions using the SAME math as data points
-            const maxNormalizedValue = 1; // max volume
-            const midNormalizedValue = 0.5; // mid volume
-            const minNormalizedValue = 0; // min volume
+            // Create clean, rounded y-axis labels
+            const createCleanLabels = () => {
+              const range = maxVolume - minVolume;
+              
+              // Determine appropriate increment based on range
+              let increment;
+              if (range <= 1000) increment = 100;
+              else if (range <= 5000) increment = 500;
+              else if (range <= 10000) increment = 1000;
+              else increment = 2000;
+              
+              // Round min and max to clean increments
+              const cleanMin = Math.floor(minVolume / increment) * increment;
+              const cleanMax = Math.ceil(maxVolume / increment) * increment;
+              
+              // Generate 3-4 evenly spaced labels
+              const labelCount = 3;
+              const labels = [];
+              for (let i = 0; i < labelCount; i++) {
+                const value = cleanMin + (cleanMax - cleanMin) * (i / (labelCount - 1));
+                labels.push(Math.round(value / increment) * increment);
+              }
+              
+              return labels;
+            };
             
-            const maxY = availableHeight - maxNormalizedValue * availableHeight + chartPadding;
-            const midY = availableHeight - midNormalizedValue * availableHeight + chartPadding;
-            const minY = availableHeight - minNormalizedValue * availableHeight + chartPadding;
+            const labels = createCleanLabels();
+            
+            // Use the EXACT same calculation logic as the data points for positioning
+            const calculateY = (volume: number) => {
+              const normalizedValue = maxVolume > minVolume ? (volume - minVolume) / (maxVolume - minVolume) : 0.5;
+              return availableHeight - normalizedValue * availableHeight + chartPadding;
+            };
             
             return (
               <>
-                {/* Top label (max volume) */}
-                <Text style={[styles.yAxisLabel, { 
-                  position: 'absolute', 
-                  top: maxY - 8, // offset by half text height for center alignment
-                  lineHeight: 16
-                }]}>
-                  {Math.round(maxVolume).toLocaleString()}
-                </Text>
-                {/* Middle label */}
-                <Text style={[styles.yAxisLabel, { 
-                  position: 'absolute', 
-                  top: midY - 8, // offset by half text height for center alignment
-                  lineHeight: 16
-                }]}>
-                  {Math.round((maxVolume + minVolume) * 0.5).toLocaleString()}
-                </Text>
-                {/* Bottom label (min volume) */}
-                <Text style={[styles.yAxisLabel, { 
-                  position: 'absolute', 
-                  top: minY - 8, // offset by half text height for center alignment
-                  lineHeight: 16
-                }]}>
-                  {Math.round(minVolume).toLocaleString()}
-                </Text>
+                {labels.map((labelValue, index) => (
+                  <Text key={index} style={[styles.yAxisLabel, { 
+                    position: 'absolute', 
+                    top: calculateY(labelValue) - 8, // offset by half text height for center alignment
+                    lineHeight: 16
+                  }]}>
+                    {labelValue.toLocaleString()}
+                  </Text>
+                ))}
               </>
             );
           })()}
@@ -635,9 +645,49 @@ export default function ProgressScreen() {
         <View style={[styles.chart, { width: chartWidth }]}>
           {/* Horizontal grid lines */}
           <View style={styles.gridLines}>
-            <View style={[styles.gridLine, { top: 20 }]} />
-            <View style={[styles.gridLine, { top: chartHeight * 0.5 + 20 }]} />
-            <View style={[styles.gridLine, { top: chartHeight + 20 }]} />
+            {(() => {
+              const chartPadding = 20;
+              const availableHeight = chartHeight - chartPadding * 2;
+              
+              // Create the same clean labels as y-axis
+              const createCleanLabels = () => {
+                const range = maxVolume - minVolume;
+                
+                let increment;
+                if (range <= 1000) increment = 100;
+                else if (range <= 5000) increment = 500;
+                else if (range <= 10000) increment = 1000;
+                else increment = 2000;
+                
+                const cleanMin = Math.floor(minVolume / increment) * increment;
+                const cleanMax = Math.ceil(maxVolume / increment) * increment;
+                
+                const labelCount = 3;
+                const labels = [];
+                for (let i = 0; i < labelCount; i++) {
+                  const value = cleanMin + (cleanMax - cleanMin) * (i / (labelCount - 1));
+                  labels.push(Math.round(value / increment) * increment);
+                }
+                
+                return labels;
+              };
+              
+              const labels = createCleanLabels();
+              
+              // Use the EXACT same calculation as data points
+              const calculateY = (volume: number) => {
+                const normalizedValue = maxVolume > minVolume ? (volume - minVolume) / (maxVolume - minVolume) : 0.5;
+                return availableHeight - normalizedValue * availableHeight + chartPadding;
+              };
+              
+              return (
+                <>
+                  {labels.map((labelValue, index) => (
+                    <View key={index} style={[styles.gridLine, { top: calculateY(labelValue) }]} />
+                  ))}
+                </>
+              );
+            })()}
           </View>
 
           {/* Template Lines */}
@@ -1168,10 +1218,10 @@ const getStyles = (isDark: boolean) =>
     },
     yAxisLabels: {
       position: "absolute",
-      left: 0,
-      top: 40,
+      left: 8, // Add more spacing from the edge
+      top: 60, // 20 (container padding) + 20 (title fontSize) + 20 (title marginBottom)
       height: chartHeight,
-      width: 50,
+      width: 60, // Increase width to accommodate spacing
     },
     yAxisLabel: {
       fontSize: 11,
@@ -1181,7 +1231,7 @@ const getStyles = (isDark: boolean) =>
       fontVariant: ["tabular-nums"],
     },
     chart: {
-      marginLeft: 60,
+      marginLeft: 70, // Increase to match new y-axis label width + spacing
       height: chartHeight + 60,
       position: "relative",
     },

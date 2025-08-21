@@ -72,9 +72,9 @@ export default function AuthScreen() {
           isSignUp ? 'Sign Up Error' : 'Sign In Error',
           result.error.message
         )
-      } else if (isSignUp && result.data.user && !result.data.session) {
+      } else if (isSignUp && result.data?.user && !result.data?.session) {
         Alert.alert(
-          '✅ Account Created!',
+          'Account Created!',
           'Your account has been created successfully. Please check your email and click the confirmation link to complete setup.\n\n⚠️ If the link opens to an error page, don\'t worry - your account is still activated and you can sign in.',
           [
             {
