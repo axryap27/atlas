@@ -113,9 +113,10 @@ const getStyles = (isDark: boolean) =>
     },
     startTitle: {
       fontSize: 32,
-      fontWeight: "bold",
+      fontFamily: "Outfit_600SemiBold",
       color: "#000000", // Dark text
       marginBottom: 8,
+      letterSpacing: -0.5,
     },
     startSubtitle: {
       fontSize: 16,
