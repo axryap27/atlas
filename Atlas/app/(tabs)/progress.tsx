@@ -484,13 +484,14 @@ export default function ProgressScreen() {
           }
         }
 
-        // Map data to chart points, filling missing dates with null
+        // Map data to chart points, keeping array aligned with dates
         const dataPoints = uniqueDates.map(date => {
           const workout = templateData.find(w => w.date.split('T')[0] === date);
-          return workout ? workout.volume : null;
-        }).filter(point => point !== null); // Remove null values
+          return workout ? workout.volume : 0; // Use 0 instead of null to maintain alignment
+        });
 
-        if (dataPoints.length > 0) {
+        // Only add datasets that have actual data (not all zeros)
+        if (dataPoints.some(point => point > 0)) {
           datasets.push({
             data: dataPoints,
             color: (opacity = 1) => {
@@ -508,10 +509,8 @@ export default function ProgressScreen() {
         colorIndex++;
       });
 
-      // Create labels (show every 3rd date for readability)
-      const labels = uniqueDates.filter((_, index) => 
-        index === 0 || index === uniqueDates.length - 1 || index % 3 === 0
-      ).map(date => formatDate(date + 'T00:00:00'));
+      // Create labels for ALL dates to match data arrays
+      const labels = uniqueDates.map(date => formatDate(date + 'T00:00:00'));
 
       return {
         labels,
@@ -960,12 +959,11 @@ const getStyles = (isDark: boolean) =>
     },
     chartTitle: {
       fontSize: 26,
-      fontFamily: "Inter_700Bold",
+      fontFamily: "Outfit_600SemiBold",
       color: isDark ? "#FFFFFF" : "#000000",
       marginBottom: 20,
       textAlign: "center",
-      letterSpacing: -0.8, // Tighter letter spacing for modern look
-      textTransform: "uppercase" as const,
+      letterSpacing: -0.6, // Outfit-optimized letter spacing
     },
     legend: {
       backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
