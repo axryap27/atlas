@@ -250,9 +250,10 @@ const getStyles = (isDark: boolean) =>
     },
     welcomeTitle: {
       fontSize: 32,
-      fontWeight: "bold",
+      fontFamily: "Outfit_600SemiBold",
       color: isDark ? "#FFFFFF" : "#000000",
       marginBottom: 4,
+      letterSpacing: -0.5,
     },
     welcomeSubtitle: {
       fontSize: 16,
