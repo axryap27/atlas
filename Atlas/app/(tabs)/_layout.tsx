@@ -63,6 +63,11 @@ export default function TabLayout() {
             <Ionicons name="home" size={size} color={color} />
           ),
           headerTitle: 'atlas',
+          headerTitleStyle: {
+            fontFamily: 'FunnelDisplay_600SemiBold',
+            fontSize: 20,
+            letterSpacing: -0.5,
+          },
           headerRight: () => (
             <TouchableOpacity
               onPress={handleSignOut}
