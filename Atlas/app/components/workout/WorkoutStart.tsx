@@ -146,12 +146,13 @@ const getStyles = (isDark: boolean) =>
     },
     startOptionTitle: {
       fontSize: 18,
-      fontWeight: "600",
+      fontFamily: "Inter_600SemiBold",
       color: "#000000", // Dark text
       marginBottom: 4,
     },
     startOptionDescription: {
       fontSize: 14,
+      fontFamily: "Inter_400Regular",
       color: "#6D6D70", // Light theme description
     },
     disabledText: {

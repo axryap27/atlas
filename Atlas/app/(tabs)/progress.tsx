@@ -960,8 +960,7 @@ const getStyles = (isDark: boolean) =>
     },
     chartTitle: {
       fontSize: 26,
-      fontWeight: "700",
-      fontFamily: Platform.OS === 'ios' ? 'SF Pro Display' : 'Roboto',
+      fontFamily: "Inter_700Bold",
       color: isDark ? "#FFFFFF" : "#000000",
       marginBottom: 20,
       textAlign: "center",

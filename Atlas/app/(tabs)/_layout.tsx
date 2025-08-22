@@ -39,10 +39,20 @@ export default function TabLayout() {
           paddingBottom: 20,
           paddingTop: 10,
         },
+        tabBarLabelStyle: {
+          fontFamily: 'Inter_500Medium',
+          fontSize: 12,
+          letterSpacing: -0.1,
+        },
         headerStyle: {
           backgroundColor: colorScheme === 'dark' ? '#000000' : '#F2F2F7',
         },
         headerTintColor: colorScheme === 'dark' ? '#FFFFFF' : '#000000',
+        headerTitleStyle: {
+          fontFamily: 'Inter_600SemiBold',
+          fontSize: 18,
+          letterSpacing: -0.3,
+        },
       }}
     >
       <Tabs.Screen

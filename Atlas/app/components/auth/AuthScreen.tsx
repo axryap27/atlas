@@ -245,16 +245,16 @@ const styles = StyleSheet.create({
   
   title: {
     fontSize: 36,
-    fontWeight: '600',
+    fontFamily: 'Inter_600SemiBold',
     color: '#334155',
     marginBottom: 8,
     letterSpacing: -0.5,
-    fontFamily: Platform.OS === 'ios' ? 'SF Pro Display' : 'sans-serif',
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
+    fontFamily: 'Inter_400Regular',
     color: '#64748B',
-    fontWeight: '400',
     textAlign: 'center',
   },
   
@@ -282,8 +282,8 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 12,
     fontSize: 16,
+    fontFamily: 'Inter_400Regular',
     color: '#334155',
-    fontWeight: '400',
   },
   authButton: {
     backgroundColor: '#475569',
@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
   authButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: 'Inter_600SemiBold',
   },
   
   // Footer styles
@@ -317,12 +317,12 @@ const styles = StyleSheet.create({
   footerText: {
     color: '#64748B',
     fontSize: 15,
-    fontWeight: '400',
+    fontFamily: 'Inter_400Regular',
   },
   switchButton: {
     color: '#475569',
     fontSize: 15,
-    fontWeight: '600',
+    fontFamily: 'Inter_600SemiBold',
     marginLeft: 4,
   },
 })
