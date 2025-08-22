@@ -245,17 +245,18 @@ const styles = StyleSheet.create({
   
   title: {
     fontSize: 36,
-    fontFamily: 'Inter_600SemiBold',
+    fontFamily: 'FunnelDisplay_600SemiBold',
     color: '#334155',
     marginBottom: 8,
-    letterSpacing: -0.5,
+    letterSpacing: -0.8,
     textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
-    fontFamily: 'Inter_400Regular',
+    fontFamily: 'Outfit_400Regular',
     color: '#64748B',
     textAlign: 'center',
+    letterSpacing: -0.2,
   },
   
   // Form styles
