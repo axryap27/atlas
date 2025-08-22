@@ -18,10 +18,19 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { supabaseApi } from "../services/supabase-api";
 import { Session, WorkoutDay } from "../../lib/supabase";
+import {
+  VictoryChart,
+  VictoryLine,
+  VictoryScatter,
+  VictoryAxis,
+  VictoryTheme,
+  VictoryTooltip,
+  VictoryContainer
+} from "victory-native";
 
 const { width: screenWidth } = Dimensions.get("window");
-const chartWidth = screenWidth - 40;
-const chartHeight = 200;
+const chartWidth = screenWidth - 80;
+const chartHeight = 250; // Increased height for Victory chart
 
 interface VolumeData {
   date: string;
@@ -527,8 +536,8 @@ export default function ProgressScreen() {
                   vd.sessionId === data.sessionId
               );
 
-              // Calculate accurate positioning
-              const chartPadding = 20;
+              // Calculate accurate positioning with more padding
+              const chartPadding = 30; // Increased padding for sleeker look
               const availableWidth = chartWidth - 80 - chartPadding * 2; // Account for margins and padding
               const availableHeight = chartHeight - chartPadding * 2;
 
@@ -588,7 +597,7 @@ export default function ProgressScreen() {
         {/* Y-axis labels */}
         <View style={styles.yAxisLabels}>
           {(() => {
-            const chartPadding = 20;
+            const chartPadding = 30; // Match increased padding
             const availableHeight = chartHeight - chartPadding * 2;
             
             // Create clean, rounded y-axis labels
@@ -646,7 +655,7 @@ export default function ProgressScreen() {
           {/* Horizontal grid lines */}
           <View style={styles.gridLines}>
             {(() => {
-              const chartPadding = 20;
+              const chartPadding = 30; // Match increased padding
               const availableHeight = chartHeight - chartPadding * 2;
               
               // Create the same clean labels as y-axis
@@ -718,10 +727,10 @@ export default function ProgressScreen() {
                             left: point.x,
                             top: point.y,
                             width: distance,
-                            height: 2.5,
+                            height: 3, // Slightly thicker lines
                             backgroundColor: templateLine.color,
-                            borderRadius: 1.25,
-                            opacity: 0.9,
+                            borderRadius: 1.5,
+                            opacity: 0.95, // More opaque for better visibility
                             transform: [{ rotate: `${angle}deg` }],
                             transformOrigin: "left center",
                           },
@@ -792,29 +801,68 @@ export default function ProgressScreen() {
             ))}
           </View>
           
-          {/* Date labels - show once per unique date */}
+          {/* Date labels - weekly only, aligned with data points */}
           <View style={styles.dateLabelsContainer}>
-            {uniqueDates.map((dateString, index) => {
-              const chartPadding = 20;
-              const availableWidth = chartWidth - 80 - chartPadding * 2;
-              const x = (index / Math.max(uniqueDates.length - 1, 1)) * availableWidth;
+            {(() => {
+              // Filter to show only weekly labels but use correct positioning
+              const getWeeklyLabels = () => {
+                const labels = [];
+                
+                // Always include first date
+                if (uniqueDates.length > 0) {
+                  labels.push(uniqueDates[0]);
+                }
+                
+                // Add weekly intervals (every 7 days)
+                if (uniqueDates.length > 1) {
+                  const firstDate = new Date(uniqueDates[0]);
+                  
+                  for (let i = 1; i < uniqueDates.length - 1; i++) {
+                    const currentDate = new Date(uniqueDates[i]);
+                    const daysDiff = Math.floor((currentDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24));
+                    
+                    if (daysDiff % 7 === 0) {
+                      labels.push(uniqueDates[i]);
+                    }
+                  }
+                  
+                  // Always include last date if different from first
+                  const lastDate = uniqueDates[uniqueDates.length - 1];
+                  if (lastDate !== uniqueDates[0]) {
+                    labels.push(lastDate);
+                  }
+                }
+                
+                return labels;
+              };
               
-              return (
-                <Text
-                  key={dateString}
-                  style={[
-                    styles.dateLabel,
-                    {
-                      position: "absolute",
-                      left: x + chartPadding - 20,
-                      top: chartHeight + 25,
-                    },
-                  ]}
-                >
-                  {formatDate(dateString + 'T00:00:00')}
-                </Text>
-              );
-            })}
+              const weeklyLabels = getWeeklyLabels();
+              
+              return weeklyLabels.map((dateString) => {
+                const originalIndex = uniqueDates.indexOf(dateString);
+                const chartPadding = 30;
+                const dateMargin = 20;
+                const availableWidth = chartWidth - 80 - chartPadding * 2 - dateMargin * 2;
+                // Use the SAME positioning logic as data points
+                const x = dateMargin + (originalIndex / Math.max(uniqueDates.length - 1, 1)) * availableWidth;
+                
+                return (
+                  <Text
+                    key={dateString}
+                    style={[
+                      styles.dateLabel,
+                      {
+                        position: "absolute",
+                        left: x + chartPadding,
+                        top: chartHeight + 35,
+                      },
+                    ]}
+                  >
+                    {formatDate(dateString + 'T00:00:00')}
+                  </Text>
+                );
+              });
+            })()}
           </View>
         </View>
       </View>
@@ -1182,14 +1230,14 @@ const getStyles = (isDark: boolean) =>
     },
     chartContainer: {
       backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-      borderRadius: 16,
-      padding: 20,
+      borderRadius: 20, // More rounded for sleeker look
+      padding: 24, // Increased padding
       marginBottom: 24,
       shadowColor: "#000000",
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: isDark ? 0.3 : 0.1,
-      shadowRadius: 8,
-      elevation: 4,
+      shadowOffset: { width: 0, height: 3 }, // Slightly deeper shadow
+      shadowOpacity: isDark ? 0.4 : 0.12, // More prominent shadow
+      shadowRadius: 12, // Larger shadow radius
+      elevation: 6, // Higher elevation for Android
     },
     emptyChart: {
       height: 200,
@@ -1232,7 +1280,7 @@ const getStyles = (isDark: boolean) =>
     },
     chart: {
       marginLeft: 70, // Increase to match new y-axis label width + spacing
-      height: chartHeight + 60,
+      height: chartHeight + 70, // More space for date labels
       position: "relative",
     },
     gridLines: {
@@ -1246,8 +1294,8 @@ const getStyles = (isDark: boolean) =>
       left: 0,
       right: 0,
       height: 1,
-      backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
-      opacity: 0.6,
+      backgroundColor: isDark ? "#3A3A3C" : "#E5E5EA", // Subtler grid lines
+      opacity: 0.4, // More transparent for sleeker look
     },
     lineContainer: {
       position: "absolute",
@@ -1266,23 +1314,24 @@ const getStyles = (isDark: boolean) =>
       backgroundColor: "transparent", // Allow inline backgroundColor to override
     },
     dataPoint: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-      borderWidth: 2,
+      width: 6, // Smaller for sleeker look
+      height: 6,
+      borderRadius: 3,
+      borderWidth: 2, // Thinner border
       borderColor: isDark ? "#1C1C1E" : "#FFFFFF",
       shadowColor: "#000000",
       shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: isDark ? 0.4 : 0.2,
-      shadowRadius: 3,
-      elevation: 4,
+      shadowOpacity: isDark ? 0.3 : 0.15, // Subtler shadow
+      shadowRadius: 2,
+      elevation: 3,
     },
     dateLabel: {
-      fontSize: 10,
-      color: "#8E8E93",
+      fontSize: 11, // Slightly larger for better readability
+      fontWeight: "500", // Medium weight for sleeker look
+      color: isDark ? "#98989D" : "#6D6D70", // Adjust color based on theme
       textAlign: "center",
-      width: 40,
-      transform: [{ rotate: "-45deg" }],
+      width: 50, // Wider to accommodate larger text
+      transform: [{ rotate: "-35deg" }], // Less steep angle
     },
     volumeLabel: {
       fontSize: 9,
