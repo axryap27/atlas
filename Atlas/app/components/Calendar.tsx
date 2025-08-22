@@ -92,8 +92,14 @@ const Calendar = forwardRef<CalendarRef, CalendarProps>(({ onDateSelect }, ref) 
       // Create a set of dates that have workouts
       const dates = new Set<string>();
       sessions.forEach(session => {
-        const date = new Date(session.start_time);
-        const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        // Parse session date and extract just the date components to avoid timezone issues
+        const sessionDate = new Date(session.start_time);
+        const sessionYear = sessionDate.getFullYear();
+        const sessionMonth = sessionDate.getMonth() + 1; // getMonth() is 0-indexed
+        const sessionDay = sessionDate.getDate();
+        
+        // Format as YYYY-MM-DD consistently
+        const dateString = `${sessionYear}-${String(sessionMonth).padStart(2, '0')}-${String(sessionDay).padStart(2, '0')}`;
         dates.add(dateString);
       });
       setWorkoutDates(dates);
@@ -108,8 +114,15 @@ const Calendar = forwardRef<CalendarRef, CalendarProps>(({ onDateSelect }, ref) 
   // Get workout details for a specific date
   const getWorkoutDetailsForDate = (dateString: string) => {
     return workoutSessions.filter(session => {
+      // Parse session date and extract just the date components to avoid timezone issues
       const sessionDate = new Date(session.start_time);
-      const sessionDateString = `${sessionDate.getFullYear()}-${String(sessionDate.getMonth() + 1).padStart(2, '0')}-${String(sessionDate.getDate()).padStart(2, '0')}`;
+      const sessionYear = sessionDate.getFullYear();
+      const sessionMonth = sessionDate.getMonth() + 1; // getMonth() is 0-indexed
+      const sessionDay = sessionDate.getDate();
+      
+      // Format as YYYY-MM-DD for comparison
+      const sessionDateString = `${sessionYear}-${String(sessionMonth).padStart(2, '0')}-${String(sessionDay).padStart(2, '0')}`;
+      
       return sessionDateString === dateString;
     }).map(session => ({
       name: session.workout_day?.name || 'Workout Session',
@@ -352,11 +365,16 @@ const Calendar = forwardRef<CalendarRef, CalendarProps>(({ onDateSelect }, ref) 
         {selectedWorkoutDate && getWorkoutDetailsForDate(selectedWorkoutDate).length > 0 && (
           <View style={styles.workoutsSection}>
             <Text style={styles.workoutsSectionTitle}>
-              Workouts - {new Date(selectedWorkoutDate).toLocaleDateString('en-US', { 
-                weekday: 'long',
-                month: 'short', 
-                day: 'numeric' 
-              })}
+              Workouts - {(() => {
+                // Parse date string safely to avoid timezone issues
+                const [year, month, day] = selectedWorkoutDate.split('-').map(Number);
+                const date = new Date(year, month - 1, day); // month is 0-indexed
+                return date.toLocaleDateString('en-US', { 
+                  weekday: 'long',
+                  month: 'short', 
+                  day: 'numeric' 
+                });
+              })()}
             </Text>
             <View style={styles.workoutsList}>
               {getWorkoutDetailsForDate(selectedWorkoutDate).map((workout, index) => (

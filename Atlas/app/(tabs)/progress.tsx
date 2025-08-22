@@ -13,24 +13,17 @@ import {
   Dimensions,
   Alert,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { supabaseApi } from "../services/supabase-api";
 import { Session, WorkoutDay } from "../../lib/supabase";
-import {
-  VictoryChart,
-  VictoryLine,
-  VictoryScatter,
-  VictoryAxis,
-  VictoryTheme,
-  VictoryTooltip,
-  VictoryContainer
-} from "victory-native";
+import { LineChart } from "react-native-chart-kit";
 
 const { width: screenWidth } = Dimensions.get("window");
-const chartWidth = screenWidth - 80;
-const chartHeight = 250; // Increased height for Victory chart
+const chartWidth = screenWidth - 40;
+const chartHeight = 220;
 
 interface VolumeData {
   date: string;
@@ -59,23 +52,6 @@ interface TemplateStats {
   }>;
 }
 
-interface ChartPoint {
-  x: number;
-  y: number;
-  volume: number;
-  date: string;
-  workoutName: string;
-  color: string;
-  globalIndex: number;
-}
-
-interface TemplateLine {
-  templateId: string | number;
-  templateName: string;
-  color: string;
-  points: ChartPoint[];
-  dataCount: number;
-}
 
 export default function ProgressScreen() {
   const colorScheme = useColorScheme();
@@ -430,7 +406,6 @@ export default function ProgressScreen() {
   };
 
   const renderChart = () => {
-
     if (volumeData.length === 0) {
       return (
         <View style={[styles.chartContainer, styles.emptyChart]}>
@@ -439,35 +414,26 @@ export default function ProgressScreen() {
           <Text style={styles.emptyChartSubtext}>
             Complete some workouts to see your progress
           </Text>
-          <Text
-            style={[styles.emptyChartSubtext, { marginTop: 8, fontSize: 12 }]}
-          >
-            Debug: {selectedTemplates.length} templates selected
-          </Text>
         </View>
       );
     }
 
-    const maxVolume = getMaxVolume();
-    const minVolume = Math.min(...volumeData.map((d) => d.volume), 0);
-    
-    // Get all unique dates for x-axis positioning
-    const uniqueDates = [...new Set(volumeData.map(d => d.date.split('T')[0]))].sort();
-
-    // Group data by template and create separate lines
-    const createTemplateLines = () => {
-
-      // Group data by workoutDayId (template) or workout type
+    // Prepare data for LineChart with multiple lines
+    const prepareChartData = () => {
+      // Sort all data by date
+      const sortedData = volumeData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      
+      // Get unique dates for x-axis
+      const uniqueDates = [...new Set(sortedData.map(d => d.date.split('T')[0]))].sort();
+      
+      // Group data by template
       const groupedData = new Map();
-
-      volumeData.forEach((data, originalIndex) => {
+      sortedData.forEach((data) => {
         let key;
-
         if (data.workoutDayId) {
-          // Template workout - use template ID
           key = data.workoutDayId;
         } else {
-          // Quick workout - categorize by workout name (from muscle group logic)
+          // Quick workout categorization
           if (data.workoutName.toLowerCase().includes("pull")) {
             key = "pull-workouts";
           } else if (data.workoutName.toLowerCase().includes("push")) {
@@ -482,389 +448,125 @@ export default function ProgressScreen() {
         if (!groupedData.has(key)) {
           groupedData.set(key, []);
         }
-        groupedData.get(key).push({ ...data, originalIndex });
+        groupedData.get(key).push(data);
       });
 
+      // Create datasets for each template/workout type
+      const datasets = [];
+      const colors = ["#FF3B30", "#007AFF", "#34C759", "#FF9500", "#AF52DE"]; // Red, Blue, Green, Orange, Purple
+      let colorIndex = 0;
 
-      // Create lines for each template
-      const templateLines: TemplateLine[] = [];
+      groupedData.forEach((templateData, key) => {
+        // Sort by date within each template
+        templateData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-      groupedData.forEach(
-        (templateData: VolumeData[], key: string | number) => {
-          // Sort by date to ensure proper chronological order
-          templateData.sort(
-            (a: VolumeData, b: VolumeData) =>
-              new Date(a.date).getTime() - new Date(b.date).getTime()
-          );
-
-          let color, templateName;
-
-          if (typeof key === "number") {
-            // Template workout
-            color = getTemplateColor(key);
-            templateName =
-              templates.find((t) => t.id === key)?.name || `Template ${key}`;
-          } else {
-            // Categorized quick workout
-            switch (key) {
-              case "pull-workouts":
-                color = "#FF3B30"; // Red for Pull
-                templateName = "Pull Workouts";
-                break;
-              case "push-workouts":
-                color = "#34C759"; // Green for Push
-                templateName = "Push Workouts";
-                break;
-              case "leg-workouts":
-                color = "#007AFF"; // Blue for Legs
-                templateName = "Leg Workouts";
-                break;
-              default:
-                color = "#8E8E93"; // Grey for other
-                templateName = "Other Workouts";
-            }
+        let color, name;
+        if (typeof key === "number") {
+          color = getTemplateColor(key);
+          name = templates.find((t) => t.id === key)?.name || `Template ${key}`;
+        } else {
+          switch (key) {
+            case "pull-workouts":
+              color = "#FF3B30"; // Red for Pull
+              name = "Pull Day";
+              break;
+            case "push-workouts":
+              color = "#34C759"; // Green for Push
+              name = "Push Day";
+              break;
+            case "leg-workouts":
+              color = "#007AFF"; // Blue for Legs
+              name = "Leg Day";
+              break;
+            default:
+              color = colors[colorIndex % colors.length];
+              name = "Other Workouts";
           }
-
-          // Create points for this template line using date-based positioning
-          const points: ChartPoint[] = templateData.map(
-            (data: VolumeData): ChartPoint => {
-              // Find the original index of this data point in the chronologically sorted volumeData
-              const globalIndex = volumeData.findIndex(
-                (vd) =>
-                  vd.date === data.date &&
-                  vd.volume === data.volume &&
-                  vd.sessionId === data.sessionId
-              );
-
-              // Calculate accurate positioning with more padding
-              const chartPadding = 30; // Increased padding for sleeker look
-              const availableWidth = chartWidth - 80 - chartPadding * 2; // Account for margins and padding
-              const availableHeight = chartHeight - chartPadding * 2;
-
-              // X position based on date index (same date = same x position)
-              const dateOnly = data.date.split('T')[0];
-              const dateIndex = uniqueDates.indexOf(dateOnly);
-              const x =
-                (dateIndex / Math.max(uniqueDates.length - 1, 1)) *
-                availableWidth;
-
-              // Y position with accurate scaling
-              const normalizedValue =
-                maxVolume > minVolume
-                  ? (data.volume - minVolume) / (maxVolume - minVolume)
-                  : 0.5;
-              const y = availableHeight - normalizedValue * availableHeight;
-
-
-              return {
-                x: x + chartPadding,
-                y: y + chartPadding,
-                volume: data.volume,
-                date: data.date,
-                workoutName: data.workoutName,
-                color,
-                globalIndex,
-              };
-            }
-          );
-
-          if (points.length > 0) {
-            templateLines.push({
-              templateId: key,
-              templateName,
-              color,
-              points,
-              dataCount: templateData.length,
-            });
-          }
-
         }
-      );
 
-      return templateLines;
+        // Map data to chart points, filling missing dates with null
+        const dataPoints = uniqueDates.map(date => {
+          const workout = templateData.find(w => w.date.split('T')[0] === date);
+          return workout ? workout.volume : null;
+        }).filter(point => point !== null); // Remove null values
+
+        if (dataPoints.length > 0) {
+          datasets.push({
+            data: dataPoints,
+            color: (opacity = 1) => {
+              // Extract RGB from hex color
+              const hex = color.replace('#', '');
+              const r = parseInt(hex.substr(0, 2), 16);
+              const g = parseInt(hex.substr(2, 2), 16);
+              const b = parseInt(hex.substr(4, 2), 16);
+              return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+            },
+            strokeWidth: 3,
+          });
+        }
+
+        colorIndex++;
+      });
+
+      // Create labels (show every 3rd date for readability)
+      const labels = uniqueDates.filter((_, index) => 
+        index === 0 || index === uniqueDates.length - 1 || index % 3 === 0
+      ).map(date => formatDate(date + 'T00:00:00'));
+
+      return {
+        labels,
+        datasets: datasets.length > 0 ? datasets : [{
+          data: [0],
+          color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
+          strokeWidth: 3,
+        }]
+      };
     };
 
-    const templateLines = createTemplateLines();
-    const totalDataPoints = templateLines.reduce(
-      (sum, line) => sum + line.dataCount,
-      0
-    );
+    const chartData = prepareChartData();
 
     return (
       <View style={styles.chartContainer}>
         <Text style={styles.chartTitle}>Volume Progress</Text>
-
-        {/* Y-axis labels */}
-        <View style={styles.yAxisLabels}>
-          {(() => {
-            const chartPadding = 30; // Match increased padding
-            const availableHeight = chartHeight - chartPadding * 2;
-            
-            // Create clean, rounded y-axis labels
-            const createCleanLabels = () => {
-              const range = maxVolume - minVolume;
-              
-              // Determine appropriate increment based on range
-              let increment;
-              if (range <= 1000) increment = 100;
-              else if (range <= 5000) increment = 500;
-              else if (range <= 10000) increment = 1000;
-              else increment = 2000;
-              
-              // Round min and max to clean increments
-              const cleanMin = Math.floor(minVolume / increment) * increment;
-              const cleanMax = Math.ceil(maxVolume / increment) * increment;
-              
-              // Generate 3-4 evenly spaced labels
-              const labelCount = 3;
-              const labels = [];
-              for (let i = 0; i < labelCount; i++) {
-                const value = cleanMin + (cleanMax - cleanMin) * (i / (labelCount - 1));
-                labels.push(Math.round(value / increment) * increment);
-              }
-              
-              return labels;
-            };
-            
-            const labels = createCleanLabels();
-            
-            // Use the EXACT same calculation logic as the data points for positioning
-            const calculateY = (volume: number) => {
-              const normalizedValue = maxVolume > minVolume ? (volume - minVolume) / (maxVolume - minVolume) : 0.5;
-              return availableHeight - normalizedValue * availableHeight + chartPadding;
-            };
-            
-            return (
-              <>
-                {labels.map((labelValue, index) => (
-                  <Text key={index} style={[styles.yAxisLabel, { 
-                    position: 'absolute', 
-                    top: calculateY(labelValue) - 8, // offset by half text height for center alignment
-                    lineHeight: 16
-                  }]}>
-                    {labelValue.toLocaleString()}
-                  </Text>
-                ))}
-              </>
-            );
-          })()}
-        </View>
-
-        {/* Chart area */}
-        <View style={[styles.chart, { width: chartWidth }]}>
-          {/* Horizontal grid lines */}
-          <View style={styles.gridLines}>
-            {(() => {
-              const chartPadding = 30; // Match increased padding
-              const availableHeight = chartHeight - chartPadding * 2;
-              
-              // Create the same clean labels as y-axis
-              const createCleanLabels = () => {
-                const range = maxVolume - minVolume;
-                
-                let increment;
-                if (range <= 1000) increment = 100;
-                else if (range <= 5000) increment = 500;
-                else if (range <= 10000) increment = 1000;
-                else increment = 2000;
-                
-                const cleanMin = Math.floor(minVolume / increment) * increment;
-                const cleanMax = Math.ceil(maxVolume / increment) * increment;
-                
-                const labelCount = 3;
-                const labels = [];
-                for (let i = 0; i < labelCount; i++) {
-                  const value = cleanMin + (cleanMax - cleanMin) * (i / (labelCount - 1));
-                  labels.push(Math.round(value / increment) * increment);
-                }
-                
-                return labels;
-              };
-              
-              const labels = createCleanLabels();
-              
-              // Use the EXACT same calculation as data points
-              const calculateY = (volume: number) => {
-                const normalizedValue = maxVolume > minVolume ? (volume - minVolume) / (maxVolume - minVolume) : 0.5;
-                return availableHeight - normalizedValue * availableHeight + chartPadding;
-              };
-              
-              return (
-                <>
-                  {labels.map((labelValue, index) => (
-                    <View key={index} style={[styles.gridLine, { top: calculateY(labelValue) }]} />
-                  ))}
-                </>
-              );
-            })()}
-          </View>
-
-          {/* Template Lines */}
-          <View style={styles.lineContainer}>
-            {templateLines.map((templateLine, templateIndex) => (
-              <View key={`template-${templateLine.templateId}`}>
-                {/* Connecting lines for this template */}
-                {templateLine.points.map(
-                  (point: ChartPoint, pointIndex: number) => {
-                    if (pointIndex >= templateLine.points.length - 1)
-                      return null;
-
-                    const nextPoint = templateLine.points[pointIndex + 1];
-                    const distance = Math.sqrt(
-                      Math.pow(nextPoint.x - point.x, 2) +
-                        Math.pow(nextPoint.y - point.y, 2)
-                    );
-                    const angle =
-                      Math.atan2(nextPoint.y - point.y, nextPoint.x - point.x) *
-                      (180 / Math.PI);
-
-                    return (
-                      <View
-                        key={`line-${templateIndex}-${pointIndex}`}
-                        style={[
-                          {
-                            position: "absolute",
-                            left: point.x,
-                            top: point.y,
-                            width: distance,
-                            height: 3, // Slightly thicker lines
-                            backgroundColor: templateLine.color,
-                            borderRadius: 1.5,
-                            opacity: 0.95, // More opaque for better visibility
-                            transform: [{ rotate: `${angle}deg` }],
-                            transformOrigin: "left center",
-                          },
-                        ]}
-                      />
-                    );
-                  }
-                )}
-
-                {/* Data points for this template */}
-                {templateLine.points.map((point, pointIndex) => (
-                  <View key={`point-${templateIndex}-${pointIndex}`}>
-                    <TouchableOpacity
-                      style={[
-                        styles.dataPoint,
-                        {
-                          position: "absolute",
-                          left: point.x - 4,
-                          top: point.y - 4,
-                          backgroundColor: templateLine.color,
-                          borderColor: "#FFFFFF",
-                        },
-                      ]}
-                      onPress={() => {
-                        // Clear existing timer if any
-                        if (volumeTimer) {
-                          clearTimeout(volumeTimer);
-                        }
-                        
-                        // Show the volume for this point
-                        setSelectedDataPoint({
-                          sessionId: volumeData[point.globalIndex]?.sessionId || 0,
-                          templateIndex,
-                          pointIndex
-                        });
-                        
-                        // Set timer to hide after 3 seconds
-                        const newTimer = setTimeout(() => {
-                          setSelectedDataPoint(null);
-                          setVolumeTimer(null);
-                        }, 3000);
-                        
-                        setVolumeTimer(newTimer);
-                      }}
-                      activeOpacity={0.7}
-                    />
-                    {/* Volume labels - only show for selected point */}
-                    {selectedDataPoint && 
-                     selectedDataPoint.templateIndex === templateIndex &&
-                     selectedDataPoint.pointIndex === pointIndex && (
-                      <Text
-                        style={[
-                          styles.volumeLabel,
-                          {
-                            position: "absolute",
-                            left: point.x - 15,
-                            top: point.y - 25,
-                            color: templateLine.color,
-                          },
-                        ]}
-                      >
-                        {Math.round(point.volume).toLocaleString()}
-                      </Text>
-                    )}
-                  </View>
-                ))}
-              </View>
-            ))}
-          </View>
-          
-          {/* Date labels - weekly only, aligned with data points */}
-          <View style={styles.dateLabelsContainer}>
-            {(() => {
-              // Filter to show only weekly labels but use correct positioning
-              const getWeeklyLabels = () => {
-                const labels = [];
-                
-                // Always include first date
-                if (uniqueDates.length > 0) {
-                  labels.push(uniqueDates[0]);
-                }
-                
-                // Add weekly intervals (every 7 days)
-                if (uniqueDates.length > 1) {
-                  const firstDate = new Date(uniqueDates[0]);
-                  
-                  for (let i = 1; i < uniqueDates.length - 1; i++) {
-                    const currentDate = new Date(uniqueDates[i]);
-                    const daysDiff = Math.floor((currentDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24));
-                    
-                    if (daysDiff % 7 === 0) {
-                      labels.push(uniqueDates[i]);
-                    }
-                  }
-                  
-                  // Always include last date if different from first
-                  const lastDate = uniqueDates[uniqueDates.length - 1];
-                  if (lastDate !== uniqueDates[0]) {
-                    labels.push(lastDate);
-                  }
-                }
-                
-                return labels;
-              };
-              
-              const weeklyLabels = getWeeklyLabels();
-              
-              return weeklyLabels.map((dateString) => {
-                const originalIndex = uniqueDates.indexOf(dateString);
-                const chartPadding = 30;
-                const dateMargin = 20;
-                const availableWidth = chartWidth - 80 - chartPadding * 2 - dateMargin * 2;
-                // Use the SAME positioning logic as data points
-                const x = dateMargin + (originalIndex / Math.max(uniqueDates.length - 1, 1)) * availableWidth;
-                
-                return (
-                  <Text
-                    key={dateString}
-                    style={[
-                      styles.dateLabel,
-                      {
-                        position: "absolute",
-                        left: x + chartPadding,
-                        top: chartHeight + 35,
-                      },
-                    ]}
-                  >
-                    {formatDate(dateString + 'T00:00:00')}
-                  </Text>
-                );
-              });
-            })()}
-          </View>
-        </View>
+        
+        <LineChart
+          data={chartData}
+          width={chartWidth}
+          height={chartHeight}
+          chartConfig={{
+            backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+            backgroundGradientFrom: isDark ? "#1C1C1E" : "#FFFFFF",
+            backgroundGradientTo: isDark ? "#1C1C1E" : "#FFFFFF",
+            decimalPlaces: 0,
+            color: (opacity = 1) => isDark ? `rgba(255, 255, 255, ${opacity})` : `rgba(0, 0, 0, ${opacity})`,
+            labelColor: (opacity = 1) => isDark ? `rgba(142, 142, 147, ${opacity})` : `rgba(109, 109, 112, ${opacity})`,
+            style: {
+              borderRadius: 16,
+            },
+            propsForDots: {
+              r: "4",
+              strokeWidth: "2",
+              stroke: isDark ? "#1C1C1E" : "#FFFFFF"
+            },
+            propsForBackgroundLines: {
+              strokeDasharray: "",
+              stroke: isDark ? "#3A3A3C" : "#E5E5EA",
+              strokeWidth: 1,
+              opacity: 0.4
+            }
+          }}
+          bezier
+          style={{
+            marginVertical: 8,
+            borderRadius: 16,
+          }}
+          withHorizontalLabels={true}
+          withVerticalLabels={true}
+          withDots={true}
+          withShadow={false}
+          withInnerLines={true}
+          withOuterLines={false}
+        />
       </View>
     );
   };
@@ -1257,90 +959,14 @@ const getStyles = (isDark: boolean) =>
       marginTop: 4,
     },
     chartTitle: {
-      fontSize: 20,
+      fontSize: 26,
       fontWeight: "700",
+      fontFamily: Platform.OS === 'ios' ? 'SF Pro Display' : 'Roboto',
       color: isDark ? "#FFFFFF" : "#000000",
       marginBottom: 20,
       textAlign: "center",
-      letterSpacing: 0.5,
-    },
-    yAxisLabels: {
-      position: "absolute",
-      left: 8, // Add more spacing from the edge
-      top: 60, // 20 (container padding) + 20 (title fontSize) + 20 (title marginBottom)
-      height: chartHeight,
-      width: 60, // Increase width to accommodate spacing
-    },
-    yAxisLabel: {
-      fontSize: 11,
-      fontWeight: "500",
-      color: isDark ? "#8E8E93" : "#6D6D70",
-      textAlign: "right",
-      fontVariant: ["tabular-nums"],
-    },
-    chart: {
-      marginLeft: 70, // Increase to match new y-axis label width + spacing
-      height: chartHeight + 70, // More space for date labels
-      position: "relative",
-    },
-    gridLines: {
-      position: "absolute",
-      left: 0,
-      right: 0,
-      height: chartHeight,
-    },
-    gridLine: {
-      position: "absolute",
-      left: 0,
-      right: 0,
-      height: 1,
-      backgroundColor: isDark ? "#3A3A3C" : "#E5E5EA", // Subtler grid lines
-      opacity: 0.4, // More transparent for sleeker look
-    },
-    lineContainer: {
-      position: "absolute",
-      width: "100%",
-      height: "100%",
-    },
-    dateLabelsContainer: {
-      position: "absolute",
-      width: "100%",
-      height: 40,
-    },
-    lineSegment: {
-      height: 3,
-      transformOrigin: "left center",
-      borderRadius: 1.5,
-      backgroundColor: "transparent", // Allow inline backgroundColor to override
-    },
-    dataPoint: {
-      width: 6, // Smaller for sleeker look
-      height: 6,
-      borderRadius: 3,
-      borderWidth: 2, // Thinner border
-      borderColor: isDark ? "#1C1C1E" : "#FFFFFF",
-      shadowColor: "#000000",
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: isDark ? 0.3 : 0.15, // Subtler shadow
-      shadowRadius: 2,
-      elevation: 3,
-    },
-    dateLabel: {
-      fontSize: 11, // Slightly larger for better readability
-      fontWeight: "500", // Medium weight for sleeker look
-      color: isDark ? "#98989D" : "#6D6D70", // Adjust color based on theme
-      textAlign: "center",
-      width: 50, // Wider to accommodate larger text
-      transform: [{ rotate: "-35deg" }], // Less steep angle
-    },
-    volumeLabel: {
-      fontSize: 9,
-      fontWeight: "600",
-      textAlign: "center",
-      width: 30,
-      backgroundColor: "rgba(255, 255, 255, 0.9)",
-      borderRadius: 4,
-      paddingVertical: 2,
+      letterSpacing: -0.8, // Tighter letter spacing for modern look
+      textTransform: "uppercase" as const,
     },
     legend: {
       backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
