@@ -11,7 +11,9 @@
     "lint": "expo lint"
   },
   "dependencies": {
+    "@expo-google-fonts/funnel-display": "^0.4.0",
     "@expo-google-fonts/inter": "^0.4.1",
+    "@expo-google-fonts/outfit": "^0.4.2",
     "@expo/vector-icons": "^14.1.0",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-navigation/bottom-tabs": "^7.3.10",
