@@ -6,7 +6,6 @@ import {
   StyleSheet,
   ScrollView,
   SafeAreaView,
-  useColorScheme,
   TouchableOpacity,
   Modal,
   FlatList,
@@ -54,8 +53,6 @@ interface TemplateStats {
 
 
 export default function ProgressScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
 
   const [volumeData, setVolumeData] = useState<VolumeData[]>([]);
   const [templates, setTemplates] = useState<WorkoutDay[]>([]);
@@ -381,23 +378,23 @@ export default function ProgressScreen() {
     // Assign colors based on template name patterns
     let color;
     if (templateName.includes("pull") || templateName.includes("back")) {
-      color = "#FF3B30"; // Red for Pull
+      color = "#EF4444"; // Red for Pull
     } else if (
       templateName.includes("push") ||
       templateName.includes("chest")
     ) {
-      color = "#34C759"; // Green for Push
+      color = "#84CC16"; // Toned-down lime green for Push
     } else if (templateName.includes("leg") || templateName.includes("squat")) {
-      color = "#007AFF"; // Blue for Legs
+      color = "#3B82F6"; // Blue for Legs
     } else {
-      // Fallback to position-based colors for other templates
+      // Fallback to position-based colors for other templates - slate-friendly palette
       const colors = [
-        "#FF9500",
-        "#AF52DE",
-        "#FF2D92",
-        "#00C7BE",
-        "#FFD60A",
-        "#BF5AF2",
+        "#F59E0B", // Amber
+        "#8B5CF6", // Violet
+        "#EC4899", // Pink
+        "#06B6D4", // Cyan
+        "#EAB308", // Yellow
+        "#A855F7", // Purple
       ];
       const index = templates.findIndex((t) => t.id === templateId);
       color = colors[index % colors.length];
@@ -498,15 +495,15 @@ export default function ProgressScreen() {
         } else {
           switch (key) {
             case "pull-workouts":
-              color = "#FF3B30"; // Red for Pull
+              color = "#EF4444"; // Red for Pull
               name = "Pull Day";
               break;
             case "push-workouts":
-              color = "#34C759"; // Green for Push
+              color = "#84CC16"; // Toned-down lime green for Push
               name = "Push Day";
               break;
             case "leg-workouts":
-              color = "#007AFF"; // Blue for Legs
+              color = "#3B82F6"; // Blue for Legs
               name = "Leg Day";
               break;
             default:
@@ -592,25 +589,25 @@ export default function ProgressScreen() {
           width={chartWidth}
           height={chartHeight}
           chartConfig={{
-            backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-            backgroundGradientFrom: isDark ? "#1C1C1E" : "#FFFFFF",
-            backgroundGradientTo: isDark ? "#1C1C1E" : "#FFFFFF",
+            backgroundColor: "#475569", // Medium slate background
+            backgroundGradientFrom: "#475569", 
+            backgroundGradientTo: "#475569",
             decimalPlaces: 0,
-            color: (opacity = 1) => isDark ? `rgba(255, 255, 255, ${opacity})` : `rgba(0, 0, 0, ${opacity})`,
-            labelColor: (opacity = 1) => isDark ? `rgba(142, 142, 147, ${opacity})` : `rgba(109, 109, 112, ${opacity})`,
+            color: (opacity = 1) => `rgba(241, 245, 249, ${opacity})`, // Light text color
+            labelColor: (opacity = 1) => `rgba(203, 213, 225, ${opacity})`, // Light slate gray
             style: {
               borderRadius: 16,
             },
             propsForDots: {
               r: "4",
               strokeWidth: "2",
-              stroke: isDark ? "#1C1C1E" : "#FFFFFF"
+              stroke: "#475569" // Match chart background
             },
             propsForBackgroundLines: {
               strokeDasharray: "",
-              stroke: isDark ? "#3A3A3C" : "#E5E5EA",
+              stroke: "#64748B", // Darker slate grid lines
               strokeWidth: 1,
-              opacity: 0.4
+              opacity: 0.3
             }
           }}
           bezier
@@ -667,7 +664,7 @@ export default function ProgressScreen() {
                 }}
                 style={styles.refreshButton}
               >
-                <Ionicons name="refresh" size={20} color="#007AFF" />
+                <Ionicons name="refresh" size={20} color="#84CC16" />
               </TouchableOpacity>
             </View>
             <TouchableOpacity onPress={() => setShowTemplateSelector(false)}>
@@ -699,7 +696,7 @@ export default function ProgressScreen() {
                   <Ionicons
                     name={isSelected ? "checkmark-circle" : "ellipse-outline"}
                     size={24}
-                    color={isSelected ? "#007AFF" : "#C7C7CC"}
+                    color={isSelected ? "#84CC16" : "#C7C7CC"}
                   />
                 </TouchableOpacity>
               );
@@ -722,7 +719,7 @@ export default function ProgressScreen() {
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => setShowTemplateStats(false)}>
-              <Ionicons name="arrow-back" size={24} color="#007AFF" />
+              <Ionicons name="arrow-back" size={24} color="#84CC16" />
             </TouchableOpacity>
             <Text style={styles.modalTitle}>
               {selectedTemplateStats.templateName}
@@ -850,13 +847,13 @@ export default function ProgressScreen() {
     );
   };
 
-  const styles = getStyles(isDark);
+  const styles = getStyles();
 
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
+          <ActivityIndicator size="large" color="#84CC16" />
           <Text style={styles.loadingText}>Loading progress data...</Text>
         </View>
       </SafeAreaView>
@@ -877,7 +874,7 @@ export default function ProgressScreen() {
             activeOpacity={0.7}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Ionicons name="filter" size={16} color="#007AFF" />
+            <Ionicons name="filter" size={16} color="#84CC16" />
             <Text style={styles.filterButtonText}>
               {selectedTemplates.length === 0
                 ? "Select workouts to view"
@@ -948,11 +945,11 @@ export default function ProgressScreen() {
   );
 }
 
-const getStyles = (isDark: boolean) =>
+const getStyles = () =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: isDark ? "#0F172A" : "#F1F5F9", // Slate backgrounds
+      backgroundColor: "#334155", // Dark slate background
     },
     scrollView: {
       flex: 1,
@@ -965,7 +962,7 @@ const getStyles = (isDark: boolean) =>
     },
     loadingText: {
       fontSize: 16,
-      color: isDark ? "#FFFFFF" : "#8E8E93",
+      color: "#CBD5E1", // Light slate gray
     },
     filterContainer: {
       marginBottom: 20,
@@ -973,7 +970,7 @@ const getStyles = (isDark: boolean) =>
     filterButton: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+      backgroundColor: "#475569", // Medium slate background
       paddingHorizontal: 16,
       paddingVertical: 12,
       borderRadius: 8,
@@ -981,24 +978,28 @@ const getStyles = (isDark: boolean) =>
       minHeight: 44, // Ensure minimum tappable area
       shadowColor: "#000000",
       shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.1,
+      shadowOpacity: 0.2,
       shadowRadius: 2,
       elevation: 2,
+      borderWidth: 1,
+      borderColor: "#64748B", // Subtle border
     },
     filterButtonText: {
       fontSize: 16,
-      color: "#007AFF",
+      color: "#84CC16", // Toned-down lime green accent
     },
     chartContainer: {
-      backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+      backgroundColor: "#475569", // Medium slate background
       borderRadius: 20, // More rounded for sleeker look
       padding: 24, // Increased padding
       marginBottom: 24,
       shadowColor: "#000000",
       shadowOffset: { width: 0, height: 3 }, // Slightly deeper shadow
-      shadowOpacity: isDark ? 0.4 : 0.12, // More prominent shadow
+      shadowOpacity: 0.2, // More prominent shadow for dark theme
       shadowRadius: 12, // Larger shadow radius
       elevation: 6, // Higher elevation for Android
+      borderWidth: 1,
+      borderColor: "#64748B", // Subtle border
     },
     emptyChart: {
       height: 200,
@@ -1008,33 +1009,35 @@ const getStyles = (isDark: boolean) =>
     emptyChartText: {
       fontSize: 18,
       fontWeight: "600",
-      color: "#8E8E93",
+      color: "#CBD5E1", // Light slate gray
       marginTop: 12,
     },
     emptyChartSubtext: {
       fontSize: 14,
-      color: "#8E8E93",
+      color: "#CBD5E1", // Light slate gray
       textAlign: "center",
       marginTop: 4,
     },
     chartTitle: {
       fontSize: 26,
       fontFamily: "Outfit_600SemiBold",
-      color: isDark ? "#FFFFFF" : "#000000",
+      color: "#F1F5F9", // Light text for dark background
       marginBottom: 20,
       textAlign: "center",
       letterSpacing: -0.6, // Outfit-optimized letter spacing
     },
     legend: {
-      backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+      backgroundColor: "#475569", // Medium slate background
       borderRadius: 12,
       padding: 16,
       marginBottom: 20,
+      borderWidth: 1,
+      borderColor: "#64748B", // Subtle border
     },
     legendTitle: {
       fontSize: 16,
       fontWeight: "600",
-      color: isDark ? "#FFFFFF" : "#000000",
+      color: "#F1F5F9", // Light text for dark background
       marginBottom: 12,
     },
     legendItem: {
@@ -1050,18 +1053,20 @@ const getStyles = (isDark: boolean) =>
     },
     legendText: {
       fontSize: 14,
-      color: isDark ? "#FFFFFF" : "#000000",
+      color: "#CBD5E1", // Light slate gray
     },
     statsContainer: {
-      backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+      backgroundColor: "#475569", // Medium slate background
       borderRadius: 12,
       padding: 16,
       marginBottom: 20,
+      borderWidth: 1,
+      borderColor: "#64748B", // Subtle border
     },
     statsTitle: {
       fontSize: 16,
       fontWeight: "600",
-      color: isDark ? "#FFFFFF" : "#000000",
+      color: "#F1F5F9", // Light text for dark background
       marginBottom: 16,
     },
     statsGrid: {
@@ -1074,17 +1079,17 @@ const getStyles = (isDark: boolean) =>
     statValue: {
       fontSize: 24,
       fontWeight: "bold",
-      color: "#007AFF",
+      color: "#84CC16", // Toned-down lime green accent
       marginBottom: 4,
     },
     statLabel: {
       fontSize: 12,
-      color: "#8E8E93",
+      color: "#CBD5E1", // Light slate gray
       textAlign: "center",
     },
     modalContainer: {
       flex: 1,
-      backgroundColor: isDark ? "#000000" : "#F2F2F7",
+      backgroundColor: "#334155", // Dark slate background
     },
     modalHeader: {
       flexDirection: "row",
@@ -1092,7 +1097,7 @@ const getStyles = (isDark: boolean) =>
       alignItems: "center",
       padding: 16,
       borderBottomWidth: 1,
-      borderBottomColor: "#E5E5EA",
+      borderBottomColor: "#64748B", // Darker border for dark theme
     },
     modalTitleContainer: {
       flexDirection: "row",
@@ -1102,19 +1107,19 @@ const getStyles = (isDark: boolean) =>
     modalTitle: {
       fontSize: 18,
       fontWeight: "bold",
-      color: isDark ? "#FFFFFF" : "#000000",
+      color: "#F1F5F9", // Light text for dark background
     },
     refreshButton: {
       padding: 4,
     },
     doneButton: {
       fontSize: 16,
-      color: "#007AFF",
+      color: "#84CC16", // Lime green accent
       fontWeight: "600",
     },
     selectAllButton: {
       fontSize: 16,
-      color: "#007AFF",
+      color: "#84CC16", // Lime green accent
       fontWeight: "600",
     },
     templateItem: {
@@ -1122,9 +1127,9 @@ const getStyles = (isDark: boolean) =>
       justifyContent: "space-between",
       alignItems: "center",
       padding: 16,
-      backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+      backgroundColor: "#475569", // Medium slate background
       borderBottomWidth: 1,
-      borderBottomColor: "#E5E5EA",
+      borderBottomColor: "#64748B", // Darker border
     },
     templateItemLeft: {
       flexDirection: "row",
@@ -1138,7 +1143,7 @@ const getStyles = (isDark: boolean) =>
     },
     templateName: {
       fontSize: 16,
-      color: isDark ? "#FFFFFF" : "#000000",
+      color: "#F1F5F9", // Light text for dark background
     },
     statsModalContent: {
       flex: 1,
@@ -1150,48 +1155,52 @@ const getStyles = (isDark: boolean) =>
     statsSectionTitle: {
       fontSize: 18,
       fontWeight: "600",
-      color: isDark ? "#FFFFFF" : "#000000",
+      color: "#F1F5F9", // Light text for dark background
       marginBottom: 16,
     },
     statCard: {
       flex: 1,
-      backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+      backgroundColor: "#475569", // Medium slate background
       borderRadius: 8,
       padding: 12,
       alignItems: "center",
       marginHorizontal: 4,
       shadowColor: "#000000",
       shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.1,
+      shadowOpacity: 0.2,
       shadowRadius: 2,
       elevation: 1,
+      borderWidth: 1,
+      borderColor: "#64748B", // Subtle border
     },
     statCardValue: {
       fontSize: 18,
       fontWeight: "bold",
-      color: "#007AFF",
+      color: "#84CC16", // Lime green accent
       marginBottom: 4,
     },
     statCardLabel: {
       fontSize: 12,
-      color: "#8E8E93",
+      color: "#CBD5E1", // Light slate gray
       textAlign: "center",
     },
     exerciseStatsCard: {
-      backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+      backgroundColor: "#475569", // Medium slate background
       borderRadius: 8,
       padding: 16,
       marginBottom: 12,
       shadowColor: "#000000",
       shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.1,
+      shadowOpacity: 0.2,
       shadowRadius: 2,
       elevation: 1,
+      borderWidth: 1,
+      borderColor: "#64748B", // Subtle border
     },
     exerciseStatsName: {
       fontSize: 16,
       fontWeight: "600",
-      color: isDark ? "#FFFFFF" : "#000000",
+      color: "#F1F5F9", // Light text for dark background
       marginBottom: 12,
     },
     exerciseStatsRow: {
@@ -1205,12 +1214,12 @@ const getStyles = (isDark: boolean) =>
     exerciseStatValue: {
       fontSize: 14,
       fontWeight: "bold",
-      color: "#007AFF",
+      color: "#84CC16", // Lime green accent
       marginBottom: 2,
     },
     exerciseStatLabel: {
       fontSize: 10,
-      color: "#8E8E93",
+      color: "#CBD5E1", // Light slate gray
       textAlign: "center",
     },
   });
