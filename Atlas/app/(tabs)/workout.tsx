@@ -114,22 +114,22 @@ export default function WorkoutScreen() {
 
     case "recent":
       return (
-        <View style={{ flex: 1, backgroundColor: '#F2F2F7' }}>
+        <View style={{ flex: 1, backgroundColor: '#334155' }}>
           <View style={{ 
             flexDirection: 'row', 
             alignItems: 'center', 
             paddingHorizontal: 16, 
             paddingTop: 16, 
             paddingBottom: 8,
-            backgroundColor: '#F2F2F7'
+            backgroundColor: '#334155'
           }}>
             <TouchableOpacity 
               onPress={handleBackToStart}
               style={{ marginRight: 16, padding: 8 }}
             >
-              <Ionicons name="arrow-back" size={24} color="#007AFF" />
+              <Ionicons name="arrow-back" size={24} color="#84CC16" />
             </TouchableOpacity>
-            <Text style={{ fontSize: 18, fontWeight: '600', color: '#000000' }}>Recent Workouts</Text>
+            <Text style={{ fontSize: 18, fontWeight: '600', color: '#F1F5F9' }}>Recent Workouts</Text>
           </View>
           <RecentWorkouts
             showHeader={false}
