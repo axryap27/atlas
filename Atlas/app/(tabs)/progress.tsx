@@ -22,7 +22,6 @@ import { Session, WorkoutDay } from "../../lib/supabase";
 import { LineChart } from "react-native-chart-kit";
 
 const { width: screenWidth } = Dimensions.get("window");
-const chartWidth = screenWidth - 40;
 const chartHeight = 220;
 
 interface VolumeData {
@@ -199,6 +198,7 @@ export default function ProgressScreen() {
             workoutDayId: session.workout_day_id,
           } as VolumeData;
         })
+        .filter(data => data.volume > 0) // Filter out sessions with 0 volume
         .sort(
           (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
         );
@@ -423,10 +423,7 @@ export default function ProgressScreen() {
       // Sort all data by date
       const sortedData = volumeData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
       
-      // Get unique dates for x-axis
-      const uniqueDates = [...new Set(sortedData.map(d => d.date.split('T')[0]))].sort();
-      
-      // Group data by template
+      // Group data by template first
       const groupedData = new Map();
       sortedData.forEach((data) => {
         let key;
@@ -450,6 +447,9 @@ export default function ProgressScreen() {
         }
         groupedData.get(key).push(data);
       });
+
+      // Get all unique dates from all templates for x-axis labels
+      const allDates = [...new Set(sortedData.map(d => d.date.split('T')[0]))].sort();
 
       // Create datasets for each template/workout type
       const datasets = [];
@@ -484,14 +484,15 @@ export default function ProgressScreen() {
           }
         }
 
-        // Map data to chart points, keeping array aligned with dates
-        const dataPoints = uniqueDates.map(date => {
+        // Create data points only for dates where this template has workouts
+        // Fill missing dates with null to maintain chart structure but end lines naturally
+        const dataPoints = allDates.map(date => {
           const workout = templateData.find(w => w.date.split('T')[0] === date);
-          return workout ? workout.volume : 0; // Use 0 instead of null to maintain alignment
+          return workout ? workout.volume : null;
         });
 
-        // Only add datasets that have actual data (not all zeros)
-        if (dataPoints.some(point => point > 0)) {
+        // Only add datasets that have actual data
+        if (templateData.length > 0) {
           datasets.push({
             data: dataPoints,
             color: (opacity = 1) => {
@@ -509,8 +510,8 @@ export default function ProgressScreen() {
         colorIndex++;
       });
 
-      // Create labels for ALL dates to match data arrays
-      const labels = uniqueDates.map(date => formatDate(date + 'T00:00:00'));
+      // Create labels for all dates
+      const labels = allDates.map(date => formatDate(date + 'T00:00:00'));
 
       return {
         labels,
@@ -523,15 +524,25 @@ export default function ProgressScreen() {
     };
 
     const chartData = prepareChartData();
+    
+    // Calculate dynamic chart width - minimum screen width, but expand for more data points
+    const minWidth = screenWidth - 40;
+    const pointsPerScreenWidth = 6; // Show ~6 data points per screen width
+    const dynamicWidth = Math.max(minWidth, (chartData.labels.length / pointsPerScreenWidth) * minWidth);
 
     return (
       <View style={styles.chartContainer}>
         <Text style={styles.chartTitle}>Volume Progress</Text>
         
-        <LineChart
-          data={chartData}
-          width={chartWidth}
-          height={chartHeight}
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={dynamicWidth > minWidth ? { paddingRight: 20 } : undefined}
+        >
+          <LineChart
+            data={chartData}
+            width={dynamicWidth}
+            height={chartHeight}
           chartConfig={{
             backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
             backgroundGradientFrom: isDark ? "#1C1C1E" : "#FFFFFF",
@@ -565,6 +576,7 @@ export default function ProgressScreen() {
           withShadow={false}
           withInnerLines={true}
           withOuterLines={false}
+          fromZero={true}
         />
       </View>
     );
