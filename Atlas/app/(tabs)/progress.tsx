@@ -22,6 +22,7 @@ import { Session, WorkoutDay } from "../../lib/supabase";
 import { LineChart } from "react-native-chart-kit";
 
 const { width: screenWidth } = Dimensions.get("window");
+const chartWidth = screenWidth - 80; // Reduced width to account for container padding and chart margins
 const chartHeight = 220;
 
 interface VolumeData {
@@ -451,6 +452,36 @@ export default function ProgressScreen() {
       // Get all unique dates from all templates for x-axis labels
       const allDates = [...new Set(sortedData.map(d => d.date.split('T')[0]))].sort();
 
+      // Intelligently sample data points based on total data density
+      const sampleDates = (dates) => {
+        const totalDates = dates.length;
+        let sampledDates;
+        
+        if (totalDates <= 10) {
+          // Show all points for small datasets
+          sampledDates = dates;
+        } else if (totalDates <= 30) {
+          // Show every other day for medium datasets (2 weeks to 1 month)
+          sampledDates = dates.filter((_, index) => index % 2 === 0 || index === dates.length - 1);
+        } else if (totalDates <= 90) {
+          // Show weekly for larger datasets (1-3 months)
+          sampledDates = dates.filter((_, index) => index % 7 === 0 || index === dates.length - 1);
+        } else {
+          // Show biweekly for very large datasets (3+ months)
+          sampledDates = dates.filter((_, index) => index % 14 === 0 || index === dates.length - 1);
+        }
+        
+        // Always include the first and last dates
+        if (sampledDates[0] !== dates[0]) sampledDates.unshift(dates[0]);
+        if (sampledDates[sampledDates.length - 1] !== dates[dates.length - 1]) {
+          sampledDates.push(dates[dates.length - 1]);
+        }
+        
+        return [...new Set(sampledDates)].sort(); // Remove duplicates and sort
+      };
+
+      const sampledDates = sampleDates(allDates);
+
       // Create datasets for each template/workout type
       const datasets = [];
       const colors = ["#FF3B30", "#007AFF", "#34C759", "#FF9500", "#AF52DE"]; // Red, Blue, Green, Orange, Purple
@@ -484,10 +515,32 @@ export default function ProgressScreen() {
           }
         }
 
-        // Create data points only for dates where this template has workouts
-        // Fill missing dates with null to maintain chart structure but end lines naturally
-        const dataPoints = allDates.map(date => {
-          const workout = templateData.find(w => w.date.split('T')[0] === date);
+        // Create data points only for sampled dates - use closest actual workout data
+        const dataPoints = sampledDates.map(date => {
+          // First try to find exact match
+          let workout = templateData.find(w => w.date.split('T')[0] === date);
+          
+          // If no exact match, find the closest workout within a reasonable range
+          if (!workout) {
+            const targetDate = new Date(date);
+            const closestWorkout = templateData.reduce((closest, current) => {
+              const currentDate = new Date(current.date.split('T')[0]);
+              const closestDate = closest ? new Date(closest.date.split('T')[0]) : null;
+              
+              if (!closest) return current;
+              
+              const currentDiff = Math.abs(targetDate.getTime() - currentDate.getTime());
+              const closestDiff = Math.abs(targetDate.getTime() - closestDate.getTime());
+              
+              // Only use if within 3 days and closer than current closest
+              const maxDiff = 3 * 24 * 60 * 60 * 1000; // 3 days in milliseconds
+              
+              return currentDiff < closestDiff && currentDiff <= maxDiff ? current : closest;
+            }, null);
+            
+            workout = closestWorkout;
+          }
+          
           return workout ? workout.volume : null;
         });
 
@@ -510,11 +563,16 @@ export default function ProgressScreen() {
         colorIndex++;
       });
 
-      // Create labels for all dates
-      const labels = allDates.map(date => formatDate(date + 'T00:00:00'));
+      // Create labels for sampled dates, but show fewer labels if we have many data points
+      const allLabels = sampledDates.map(date => formatDate(date + 'T00:00:00'));
+      
+      // Show every other label if we have 6 or more data points to prevent x-axis crowding
+      const displayLabels = allLabels.length >= 6 
+        ? allLabels.map((label, index) => index % 2 === 0 ? label : '')
+        : allLabels;
 
       return {
-        labels,
+        labels: displayLabels,
         datasets: datasets.length > 0 ? datasets : [{
           data: [0],
           color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
@@ -524,25 +582,15 @@ export default function ProgressScreen() {
     };
 
     const chartData = prepareChartData();
-    
-    // Calculate dynamic chart width - minimum screen width, but expand for more data points
-    const minWidth = screenWidth - 40;
-    const pointsPerScreenWidth = 6; // Show ~6 data points per screen width
-    const dynamicWidth = Math.max(minWidth, (chartData.labels.length / pointsPerScreenWidth) * minWidth);
 
     return (
       <View style={styles.chartContainer}>
         <Text style={styles.chartTitle}>Volume Progress</Text>
         
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={dynamicWidth > minWidth ? { paddingRight: 20 } : undefined}
-        >
-          <LineChart
-            data={chartData}
-            width={dynamicWidth}
-            height={chartHeight}
+        <LineChart
+          data={chartData}
+          width={chartWidth}
+          height={chartHeight}
           chartConfig={{
             backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
             backgroundGradientFrom: isDark ? "#1C1C1E" : "#FFFFFF",
@@ -904,7 +952,7 @@ const getStyles = (isDark: boolean) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: isDark ? "#000000" : "#F2F2F7",
+      backgroundColor: isDark ? "#0F172A" : "#F1F5F9", // Slate backgrounds
     },
     scrollView: {
       flex: 1,
