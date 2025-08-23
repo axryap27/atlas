@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   SafeAreaView,
-  useColorScheme,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { WorkoutScreen } from "../../(tabs)/workout";
@@ -17,9 +16,6 @@ interface WorkoutStartProps {
 }
 
 export default function WorkoutStart({ onNavigate }: WorkoutStartProps) {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-
   const handleQuickStart = () => {
     onNavigate("active", []); // Start with empty exercises
   };
@@ -32,7 +28,7 @@ export default function WorkoutStart({ onNavigate }: WorkoutStartProps) {
     onNavigate("recent");
   };
 
-  const styles = getStyles(isDark);
+  const styles = getStyles();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -47,7 +43,7 @@ export default function WorkoutStart({ onNavigate }: WorkoutStartProps) {
             onPress={handleQuickStart}
           >
             <View style={styles.startOptionContent}>
-              <Ionicons name="flash" size={24} color="#007AFF" />
+              <Ionicons name="flash" size={24} color="#84CC16" />
               <View style={styles.startOptionText}>
                 <Text style={styles.startOptionTitle}>Quick Start</Text>
                 <Text style={styles.startOptionDescription}>
@@ -64,7 +60,7 @@ export default function WorkoutStart({ onNavigate }: WorkoutStartProps) {
             onPress={handleTemplates}
           >
             <View style={styles.startOptionContent}>
-              <Ionicons name="library" size={24} color="#007AFF" />
+              <Ionicons name="library" size={24} color="#84CC16" />
               <View style={styles.startOptionText}>
                 <Text style={styles.startOptionTitle}>Workout Templates</Text>
                 <Text style={styles.startOptionDescription}>
@@ -81,7 +77,7 @@ export default function WorkoutStart({ onNavigate }: WorkoutStartProps) {
             onPress={handleRecentWorkouts}
           >
             <View style={styles.startOptionContent}>
-              <Ionicons name="time" size={24} color="#007AFF" />
+              <Ionicons name="time" size={24} color="#84CC16" />
               <View style={styles.startOptionText}>
                 <Text style={styles.startOptionTitle}>
                   Recent Workouts
@@ -99,11 +95,11 @@ export default function WorkoutStart({ onNavigate }: WorkoutStartProps) {
   );
 }
 
-const getStyles = (isDark: boolean) =>
+const getStyles = () =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: "#F2F2F7", // Light background
+      backgroundColor: "#334155", // Dark slate background
     },
     scrollView: {
       flex: 1,
@@ -114,24 +110,26 @@ const getStyles = (isDark: boolean) =>
     startTitle: {
       fontSize: 32,
       fontFamily: "Outfit_600SemiBold",
-      color: "#000000", // Dark text
+      color: "#F1F5F9", // Light text for dark background
       marginBottom: 8,
       letterSpacing: -0.5,
     },
     startSubtitle: {
       fontSize: 16,
-      color: "#6D6D70", // Light theme subtitle
+      color: "#CBD5E1", // Light slate gray for dark background
       marginBottom: 32,
     },
     startOption: {
-      backgroundColor: "#FFFFFF", // White cards
+      backgroundColor: "#475569", // Medium slate background
       borderRadius: 12,
       marginBottom: 16,
       shadowColor: "#000000",
       shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1, // Light shadow
+      shadowOpacity: 0.2,
       shadowRadius: 4,
       elevation: 3,
+      borderWidth: 1,
+      borderColor: "#64748B", // Subtle border
     },
     disabledOption: {
       opacity: 0.5,
@@ -148,15 +146,15 @@ const getStyles = (isDark: boolean) =>
     startOptionTitle: {
       fontSize: 18,
       fontFamily: "Inter_600SemiBold",
-      color: "#000000", // Dark text
+      color: "#F1F5F9", // Light text for dark background
       marginBottom: 4,
     },
     startOptionDescription: {
       fontSize: 14,
       fontFamily: "Inter_400Regular",
-      color: "#6D6D70", // Light theme description
+      color: "#CBD5E1", // Light slate gray for descriptions
     },
     disabledText: {
-      color: "#8E8E93",
+      color: "#94A3B8", // Lighter disabled text for dark theme
     },
   });

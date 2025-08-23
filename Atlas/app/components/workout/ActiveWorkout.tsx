@@ -9,7 +9,6 @@ import {
   StyleSheet,
   Alert,
   SafeAreaView,
-  useColorScheme,
   Modal,
   Animated,
   PanResponder,
@@ -102,8 +101,6 @@ export default function ActiveWorkout({
   templateId
 }: ActiveWorkoutProps) {
   
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
   
   const [selectedExercises, setSelectedExercises] = useState<Exercise[]>(initialExercises);
   const [availableExercises, setAvailableExercises] = useState<ExerciseData[]>([]);
@@ -536,7 +533,7 @@ export default function ActiveWorkout({
     }
   };
 
-  const styles = getStyles(isDark);
+  const styles = getStyles();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -545,13 +542,13 @@ export default function ActiveWorkout({
         <View style={styles.header}>
           <View style={styles.headerTop}>
             <TouchableOpacity onPress={handleEndWorkout} style={styles.backButton}>
-              <Ionicons name="chevron-back" size={24} color="#007AFF" />
+              <Ionicons name="chevron-back" size={24} color="#84CC16" />
               <Text style={styles.backText}>End Workout</Text>
             </TouchableOpacity>
             
             {/* Workout Timer */}
             <View style={styles.timerContainer}>
-              <Ionicons name="time-outline" size={16} color="#8E8E93" />
+              <Ionicons name="time-outline" size={16} color="#CBD5E1" />
               <Text style={styles.timerText}>{formatTime(elapsedTime)}</Text>
             </View>
           </View>
@@ -580,7 +577,7 @@ export default function ActiveWorkout({
           style={styles.addExerciseButton} 
           onPress={() => setShowExercisePicker(true)}
         >
-          <Ionicons name="add" size={24} color="#007AFF" />
+          <Ionicons name="add" size={24} color="#84CC16" />
           <Text style={styles.addExerciseText}>Add Exercise</Text>
         </TouchableOpacity>
 
@@ -670,7 +667,7 @@ export default function ActiveWorkout({
                           value={set.weight}
                           onChangeText={(value) => handleWeightChange(exercise.id, set.id, value)}
                           placeholder="0"
-                          placeholderTextColor="#8E8E93"
+                          placeholderTextColor="#94A3B8"
                           keyboardType="decimal-pad"
                           selectTextOnFocus={true}
                         />
@@ -680,7 +677,7 @@ export default function ActiveWorkout({
                             style={[styles.incrementButton, styles.incrementButtonLeft]} 
                             onPress={() => handleRepsDecrement(exercise.id, set.id)}
                           >
-                            <Ionicons name="remove" size={16} color="#007AFF" />
+                            <Ionicons name="remove" size={16} color="#84CC16" />
                           </TouchableOpacity>
                           
                           <TextInput
@@ -688,7 +685,7 @@ export default function ActiveWorkout({
                             value={set.reps}
                             onChangeText={(value) => handleRepsChange(exercise.id, set.id, value)}
                             placeholder="0"
-                            placeholderTextColor="#8E8E93"
+                            placeholderTextColor="#94A3B8"
                             keyboardType="number-pad"
                             selectTextOnFocus={true}
                           />
@@ -697,7 +694,7 @@ export default function ActiveWorkout({
                             style={[styles.incrementButton, styles.incrementButtonRight]} 
                             onPress={() => handleRepsIncrement(exercise.id, set.id)}
                           >
-                            <Ionicons name="add" size={16} color="#007AFF" />
+                            <Ionicons name="add" size={16} color="#84CC16" />
                           </TouchableOpacity>
                         </View>
                         
@@ -709,7 +706,7 @@ export default function ActiveWorkout({
                             <Ionicons 
                               name={set.completed ? "checkmark" : "ellipse-outline"} 
                               size={20} 
-                              color={set.completed ? "#FFFFFF" : "#007AFF"} 
+                              color={set.completed ? "#FFFFFF" : "#84CC16"} 
                             />
                           </TouchableOpacity>
 
@@ -728,7 +725,7 @@ export default function ActiveWorkout({
                       style={styles.addSetButton}
                       onPress={() => handleAddSet(exercise.id)}
                     >
-                      <Ionicons name="add" size={20} color="#007AFF" />
+                      <Ionicons name="add" size={20} color="#84CC16" />
                       <Text style={styles.addSetButtonText}>Add Set</Text>
                     </TouchableOpacity>
                       </>
@@ -775,13 +772,13 @@ export default function ActiveWorkout({
 
           {/* Fixed Search Bar */}
           <View style={styles.searchContainer}>
-            <Ionicons name="search" size={20} color="#8E8E93" />
+            <Ionicons name="search" size={20} color="#CBD5E1" />
             <TextInput
               style={styles.searchInput}
               placeholder="Search exercises..."
               value={searchQuery}
               onChangeText={setSearchQuery}
-              placeholderTextColor="#8E8E93"
+              placeholderTextColor="#94A3B8"
             />
           </View>
 
@@ -826,7 +823,7 @@ export default function ActiveWorkout({
                     <Text style={styles.exercisePickerName}>{exercise.name}</Text>
                     <Text style={styles.exercisePickerMuscle}>{exercise.muscleGroup || "Unknown"}</Text>
                   </View>
-                  <Ionicons name="add-circle" size={24} color="#007AFF" />
+                  <Ionicons name="add-circle" size={24} color="#84CC16" />
                 </TouchableOpacity>
               ))
             ) : (
@@ -844,10 +841,10 @@ export default function ActiveWorkout({
   );
 }
 
-const getStyles = (isDark: boolean) => StyleSheet.create({
+const getStyles = () => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F2F2F7",
+    backgroundColor: "#334155", // Dark slate background
   },
   scrollView: {
     flex: 1,
@@ -867,32 +864,34 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   },
   backText: {
     fontSize: 16,
-    color: "#007AFF",
+    color: "#84CC16", // Lime green accent
     marginLeft: 4,
   },
   timerContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#475569", // Medium slate background
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
     gap: 4,
+    borderWidth: 1,
+    borderColor: "#64748B", // Subtle border
   },
   timerText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#000000",
+    color: "#F1F5F9", // Light text for dark background
   },
   workoutTitle: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#000000",
+    color: "#F1F5F9", // Light text for dark background
     marginBottom: 8,
   },
   progressText: {
     fontSize: 16,
-    color: "#6D6D70",
+    color: "#CBD5E1", // Light slate gray
   },
   progressContainer: {
     marginHorizontal: 16,
@@ -900,36 +899,36 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   },
   progressBackground: {
     height: 8,
-    backgroundColor: "#E5E5EA",
+    backgroundColor: "#64748B", // Darker slate for progress background
     borderRadius: 4,
     overflow: "hidden",
   },
   progressFill: {
     height: "100%",
-    backgroundColor: "#007AFF",
+    backgroundColor: "#84CC16", // Lime green accent
     borderRadius: 4,
   },
   addExerciseButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#475569", // Medium slate background
     marginHorizontal: 16,
     marginBottom: 24,
     paddingVertical: 16,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: "#007AFF",
+    borderColor: "#84CC16", // Lime green border
     borderStyle: "dashed",
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.2,
     shadowRadius: 2,
     elevation: 1,
   },
   addExerciseText: {
     fontSize: 16,
-    color: "#007AFF",
+    color: "#84CC16", // Lime green accent
     fontWeight: "600",
     marginLeft: 8,
   },
@@ -941,13 +940,13 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   emptyWorkoutText: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#8E8E93",
+    color: "#CBD5E1", // Light slate gray
     marginTop: 16,
     marginBottom: 8,
   },
   emptyWorkoutSubtext: {
     fontSize: 14,
-    color: "#8E8E93",
+    color: "#CBD5E1", // Light slate gray
     textAlign: "center",
   },
   exerciseList: {
@@ -987,14 +986,16 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     zIndex: 2,
   },
   exerciseCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#475569", // Medium slate background
     borderRadius: 12,
     padding: 16,
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 3,
+    borderWidth: 1,
+    borderColor: "#64748B", // Subtle border
   },
   completedExercise: {
     borderColor: "#34C759",
@@ -1014,7 +1015,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   exerciseName: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#000000",
+    color: "#F1F5F9", // Light text for dark background
   },
   exerciseActions: {
     flexDirection: "row",
@@ -1025,13 +1026,13 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     flexDirection: "row",
     paddingBottom: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E5EA",
+    borderBottomColor: "#64748B", // Darker border for dark theme
     marginBottom: 8,
   },
   tableHeaderText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#8E8E93",
+    color: "#CBD5E1", // Light slate gray
     textAlign: "center",
   },
   tableHeaderSet: {
@@ -1063,20 +1064,20 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     textAlign: "center",
     fontSize: 16,
     fontWeight: "600",
-    color: "#000000",
+    color: "#F1F5F9", // Light text for dark background
   },
   input: {
     width: 80,
     height: 40,
     borderWidth: 1,
-    borderColor: "#E5E5EA",
+    borderColor: "#64748B", // Darker border
     borderRadius: 8,
     paddingHorizontal: 12,
     marginHorizontal: 4,
     textAlign: "center",
     fontSize: 16,
-    backgroundColor: "#F8F8F8",
-    color: "#000000",
+    backgroundColor: "#334155", // Dark slate background
+    color: "#F1F5F9", // Light text
   },
   inputWithButtons: {
     width: 120,
@@ -1097,8 +1098,8 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#E5E5EA",
-    backgroundColor: "#F8F8F8",
+    borderColor: "#64748B", // Darker border
+    backgroundColor: "#334155", // Dark slate background
   },
   incrementButtonLeft: {
     borderTopLeftRadius: 8,
@@ -1123,10 +1124,10 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#E5E5EA",
+    backgroundColor: "#64748B", // Darker slate
   },
   doneButtonCompleted: {
-    backgroundColor: "#007AFF",
+    backgroundColor: "#84CC16", // Lime green accent
   },
   removeButton: {
     width: 32,
@@ -1134,14 +1135,14 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#E5E5EA",
+    backgroundColor: "#64748B", // Darker slate
   },
   addSetButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
-    borderColor: "#007AFF",
+    borderColor: "#84CC16", // Lime green border
     borderStyle: "dashed",
     borderRadius: 8,
     paddingVertical: 12,
@@ -1150,11 +1151,11 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   },
   addSetButtonText: {
     fontSize: 16,
-    color: "#007AFF",
+    color: "#84CC16", // Lime green text
     fontWeight: "600",
   },
   completeButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: "#84CC16", // Lime green accent
     paddingVertical: 16,
     borderRadius: 12,
     marginTop: 24,
@@ -1170,7 +1171,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   // Modal styles
   modalContainer: {
     flex: 1,
-    backgroundColor: "#F2F2F7",
+    backgroundColor: "#334155", // Dark slate background
   },
   modalHeader: {
     flexDirection: "row",
@@ -1179,17 +1180,17 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E5EA",
-    backgroundColor: "#F2F2F7",
+    borderBottomColor: "#64748B", // Darker border
+    backgroundColor: "#334155", // Dark slate background
   },
   modalCancelText: {
     fontSize: 16,
-    color: "#007AFF",
+    color: "#84CC16", // Lime green accent
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#000000",
+    color: "#F1F5F9", // Light text for dark background
   },
   modalSpacer: {
     width: 60,
@@ -1197,7 +1198,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#475569", // Medium slate background
     marginHorizontal: 16,
     marginTop: 16,
     marginBottom: 8,
@@ -1205,12 +1206,12 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#E5E5EA",
+    borderColor: "#64748B", // Darker border
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: "#000000",
+    color: "#F1F5F9", // Light text
     marginLeft: 8,
   },
   filterWrapper: {
@@ -1226,17 +1227,17 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     paddingVertical: 6,
     marginRight: 8,
     borderRadius: 16,
-    backgroundColor: "#E5E5EA",
+    backgroundColor: "#64748B", // Darker slate
     minWidth: 60,
     alignItems: "center",
   },
   filterButtonActive: {
-    backgroundColor: "#007AFF",
+    backgroundColor: "#84CC16", // Lime green accent
   },
   filterButtonText: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#000000",
+    color: "#F1F5F9", // Light text
     textAlign: "center",
   },
   filterButtonTextActive: {
@@ -1252,16 +1253,18 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   exercisePickerItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#475569", // Medium slate background
     paddingHorizontal: 16,
     paddingVertical: 12,
     marginBottom: 8,
     borderRadius: 8,
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.2,
     shadowRadius: 2,
     elevation: 2,
+    borderWidth: 1,
+    borderColor: "#64748B", // Subtle border
   },
   exercisePickerItemContent: {
     flex: 1,
@@ -1269,12 +1272,12 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   exercisePickerName: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#000000",
+    color: "#F1F5F9", // Light text for dark background
     marginBottom: 4,
   },
   exercisePickerMuscle: {
     fontSize: 14,
-    color: "#8E8E93",
+    color: "#CBD5E1", // Light slate gray
     textTransform: "capitalize",
   },
   noExercisesFound: {
@@ -1285,12 +1288,12 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   noExercisesText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#8E8E93",
+    color: "#CBD5E1", // Light slate gray
     marginBottom: 8,
   },
   noExercisesSubtext: {
     fontSize: 14,
-    color: "#8E8E93",
+    color: "#CBD5E1", // Light slate gray
     textAlign: "center",
   },
 });

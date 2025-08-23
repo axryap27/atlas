@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   SafeAreaView,
-  useColorScheme,
   ActivityIndicator,
   Alert,
 } from "react-native";
@@ -50,13 +49,10 @@ interface TemplatesProps {
 }
 
 export default function Templates({ onNavigate, onBack, needsRefresh, onRefreshed }: TemplatesProps) {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const styles = getStyles(isDark);
+  const styles = getStyles();
 
   useEffect(() => {
     loadTemplates();
@@ -161,7 +157,7 @@ export default function Templates({ onNavigate, onBack, needsRefresh, onRefreshe
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <TouchableOpacity onPress={onBack} style={styles.backButton}>
-            <Ionicons name="chevron-back" size={24} color="#007AFF" />
+            <Ionicons name="chevron-back" size={24} color="#84CC16" />
             <Text style={styles.backText}>Back</Text>
           </TouchableOpacity>
         </View>
@@ -174,7 +170,7 @@ export default function Templates({ onNavigate, onBack, needsRefresh, onRefreshe
       <ScrollView style={styles.templatesScrollView}>
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#007AFF" />
+            <ActivityIndicator size="large" color="#84CC16" />
             <Text style={styles.loadingText}>Loading your templates...</Text>
           </View>
         ) : templates.length > 0 ? (
@@ -230,7 +226,7 @@ export default function Templates({ onNavigate, onBack, needsRefresh, onRefreshe
           style={styles.createTemplateButton}
           onPress={handleCreateTemplate}
         >
-          <Ionicons name="add" size={24} color="#007AFF" />
+          <Ionicons name="add" size={24} color="#84CC16" />
           <Text style={styles.createTemplateText}>Create New Template</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -238,10 +234,10 @@ export default function Templates({ onNavigate, onBack, needsRefresh, onRefreshe
   );
 }
 
-const getStyles = (isDark: boolean) => StyleSheet.create({
+const getStyles = () => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F2F2F7", // Light background
+    backgroundColor: "#334155", // Dark slate background
   },
   header: {
     padding: 16,
@@ -258,18 +254,18 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   },
   backText: {
     fontSize: 16,
-    color: "#007AFF",
+    color: "#84CC16",
     marginLeft: 4,
   },
   workoutTitle: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#000000", // Dark text
+    color: "#F1F5F9", // Light text for dark background
     marginBottom: 8,
   },
   progressText: {
     fontSize: 16,
-    color: "#6D6D70", // Light theme secondary
+    color: "#CBD5E1", // Light slate gray
   },
   templatesScrollView: {
     flex: 1,
@@ -282,7 +278,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
-    color: "#8E8E93",
+    color: "#CBD5E1",
     marginTop: 12,
   },
   emptyState: {
@@ -293,27 +289,29 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   emptyStateText: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#000000",
+    color: "#F1F5F9",
     marginTop: 16,
     marginBottom: 8,
   },
   emptyStateSubtext: {
     fontSize: 14,
-    color: "#8E8E93",
+    color: "#CBD5E1",
     textAlign: "center",
     lineHeight: 20,
   },
   templateCard: {
-    backgroundColor: "#FFFFFF", // White cards
+    backgroundColor: "#475569", // Medium slate background
     borderRadius: 12,
     marginBottom: 12,
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1, // Light shadow
+    shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 3,
     flexDirection: "row",
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#64748B", // Subtle border
   },
   templateContent: {
     flex: 1,
@@ -323,12 +321,12 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 16,
     borderLeftWidth: 1,
-    borderLeftColor: "#F2F2F7",
+    borderLeftColor: "#64748B",
   },
   deleteButton: {
     padding: 8,
     borderRadius: 8,
-    backgroundColor: "#FFF2F2",
+    backgroundColor: "#7F1D1D", // Dark red background for delete
   },
   templateHeader: {
     marginBottom: 12,
@@ -336,19 +334,19 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   templateName: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#000000", // Dark text
+    color: "#F1F5F9", // Light text for dark background
     marginBottom: 4,
   },
   templateDescription: {
     fontSize: 14,
-    color: "#6D6D70", // Light theme secondary
+    color: "#CBD5E1", // Light slate gray
   },
   templateExercises: {
     marginBottom: 12,
   },
   templateExerciseList: {
     fontSize: 14,
-    color: "#6D6D70", // Light theme secondary
+    color: "#CBD5E1", // Light slate gray
     lineHeight: 20,
   },
   templateFooter: {
@@ -358,28 +356,28 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   },
   templateStats: {
     fontSize: 12,
-    color: "#8E8E93", // Light theme tertiary
+    color: "#94A3B8", // Lighter slate gray
   },
   createTemplateButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#475569", // Medium slate background
     borderRadius: 12,
     padding: 20,
     marginBottom: 20,
     borderWidth: 2,
-    borderColor: "#007AFF",
+    borderColor: "#84CC16", // Lime green border
     borderStyle: "dashed",
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 1,
   },
   createTemplateText: {
     fontSize: 16,
-    color: "#007AFF",
+    color: "#84CC16", // Lime green text
     fontWeight: "600",
     marginLeft: 8,
   },

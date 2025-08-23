@@ -41,8 +41,6 @@ interface CreateTemplateProps {
 }
 
 export default function CreateTemplate({ onBack, onTemplateCreated }: CreateTemplateProps) {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
 
   // Template form state
   const [templateName, setTemplateName] = useState("");
@@ -56,7 +54,7 @@ export default function CreateTemplate({ onBack, onTemplateCreated }: CreateTemp
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const styles = getStyles(isDark);
+  const styles = getStyles();
 
   useEffect(() => {
     loadExercises();
@@ -396,11 +394,11 @@ export default function CreateTemplate({ onBack, onTemplateCreated }: CreateTemp
   );
 }
 
-const getStyles = (isDark: boolean) =>
+const getStyles = () =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: "#F2F2F7",
+      backgroundColor: "#F1F5F9",
     },
     header: {
       padding: 16,
@@ -596,7 +594,7 @@ const getStyles = (isDark: boolean) =>
     // Modal styles
     modalContainer: {
       flex: 1,
-      backgroundColor: "#F2F2F7",
+      backgroundColor: "#F1F5F9",
     },
     modalHeader: {
       flexDirection: "row",

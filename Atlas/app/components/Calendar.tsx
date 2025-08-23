@@ -4,7 +4,6 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  useColorScheme,
   Modal,
 } from 'react-native';
 import { GestureHandlerRootView, PanGestureHandler, State } from 'react-native-gesture-handler';
@@ -29,9 +28,7 @@ interface DayProps {
 }
 
 const Day: React.FC<DayProps> = ({ day, isToday, isSelected, hasWorkout, onPress, disabled }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-  const dayStyles = getDayStyles(isDark);
+  const dayStyles = getDayStyles();
 
   if (!day) {
     return <View style={dayStyles.emptyDay} />;
@@ -54,7 +51,6 @@ const Day: React.FC<DayProps> = ({ day, isToday, isSelected, hasWorkout, onPress
           isToday && dayStyles.todayText,
           isSelected && dayStyles.selectedDayText,
           disabled && dayStyles.disabledDayText,
-          { color: isDark ? '#FFFFFF' : '#000000' }
         ]}
       >
         {day}
@@ -67,8 +63,6 @@ const Day: React.FC<DayProps> = ({ day, isToday, isSelected, hasWorkout, onPress
 };
 
 const Calendar = forwardRef<CalendarRef, CalendarProps>(({ onDateSelect }, ref) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
   
   const [currentDate, setCurrentDate] = useState(new Date()); // Current date
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -124,10 +118,38 @@ const Calendar = forwardRef<CalendarRef, CalendarProps>(({ onDateSelect }, ref) 
       const sessionDateString = `${sessionYear}-${String(sessionMonth).padStart(2, '0')}-${String(sessionDay).padStart(2, '0')}`;
       
       return sessionDateString === dateString;
-    }).map(session => ({
-      name: session.workout_day?.name || 'Workout Session',
-      exercises: session.set_logs?.map(setLog => setLog.exercise?.name).filter((name): name is string => Boolean(name)) || []
-    }));
+    }).map(session => {
+      // Group set logs by exercise and find the single top set (heaviest weight with its reps)
+      const exerciseData = new Map();
+      
+      session.set_logs?.forEach(setLog => {
+        if (setLog.exercise?.name) {
+          const exerciseName = setLog.exercise.name;
+          const weight = setLog.weight || 0;
+          const reps = setLog.reps || 0;
+          
+          if (!exerciseData.has(exerciseName)) {
+            exerciseData.set(exerciseName, { 
+              name: exerciseName, 
+              topWeight: weight, 
+              topReps: reps
+            });
+          } else {
+            const existing = exerciseData.get(exerciseName);
+            // Update top weight and reps if this set has higher weight
+            if (weight > existing.topWeight) {
+              existing.topWeight = weight;
+              existing.topReps = reps;
+            }
+          }
+        }
+      });
+      
+      return {
+        name: session.workout_day?.name || 'Workout Session',
+        exercises: Array.from(exerciseData.values())
+      };
+    });
   };
 
   useImperativeHandle(ref, () => ({
@@ -315,7 +337,7 @@ const Calendar = forwardRef<CalendarRef, CalendarProps>(({ onDateSelect }, ref) 
     return days;
   };
 
-  const styles = getStyles(isDark);
+  const styles = getStyles();
 
   return (
     <>
@@ -382,9 +404,16 @@ const Calendar = forwardRef<CalendarRef, CalendarProps>(({ onDateSelect }, ref) 
                   <Text style={styles.workoutName}>{workout.name}</Text>
                   <View style={styles.exercisesList}>
                     {workout.exercises.map((exercise, exerciseIndex) => (
-                      <Text key={exerciseIndex} style={styles.exerciseItem}>
-                        • {exercise}
-                      </Text>
+                      <View key={exerciseIndex} style={styles.exerciseRow}>
+                        <Text style={styles.exerciseItem}>
+                          • {exercise.name}
+                        </Text>
+                        {exercise.topWeight > 0 && (
+                          <Text style={styles.exerciseWeight}>
+                            {exercise.topWeight} lbs × {exercise.topReps}
+                          </Text>
+                        )}
+                      </View>
                     ))}
                   </View>
                 </View>
@@ -467,7 +496,7 @@ const Calendar = forwardRef<CalendarRef, CalendarProps>(({ onDateSelect }, ref) 
 
 export default Calendar;
 
-const getDayStyles = (isDark: boolean) => StyleSheet.create({
+const getDayStyles = () => StyleSheet.create({
   emptyDay: {
     width: '14.28%',
     aspectRatio: 1,
@@ -485,7 +514,7 @@ const getDayStyles = (isDark: boolean) => StyleSheet.create({
     borderWidth: 1,
   },
   selectedDay: {
-    backgroundColor: isDark ? '#2C2C2E' : '#F2F2F7',
+    backgroundColor: '#1E293B', // Dark slate for selected day
   },
   workoutDay: {
     borderWidth: 1,
@@ -497,13 +526,14 @@ const getDayStyles = (isDark: boolean) => StyleSheet.create({
   dayText: {
     fontSize: 14,
     fontWeight: '500',
+    color: '#F1F5F9', // Light text for dates
   },
   todayText: {
     color: '#007AFF',
     fontWeight: 'bold',
   },
   selectedDayText: {
-    color: '#FFFFFF',
+    color: '#F1F5F9',
     fontWeight: 'bold',
   },
   disabledDayText: {
@@ -518,12 +548,12 @@ const getDayStyles = (isDark: boolean) => StyleSheet.create({
   },
 });
 
-const getStyles = (isDark: boolean) => StyleSheet.create({
+const getStyles = () => StyleSheet.create({
   container: {
-    backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+    backgroundColor: '#475569', // Medium slate background
     borderRadius: 12,
     padding: 16,
-    shadowColor: isDark ? '#000000' : '#000000',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -538,17 +568,17 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   navButton: {
     padding: 8,
     borderRadius: 6,
-    backgroundColor: isDark ? '#2C2C2E' : '#F2F2F7',
+    backgroundColor: '#334155', // Darker slate for nav buttons
   },
   navText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: isDark ? '#FFFFFF' : '#000000',
+    color: '#F1F5F9', // Light text for dark background
   },
   monthYear: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: isDark ? '#FFFFFF' : '#000000',
+    color: '#F1F5F9', // Light text for dark background
   },
   dayNamesRow: {
     flexDirection: 'row',
@@ -559,7 +589,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     textAlign: 'center',
     fontSize: 12,
     fontWeight: '600',
-    color: isDark ? '#8E8E93' : '#6D6D70',
+    color: '#CBD5E1', // Light slate gray for day names
     paddingVertical: 4,
   },
   calendarGrid: {
@@ -584,12 +614,12 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   },
   todayLegend: {
     borderWidth: 2,
-    borderColor: '#007AFF',
+    borderColor: '#84CC16', // Green accent instead of blue
     backgroundColor: 'transparent',
   },
   legendText: {
     fontSize: 12,
-    color: isDark ? '#8E8E93' : '#6D6D70',
+    color: '#CBD5E1', // Light slate gray
   },
   modalOverlay: {
     flex: 1,
@@ -597,7 +627,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+    backgroundColor: '#334155', // Dark slate background
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
@@ -612,7 +642,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: isDark ? '#FFFFFF' : '#000000',
+    color: '#F1F5F9', // Light text for dark background
   },
   fullMonthGrid: {
     flexDirection: 'row',
@@ -620,7 +650,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     marginBottom: 20,
   },
   closeButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#84CC16', // Green accent instead of blue
     borderRadius: 8,
     paddingVertical: 12,
     alignItems: 'center',
@@ -633,7 +663,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   swipeIndicator: {
     width: 40,
     height: 4,
-    backgroundColor: isDark ? '#48484A' : '#C7C7CC',
+    backgroundColor: '#C7C7CC',
     borderRadius: 2,
     alignSelf: 'center',
     marginBottom: 16,
@@ -642,40 +672,55 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     marginTop: 20,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: isDark ? '#2C2C2E' : '#E5E5EA',
+    borderTopColor: '#64748B', // Darker border for dark theme
   },
   workoutsSectionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: isDark ? '#FFFFFF' : '#000000',
+    color: '#F1F5F9', // Light text for dark background
     marginBottom: 12,
   },
   workoutsList: {
     marginTop: 10,
   },
   workoutItem: {
-    backgroundColor: isDark ? '#2C2C2E' : '#F2F2F7',
+    backgroundColor: '#1E293B', // Dark slate background for workout cards
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#334155', // Subtle border
   },
   workoutName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: isDark ? '#FFFFFF' : '#000000',
+    color: '#F1F5F9', // Light text for dark background
     marginBottom: 8,
   },
   exercisesList: {
     marginLeft: 8,
   },
-  exerciseItem: {
-    fontSize: 14,
-    color: isDark ? '#8E8E93' : '#6D6D70',
+  exerciseRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 4,
+  },
+  exerciseItem: {
+    fontSize: 16,
+    color: '#CBD5E1', // Light slate gray for exercise names
+    flex: 1,
+    fontWeight: '500',
+  },
+  exerciseWeight: {
+    fontSize: 14,
+    color: '#84CC16', // Green accent for weights
+    fontWeight: '600',
+    marginLeft: 8,
   },
   noWorkoutText: {
     fontSize: 16,
-    color: isDark ? '#8E8E93' : '#6D6D70',
+    color: '#64748B',
     textAlign: 'center',
     marginTop: 20,
   },

@@ -76,8 +76,6 @@ const apiService = {
 };
 
 export default function WorkoutSummary({ sessionId, onBack }: WorkoutSummaryProps) {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
   const [session, setSession] = useState<WorkoutSession | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -169,7 +167,7 @@ export default function WorkoutSummary({ sessionId, onBack }: WorkoutSummaryProp
     };
   };
 
-  const styles = getStyles(isDark);
+  const styles = getStyles();
 
   if (loading) {
     return (
@@ -366,10 +364,10 @@ export default function WorkoutSummary({ sessionId, onBack }: WorkoutSummaryProp
   );
 }
 
-const getStyles = (isDark: boolean) => StyleSheet.create({
+const getStyles = () => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F2F2F7",
+    backgroundColor: "#F1F5F9",
   },
   loadingContainer: {
     flex: 1,
@@ -591,7 +589,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     flexDirection: 'row',
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#F2F2F7',
+    borderBottomColor: '#F1F5F9',
   },
   setsTableCell: {
     flex: 1,

@@ -121,10 +121,11 @@ export default function AuthScreen() {
           {/* Form */}
           <View style={styles.form}>
             <View style={styles.inputContainer}>
-              <Ionicons name="mail-outline" size={20} color="#8E8E93" />
+              <Ionicons name="mail-outline" size={20} color="#CBD5E1" />
               <TextInput
                 style={styles.input}
                 placeholder={isSignUp ? "Email" : "Email or Username"}
+                placeholderTextColor="#94A3B8"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType={isSignUp ? "email-address" : "default"}
@@ -136,10 +137,11 @@ export default function AuthScreen() {
             {/* Username field - only show during sign up */}
             {isSignUp && (
               <View style={styles.inputContainer}>
-                <Ionicons name="person-outline" size={20} color="#8E8E93" />
+                <Ionicons name="person-outline" size={20} color="#CBD5E1" />
                 <TextInput
                   style={styles.input}
                   placeholder="Username"
+                  placeholderTextColor="#94A3B8"
                   value={username}
                   onChangeText={setUsername}
                   autoCapitalize="none"
@@ -149,10 +151,11 @@ export default function AuthScreen() {
             )}
 
             <View style={styles.inputContainer}>
-              <Ionicons name="lock-closed-outline" size={20} color="#8E8E93" />
+              <Ionicons name="lock-closed-outline" size={20} color="#CBD5E1" />
               <TextInput
                 style={styles.input}
                 placeholder="Password"
+                placeholderTextColor="#94A3B8"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
@@ -162,7 +165,7 @@ export default function AuthScreen() {
                 <Ionicons 
                   name={showPassword ? "eye-off-outline" : "eye-outline"} 
                   size={20} 
-                  color="#8E8E93" 
+                  color="#CBD5E1" 
                 />
               </TouchableOpacity>
             </View>
@@ -202,7 +205,7 @@ export default function AuthScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#334155', // Dark slate background
   },
   keyboardView: {
     flex: 1,
@@ -225,7 +228,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 35,
-    backgroundColor: '#F8FAFC', // Light background to see if logo is there
+    backgroundColor: '#475569', // Medium slate for logo container
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 32,
@@ -246,7 +249,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 36,
     fontFamily: 'FunnelDisplay_600SemiBold',
-    color: '#334155',
+    color: '#F1F5F9', // Light slate text for dark background
     marginBottom: 8,
     letterSpacing: -0.8,
     textAlign: 'center',
@@ -254,7 +257,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     fontFamily: 'Outfit_400Regular',
-    color: '#64748B',
+    color: '#CBD5E1', // Light slate gray for subtitle
     textAlign: 'center',
     letterSpacing: -0.2,
   },
@@ -266,13 +269,13 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#475569', // Medium slate background
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#64748B', // Darker slate border
     shadowColor: '#64748B',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
@@ -284,15 +287,15 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     fontSize: 16,
     fontFamily: 'Inter_400Regular',
-    color: '#334155',
+    color: '#F1F5F9', // Light text for dark input background
   },
   authButton: {
-    backgroundColor: '#475569',
+    backgroundColor: '#84CC16', // Toned-down lime green accent
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
     marginTop: 8,
-    shadowColor: '#475569',
+    shadowColor: '#84CC16',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -316,12 +319,12 @@ const styles = StyleSheet.create({
     marginTop: 32,
   },
   footerText: {
-    color: '#64748B',
+    color: '#CBD5E1', // Light slate gray for footer text
     fontSize: 15,
     fontFamily: 'Inter_400Regular',
   },
   switchButton: {
-    color: '#475569',
+    color: '#84CC16', // Toned-down lime green accent
     fontSize: 15,
     fontFamily: 'Inter_600SemiBold',
     marginLeft: 4,

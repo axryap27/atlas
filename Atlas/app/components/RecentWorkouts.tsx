@@ -6,7 +6,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  useColorScheme,
   RefreshControl,
   ActivityIndicator,
   Alert,
@@ -75,8 +74,6 @@ const apiService = {
 };
 
 export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, refreshTrigger, onWorkoutDeleted, showHeader = true }: RecentWorkoutsProps) {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
   const [templates, setTemplates] = useState<WorkoutDay[]>([]);
   const [loading, setLoading] = useState(true);
@@ -423,7 +420,7 @@ export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, 
   };
 
 
-  const styles = getStyles(isDark);
+  const styles = getStyles();
 
   if (loading) {
     return (
@@ -649,9 +646,10 @@ export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, 
   );
 }
 
-const getStyles = (isDark: boolean) => StyleSheet.create({
+const getStyles = () => StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#334155', // Dark slate background
   },
   header: {
     flexDirection: 'row',
@@ -660,12 +658,12 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
+    borderBottomColor: '#64748B', // Slate border
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#000000',
+    color: '#F1F5F9', // Light text for dark background
   },
   headerActions: {
     flexDirection: 'row',
@@ -686,7 +684,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
-    color: '#8E8E93',
+    color: '#CBD5E1', // Light slate gray for dark background
     marginTop: 12,
   },
   emptyState: {
@@ -699,13 +697,13 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   emptyStateTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#8E8E93',
+    color: '#CBD5E1', // Light slate gray for dark background
     marginTop: 16,
     marginBottom: 8,
   },
   emptyStateSubtitle: {
     fontSize: 14,
-    color: '#8E8E93',
+    color: '#CBD5E1', // Light slate gray for dark background
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -748,7 +746,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     zIndex: 2,
   },
   workoutCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#475569', // Medium slate background
     borderRadius: 12,
     padding: 16,
     shadowColor: '#000000',
@@ -769,17 +767,17 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   cardTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#000000',
+    color: '#F1F5F9', // Light text for dark background
     marginBottom: 4,
   },
   cardDate: {
     fontSize: 14,
-    color: '#8E8E93',
+    color: '#CBD5E1', // Light slate gray for dark background
   },
   durationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#334155', // Darker slate background
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
@@ -788,7 +786,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   durationText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#8E8E93',
+    color: '#CBD5E1', // Light slate gray
   },
   statsContainer: {
     flexDirection: 'row',
@@ -803,12 +801,12 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   statValue: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#007AFF',
+    color: '#84CC16', // Green accent instead of blue
     marginBottom: 2,
   },
   statLabel: {
     fontSize: 12,
-    color: '#8E8E93',
+    color: '#CBD5E1', // Light slate gray
     textAlign: 'center',
   },
   muscleGroupsContainer: {
@@ -818,15 +816,21 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     marginBottom: 12,
   },
   muscleGroupTag: {
-    backgroundColor: '#E3F2FD',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    backgroundColor: '#334155', // Darker slate background like duration container
+    paddingHorizontal: 10,
+    height: 28, // Fixed height
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   muscleGroupText: {
     fontSize: 12,
     fontWeight: '500',
-    color: '#007AFF',
+    color: '#CBD5E1', // Light slate gray text
+    textAlign: 'center',
+    lineHeight: 28, // Match the container height exactly
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   statusContainer: {
     flexDirection: 'row',
@@ -834,7 +838,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
     alignItems: 'center',
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: '#F2F2F7',
+    borderTopColor: '#F1F5F9',
   },
   statusLeft: {
     flex: 1,
