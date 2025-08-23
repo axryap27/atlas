@@ -1,11 +1,10 @@
 // app/(tabs)/_layout.tsx
-import { Tabs } from 'expo-router';
-import { useColorScheme, TouchableOpacity, Alert } from 'react-native';
+import { Tabs, router } from 'expo-router';
+import { TouchableOpacity, Alert, View, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { authService } from '../services/auth';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
 
   const handleSignOut = async () => {
     Alert.alert(
@@ -30,10 +29,10 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#007AFF',
-        tabBarInactiveTintColor: '#8E8E93',
+        tabBarActiveTintColor: '#84CC16', // Toned-down lime green accent
+        tabBarInactiveTintColor: '#94A3B8', // Lighter slate gray for dark background
         tabBarStyle: {
-          backgroundColor: colorScheme === 'dark' ? '#1C1C1E' : '#F2F2F7',
+          backgroundColor: '#334155', // Dark slate background
           borderTopWidth: 0,
           height: 90,
           paddingBottom: 20,
@@ -45,9 +44,9 @@ export default function TabLayout() {
           letterSpacing: -0.1,
         },
         headerStyle: {
-          backgroundColor: colorScheme === 'dark' ? '#000000' : '#F2F2F7',
+          backgroundColor: '#334155', // Dark slate background
         },
-        headerTintColor: colorScheme === 'dark' ? '#FFFFFF' : '#000000',
+        headerTintColor: '#F1F5F9', // Light text for dark background
         headerTitleStyle: {
           fontFamily: 'Inter_600SemiBold',
           fontSize: 18,
@@ -68,6 +67,18 @@ export default function TabLayout() {
             fontSize: 20,
             letterSpacing: -0.5,
           },
+          headerLeft: () => (
+            <TouchableOpacity 
+              onPress={() => router.push('/(tabs)/')}
+              style={{ marginLeft: 16, flexDirection: 'row', alignItems: 'center' }}
+            >
+              <Image 
+                source={require('../../assets/images/atlas-logo.png')}
+                style={{ width: 30, height: 30, borderRadius: 8 }}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
+          ),
           headerRight: () => (
             <TouchableOpacity
               onPress={handleSignOut}
@@ -76,7 +87,7 @@ export default function TabLayout() {
               <Ionicons 
                 name="log-out-outline" 
                 size={24} 
-                color={colorScheme === 'dark' ? '#FFFFFF' : '#000000'} 
+                color="#F1F5F9"
               />
             </TouchableOpacity>
           ),
@@ -89,7 +100,36 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="fitness" size={size} color={color} />
           ),
-          headerTitle: 'Workout',
+          headerTitle: 'atlas',
+          headerTitleStyle: {
+            fontFamily: 'FunnelDisplay_600SemiBold',
+            fontSize: 20,
+            letterSpacing: -0.5,
+          },
+          headerLeft: () => (
+            <TouchableOpacity 
+              onPress={() => router.push('/(tabs)/')}
+              style={{ marginLeft: 16, flexDirection: 'row', alignItems: 'center' }}
+            >
+              <Image 
+                source={require('../../assets/images/atlas-logo.png')}
+                style={{ width: 30, height: 30, borderRadius: 8 }}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
+          ),
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={handleSignOut}
+              style={{ marginRight: 16 }}
+            >
+              <Ionicons 
+                name="log-out-outline" 
+                size={24} 
+                color="#F1F5F9"
+              />
+            </TouchableOpacity>
+          ),
         }}
       />
       <Tabs.Screen
@@ -99,7 +139,36 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="analytics" size={size} color={color} />
           ),
-          headerTitle: 'Progress',
+          headerTitle: 'atlas',
+          headerTitleStyle: {
+            fontFamily: 'FunnelDisplay_600SemiBold',
+            fontSize: 20,
+            letterSpacing: -0.5,
+          },
+          headerLeft: () => (
+            <TouchableOpacity 
+              onPress={() => router.push('/(tabs)/')}
+              style={{ marginLeft: 16, flexDirection: 'row', alignItems: 'center' }}
+            >
+              <Image 
+                source={require('../../assets/images/atlas-logo.png')}
+                style={{ width: 30, height: 30, borderRadius: 8 }}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
+          ),
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={handleSignOut}
+              style={{ marginRight: 16 }}
+            >
+              <Ionicons 
+                name="log-out-outline" 
+                size={24} 
+                color="#F1F5F9"
+              />
+            </TouchableOpacity>
+          ),
         }}
       />
     </Tabs>
