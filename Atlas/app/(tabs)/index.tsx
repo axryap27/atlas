@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   SafeAreaView,
-  useColorScheme,
   Alert,
   Dimensions,
 } from "react-native";
@@ -36,8 +35,6 @@ interface VolumeData {
 }
 
 export default function HomeScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
 
   const [exercises, setExercises] = useState<ExerciseData[]>([]);
   const [volumeData, setVolumeData] = useState<VolumeData[]>([]);
@@ -142,7 +139,7 @@ export default function HomeScreen() {
     );
   };
 
-  const styles = getStyles(isDark);
+  const styles = getStyles();
 
   if (loading) {
     return (
@@ -226,11 +223,11 @@ export default function HomeScreen() {
   );
 }
 
-const getStyles = (isDark: boolean) =>
+const getStyles = () =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: isDark ? "#000000" : "#F2F2F7",
+      backgroundColor: "#334155", // Dark slate background
     },
     scrollView: {
       flex: 1,
@@ -243,7 +240,7 @@ const getStyles = (isDark: boolean) =>
     },
     loadingText: {
       fontSize: 16,
-      color: isDark ? "#FFFFFF" : "#000000",
+      color: "#F1F5F9", // Light text for dark background
     },
     welcomeSection: {
       marginBottom: 24,
@@ -251,20 +248,20 @@ const getStyles = (isDark: boolean) =>
     welcomeTitle: {
       fontSize: 32,
       fontFamily: "Outfit_600SemiBold",
-      color: isDark ? "#FFFFFF" : "#000000",
+      color: "#F1F5F9", // Light text for dark background
       marginBottom: 4,
       letterSpacing: -0.5,
     },
     welcomeSubtitle: {
       fontSize: 16,
-      color: isDark ? "#8E8E93" : "#6D6D70",
+      color: "#CBD5E1", // Light slate gray for dark background
     },
     quickWorkoutButton: {
-      backgroundColor: "#007AFF",
+      backgroundColor: "#84CC16", // Toned-down lime green accent
       borderRadius: 16,
       padding: 20,
       marginBottom: 32,
-      shadowColor: "#007AFF",
+      shadowColor: "#84CC16",
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.3,
       shadowRadius: 8,
@@ -304,11 +301,11 @@ const getStyles = (isDark: boolean) =>
     sectionTitle: {
       fontSize: 22,
       fontWeight: "bold",
-      color: isDark ? "#FFFFFF" : "#000000",
+      color: "#F1F5F9", // Light text for dark background
     },
     seeAllText: {
       fontSize: 16,
-      color: "#007AFF",
+      color: "#84CC16", // Toned-down lime green accent
       fontWeight: "600",
     },
   });
