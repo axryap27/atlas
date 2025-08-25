@@ -17,6 +17,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { WorkoutScreen, Exercise, Set } from "../../(tabs)/workout";
 import { supabaseApi } from "../../services/supabase-api";
+import { SocialApi } from "../../services/social-api";
 
 interface ExerciseData {
   id: number;
@@ -480,6 +481,41 @@ export default function ActiveWorkout({
     );
   };
 
+  const shareWorkout = async (sessionId: number) => {
+    try {
+      // Get current user profile
+      const userProfile = await SocialApi.getCurrentUserProfile();
+      if (!userProfile) {
+        Alert.alert(
+          "Profile Required",
+          "Please set up your social profile first to share workouts.",
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Set Up Profile", onPress: () => {
+              // Navigate to social tab for profile setup
+              Alert.alert("Navigate to Social", "Go to the Social tab to set up your profile.");
+            }}
+          ]
+        );
+        return;
+      }
+
+      // Create workout post
+      await SocialApi.createWorkoutPost(userProfile.user_id, sessionId, 
+        "Just completed an awesome workout! 💪", "friends");
+      
+      Alert.alert(
+        "Workout Shared! 🎉",
+        "Your workout has been shared with your friends!",
+        [{ text: "Awesome!", onPress: () => onBack() }]
+      );
+    } catch (error) {
+      console.error('Error sharing workout:', error);
+      Alert.alert("Error", "Failed to share workout. Please try again.");
+      onBack();
+    }
+  };
+
   const handleCompleteWorkout = async () => {
     const completedExercises = selectedExercises.filter((ex) => ex.completed).length;
     const totalCompletedSets = selectedExercises.reduce((acc, ex) => 
@@ -490,22 +526,24 @@ export default function ActiveWorkout({
     // Only create/finish session if there are actually completed sets
     if (totalCompletedSets > 0 && currentSession) {
       await apiService.finishSession(currentSession.id);
+      
+      // Offer to share workout
+      Alert.alert(
+        "Workout Complete! 🎉",
+        `Great job! You completed ${completedExercises}/${selectedExercises.length} exercises in ${duration} minutes. Want to share your workout with friends?`,
+        [
+          { text: "Not Now", onPress: () => onBack() },
+          { 
+            text: "Share", 
+            onPress: () => shareWorkout(currentSession.id)
+          }
+        ]
+      );
     } else if (totalCompletedSets === 0) {
       // No completed sets, don't save anything
       onBack();
       return;
     }
-    
-    Alert.alert(
-      "Workout Complete!",
-      `Great job! You completed ${completedExercises}/${selectedExercises.length} exercises in ${duration} minutes.`,
-      [
-        { 
-          text: "Finish", 
-          onPress: onBack
-        }
-      ]
-    );
   };
 
   const handleEndWorkout = async () => {
@@ -522,7 +560,19 @@ export default function ActiveWorkout({
             style: "destructive",
             onPress: async () => {
               await apiService.finishSession(currentSession.id);
-              onBack();
+              
+              // Offer to share workout
+              Alert.alert(
+                "Workout Complete! 🎉",
+                "Great job! Want to share your workout with friends?",
+                [
+                  { text: "Not Now", onPress: () => onBack() },
+                  { 
+                    text: "Share", 
+                    onPress: () => shareWorkout(currentSession.id)
+                  }
+                ]
+              );
             }
           }
         ]

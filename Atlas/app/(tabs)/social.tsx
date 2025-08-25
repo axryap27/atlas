@@ -203,7 +203,8 @@ export default function SocialScreen() {
 
   const likePost = async (postId: number) => {
     try {
-      await SocialApi.likeWorkoutPost(postId, currentUserId);
+      if (!userProfile) return;
+      await SocialApi.likeWorkoutPost(postId, userProfile.user_id);
       // Update local state
       setWorkoutFeed(prev => prev.map(post => 
         post.id === postId 
@@ -383,7 +384,7 @@ export default function SocialScreen() {
           </View>
         ) : (
           friends.map(friendship => {
-            const friend = friendship.requester_id === currentUserId 
+            const friend = friendship.requester_id === userProfile?.user_id 
               ? friendship.addressee 
               : friendship.requester;
             
@@ -399,7 +400,7 @@ export default function SocialScreen() {
                     <Text style={styles.friendName}>{friend?.display_name}</Text>
                     <Text style={styles.friendUsername}>@{friend?.username}</Text>
                     <Text style={styles.friendStats}>
-                      Level {friend?.level} • {friend?.total_workouts} workouts
+                      {friend?.total_workouts} workouts
                     </Text>
                   </View>
                 </View>

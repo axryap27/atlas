@@ -178,7 +178,9 @@ export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, 
     let totalVolume = 0;
 
     session.setLogs.forEach(setLog => {
-      uniqueExercises.add(setLog.exercise.id);
+      if (setLog.exercise) {
+        uniqueExercises.add(setLog.exercise.id);
+      }
       totalSets++;
       if (setLog.weight && setLog.reps) {
         totalVolume += setLog.weight * setLog.reps;
@@ -564,7 +566,7 @@ export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, 
                 <View style={styles.cardHeader}>
                   <View style={styles.cardTitleContainer}>
                     <Text style={styles.cardTitle}>
-                      {templates.length > 0 ? getWorkoutName(session) : (session.workoutDay?.name || "Loading...")}
+                      {templates.length > 0 ? getWorkoutName(session) : (session.workout_day?.name || "Loading...")}
                     </Text>
                     <Text style={styles.cardDate}>
                       {formatDate(session.startTime)} • {formatTime(session.startTime)}
