@@ -69,7 +69,7 @@ export default function TabLayout() {
           },
           headerLeft: () => (
             <TouchableOpacity 
-              onPress={() => router.push('/(tabs)/')}
+              onPress={() => router.push('/(tabs)')}
               style={{ marginLeft: 16, flexDirection: 'row', alignItems: 'center' }}
             >
               <Image 
@@ -108,7 +108,7 @@ export default function TabLayout() {
           },
           headerLeft: () => (
             <TouchableOpacity 
-              onPress={() => router.push('/(tabs)/')}
+              onPress={() => router.push('/(tabs)')}
               style={{ marginLeft: 16, flexDirection: 'row', alignItems: 'center' }}
             >
               <Image 
@@ -147,7 +147,7 @@ export default function TabLayout() {
           },
           headerLeft: () => (
             <TouchableOpacity 
-              onPress={() => router.push('/(tabs)/')}
+              onPress={() => router.push('/(tabs)')}
               style={{ marginLeft: 16, flexDirection: 'row', alignItems: 'center' }}
             >
               <Image 
