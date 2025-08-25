@@ -171,6 +171,16 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="social"
+        options={{
+          title: 'Social',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="people" size={size} color={color} />
+          ),
+          headerShown: false, // Custom header in component
+        }}
+      />
     </Tabs>
   );
 }
