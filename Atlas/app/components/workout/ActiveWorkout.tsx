@@ -1224,12 +1224,14 @@ const getStyles = () => StyleSheet.create({
   },
   filterButton: {
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 8,
     marginRight: 8,
     borderRadius: 16,
     backgroundColor: "#64748B", // Darker slate
     minWidth: 60,
+    height: 32,
     alignItems: "center",
+    justifyContent: "center",
   },
   filterButtonActive: {
     backgroundColor: "#84CC16", // Lime green accent
@@ -1239,6 +1241,9 @@ const getStyles = () => StyleSheet.create({
     fontWeight: "600",
     color: "#F1F5F9", // Light text
     textAlign: "center",
+    lineHeight: 16,
+    includeFontPadding: false,
+    textAlignVertical: "center",
   },
   filterButtonTextActive: {
     color: "#FFFFFF",
