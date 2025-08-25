@@ -68,6 +68,13 @@ export default function ProgressScreen() {
     pointIndex: number;
   } | null>(null);
   const [volumeTimer, setVolumeTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const [showVolumeCard, setShowVolumeCard] = useState(false);
+  const [volumeCardData, setVolumeCardData] = useState<{
+    volume: number;
+    workoutName: string;
+    date: string;
+  } | null>(null);
+  const [volumeCardTimer, setVolumeCardTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     loadData();
@@ -104,14 +111,17 @@ export default function ProgressScreen() {
     }
   }, [selectedTemplates]);
 
-  // Cleanup timer on unmount
+  // Cleanup timers on unmount
   useEffect(() => {
     return () => {
       if (volumeTimer) {
         clearTimeout(volumeTimer);
       }
+      if (volumeCardTimer) {
+        clearTimeout(volumeCardTimer);
+      }
     };
-  }, [volumeTimer]);
+  }, [volumeTimer, volumeCardTimer]);
 
   const loadData = async () => {
     try {
@@ -416,11 +426,40 @@ export default function ProgressScreen() {
       );
     }
 
+    // Sort all data by date and get unique dates (moved outside for click handler access)
+    const sortedData = volumeData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const allDates = [...new Set(sortedData.map(d => d.date.split('T')[0]))].sort();
+
+    // Intelligently sample data points based on total data density
+    const sampleDates = (dates) => {
+      const totalDates = dates.length;
+      let sampledDates;
+      
+      if (totalDates <= 10) {
+        // Show all points for small datasets
+        sampledDates = dates;
+      } else if (totalDates <= 30) {
+        // Show every other day for medium datasets (2 weeks to 1 month)
+        sampledDates = dates.filter((_, index) => index % 2 === 0 || index === dates.length - 1);
+      } else if (totalDates <= 90) {
+        // Show weekly for larger datasets (1-3 months)
+        sampledDates = dates.filter((_, index) => index % 7 === 0 || index === dates.length - 1);
+      } else {
+        // Show biweekly for very large datasets (3+ months)
+        sampledDates = dates.filter((_, index) => index % 14 === 0 || index === dates.length - 1);
+      }
+      
+      // Always include the first and last dates
+      if (sampledDates[0] !== dates[0]) sampledDates.unshift(dates[0]);
+      if (sampledDates[sampledDates.length - 1] !== dates[dates.length - 1]) {
+        sampledDates.push(dates[dates.length - 1]);
+      }
+      
+      return [...new Set(sampledDates)].sort(); // Remove duplicates and sort
+    };
+
     // Prepare data for LineChart with multiple lines
     const prepareChartData = () => {
-      // Sort all data by date
-      const sortedData = volumeData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-      
       // Group data by template first
       const groupedData = new Map();
       sortedData.forEach((data) => {
@@ -445,37 +484,6 @@ export default function ProgressScreen() {
         }
         groupedData.get(key).push(data);
       });
-
-      // Get all unique dates from all templates for x-axis labels
-      const allDates = [...new Set(sortedData.map(d => d.date.split('T')[0]))].sort();
-
-      // Intelligently sample data points based on total data density
-      const sampleDates = (dates) => {
-        const totalDates = dates.length;
-        let sampledDates;
-        
-        if (totalDates <= 10) {
-          // Show all points for small datasets
-          sampledDates = dates;
-        } else if (totalDates <= 30) {
-          // Show every other day for medium datasets (2 weeks to 1 month)
-          sampledDates = dates.filter((_, index) => index % 2 === 0 || index === dates.length - 1);
-        } else if (totalDates <= 90) {
-          // Show weekly for larger datasets (1-3 months)
-          sampledDates = dates.filter((_, index) => index % 7 === 0 || index === dates.length - 1);
-        } else {
-          // Show biweekly for very large datasets (3+ months)
-          sampledDates = dates.filter((_, index) => index % 14 === 0 || index === dates.length - 1);
-        }
-        
-        // Always include the first and last dates
-        if (sampledDates[0] !== dates[0]) sampledDates.unshift(dates[0]);
-        if (sampledDates[sampledDates.length - 1] !== dates[dates.length - 1]) {
-          sampledDates.push(dates[dates.length - 1]);
-        }
-        
-        return [...new Set(sampledDates)].sort(); // Remove duplicates and sort
-      };
 
       const sampledDates = sampleDates(allDates);
 
@@ -622,6 +630,74 @@ export default function ProgressScreen() {
           withInnerLines={true}
           withOuterLines={false}
           fromZero={true}
+          onDataPointClick={(data) => {
+            console.log('Chart clicked:', data);
+            
+            // Get the clicked date from the sampled dates
+            const sampledDates = sampleDates(allDates);
+            const clickedDateStr = sampledDates[data.index];
+            
+            if (!clickedDateStr) {
+              console.log('No date found for index:', data.index);
+              return;
+            }
+            
+            console.log('Clicked date string:', clickedDateStr);
+            
+            // Find all workouts from that date (there might be multiple from different templates)
+            const workoutsForDate = volumeData.filter(workout => {
+              const workoutDateStr = workout.date.split('T')[0];
+              
+              // Check for exact match first
+              if (workoutDateStr === clickedDateStr) {
+                return true;
+              }
+              
+              // Check for close dates (within 3 days) as fallback
+              const workoutDate = new Date(workoutDateStr);
+              const clickedDate = new Date(clickedDateStr);
+              const diffInDays = Math.abs(workoutDate.getTime() - clickedDate.getTime()) / (1000 * 60 * 60 * 24);
+              
+              return diffInDays <= 3;
+            });
+            
+            console.log('Workouts for date:', workoutsForDate);
+            
+            if (workoutsForDate.length > 0) {
+              // If multiple workouts, pick the one with highest volume
+              const bestWorkout = workoutsForDate.reduce((best, current) => 
+                current.volume > best.volume ? current : best
+              );
+              
+              console.log('Showing volume card for:', bestWorkout);
+              
+              // Clear existing timer if any
+              if (volumeCardTimer) {
+                clearTimeout(volumeCardTimer);
+              }
+              
+              // Set volume card data
+              setVolumeCardData({
+                volume: bestWorkout.volume,
+                workoutName: bestWorkout.workoutName,
+                date: new Date(bestWorkout.date).toLocaleDateString('en-US', { 
+                  weekday: 'short',
+                  month: 'short', 
+                  day: 'numeric' 
+                })
+              });
+              setShowVolumeCard(true);
+              
+              // Set timer to hide card after 5 seconds
+              const timer = setTimeout(() => {
+                setShowVolumeCard(false);
+                setVolumeCardData(null);
+              }, 5000);
+              setVolumeCardTimer(timer);
+            } else {
+              console.log('No matching workout found for date:', clickedDateStr);
+            }
+          }}
         />
       </View>
     );
@@ -908,10 +984,12 @@ export default function ProgressScreen() {
           </View>
         )}
 
-        {/* Stats Summary */}
+        {/* Enhanced Stats Summary */}
         {volumeData.length > 0 && (
           <View style={styles.statsContainer}>
-            <Text style={styles.statsTitle}>Summary</Text>
+            <Text style={styles.statsTitle}>Summary Statistics</Text>
+            
+            {/* Overall Stats */}
             <View style={styles.statsGrid}>
               <View style={styles.statItem}>
                 <Text style={styles.statValue}>{volumeData.length}</Text>
@@ -935,9 +1013,107 @@ export default function ProgressScreen() {
                 <Text style={styles.statLabel}>Best Volume</Text>
               </View>
             </View>
+
+            {/* Template Breakdown */}
+            {selectedTemplates.length > 0 && (
+              <View style={styles.templateBreakdownContainer}>
+                <Text style={styles.templateBreakdownTitle}>Template Breakdown</Text>
+                {selectedTemplates.map((templateId) => {
+                  const template = templates.find(t => t.id === templateId);
+                  const templateData = volumeData.filter(d => d.workoutDayId === templateId);
+                  const templateColor = getTemplateColor(templateId);
+                  
+                  if (!template || templateData.length === 0) return null;
+                  
+                  const avgVolume = Math.round(templateData.reduce((sum, d) => sum + d.volume, 0) / templateData.length);
+                  const bestVolume = Math.round(Math.max(...templateData.map(d => d.volume)));
+                  const totalVolume = Math.round(templateData.reduce((sum, d) => sum + d.volume, 0));
+                  const lastWorkout = templateData[templateData.length - 1];
+                  const firstWorkout = templateData[0];
+                  const progressPercent = templateData.length > 1 
+                    ? Math.round(((lastWorkout.volume - firstWorkout.volume) / firstWorkout.volume) * 100)
+                    : 0;
+
+                  return (
+                    <View key={templateId} style={styles.templateCard}>
+                      <View style={styles.templateHeader}>
+                        <View style={styles.templateTitleRow}>
+                          <View style={[styles.templateColorDot, { backgroundColor: templateColor }]} />
+                          <Text style={styles.templateName}>{template.name}</Text>
+                          <View style={styles.templateBadge}>
+                            <Text style={styles.templateBadgeText}>{templateData.length} sessions</Text>
+                          </View>
+                        </View>
+                        <View style={[styles.progressIndicator, progressPercent >= 0 ? styles.progressPositive : styles.progressNegative]}>
+                          <Ionicons 
+                            name={progressPercent >= 0 ? "trending-up" : "trending-down"} 
+                            size={12} 
+                            color={progressPercent >= 0 ? "#34C759" : "#FF3B30"} 
+                          />
+                          <Text style={[styles.progressText, progressPercent >= 0 ? styles.progressTextPositive : styles.progressTextNegative]}>
+                            {progressPercent > 0 ? '+' : ''}{progressPercent}%
+                          </Text>
+                        </View>
+                      </View>
+                      
+                      <View style={styles.templateStatsRow}>
+                        <View style={styles.templateStat}>
+                          <Text style={styles.templateStatValue}>{avgVolume.toLocaleString()}</Text>
+                          <Text style={styles.templateStatLabel}>Avg Volume</Text>
+                        </View>
+                        <View style={styles.templateStat}>
+                          <Text style={styles.templateStatValue}>{bestVolume.toLocaleString()}</Text>
+                          <Text style={styles.templateStatLabel}>Best Volume</Text>
+                        </View>
+                      </View>
+                      
+                      <TouchableOpacity 
+                        style={styles.viewDetailsButton}
+                        onPress={() => {
+                          // Calculate detailed template stats
+                          const templateStats: TemplateStats = {
+                            templateId: templateId,
+                            templateName: template.name,
+                            totalSessions: templateData.length,
+                            averageVolume: avgVolume,
+                            bestVolume: bestVolume,
+                            totalVolume: totalVolume,
+                            averageDuration: 0, // You can calculate this from session data
+                            lastPerformed: lastWorkout.date,
+                            volumeProgression: progressPercent,
+                            exerciseBreakdown: [] // You can populate this from set logs
+                          };
+                          setSelectedTemplateStats(templateStats);
+                          setShowTemplateStats(true);
+                        }}
+                      >
+                        <Text style={styles.viewDetailsButtonText}>View Details</Text>
+                        <Ionicons name="chevron-forward" size={16} color="#84CC16" />
+                      </TouchableOpacity>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
           </View>
         )}
       </ScrollView>
+
+      {/* Volume Card */}
+      {showVolumeCard && volumeCardData && (
+        <View style={styles.volumeCardOverlay}>
+          <View style={styles.volumeCard}>
+            <View style={styles.volumeCardHeader}>
+              <Text style={styles.volumeCardWorkoutName}>{volumeCardData.workoutName}</Text>
+              <Text style={styles.volumeCardDate}>{volumeCardData.date}</Text>
+            </View>
+            <View style={styles.volumeCardContent}>
+              <Text style={styles.volumeCardVolumeLabel}>Volume</Text>
+              <Text style={styles.volumeCardVolumeValue}>{volumeCardData.volume.toLocaleString()} lbs</Text>
+            </View>
+          </View>
+        </View>
+      )}
 
       {renderTemplateSelector()}
       {renderTemplateStatsModal()}
@@ -1165,6 +1341,7 @@ const getStyles = () =>
       padding: 12,
       alignItems: "center",
       marginHorizontal: 4,
+      marginVertical: 6,
       shadowColor: "#000000",
       shadowOffset: { width: 0, height: 1 },
       shadowOpacity: 0.2,
@@ -1220,6 +1397,166 @@ const getStyles = () =>
     exerciseStatLabel: {
       fontSize: 10,
       color: "#CBD5E1", // Light slate gray
+      textAlign: "center",
+    },
+    // Template Breakdown Styles
+    templateBreakdownContainer: {
+      marginTop: 20,
+    },
+    templateBreakdownTitle: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: "#F1F5F9", // Light text for dark background
+      marginBottom: 12,
+    },
+    templateCard: {
+      backgroundColor: "#334155", // Darker slate background
+      borderRadius: 8,
+      padding: 12,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: "#64748B", // Subtle border
+    },
+    templateHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 12,
+    },
+    templateTitleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      flex: 1,
+    },
+    templateBadge: {
+      backgroundColor: "#64748B", // Medium slate
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 8,
+      marginLeft: 8,
+    },
+    templateBadgeText: {
+      fontSize: 10,
+      fontWeight: "500",
+      color: "#CBD5E1", // Light slate text
+    },
+    progressIndicator: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 4,
+    },
+    progressPositive: {
+      backgroundColor: "rgba(52, 199, 89, 0.1)", // Light green background
+    },
+    progressNegative: {
+      backgroundColor: "rgba(255, 59, 48, 0.1)", // Light red background
+    },
+    progressText: {
+      fontSize: 11,
+      fontWeight: "600",
+      marginLeft: 2,
+    },
+    progressTextPositive: {
+      color: "#34C759", // Green
+    },
+    progressTextNegative: {
+      color: "#FF3B30", // Red
+    },
+    templateStatsRow: {
+      flexDirection: "row",
+      justifyContent: "space-around",
+      marginBottom: 12,
+    },
+    templateStat: {
+      alignItems: "center",
+      flex: 1,
+    },
+    templateStatValue: {
+      fontSize: 12,
+      fontWeight: "bold",
+      color: "#84CC16", // Lime green accent
+      marginBottom: 2,
+    },
+    templateStatLabel: {
+      fontSize: 9,
+      color: "#CBD5E1", // Light slate gray
+      textAlign: "center",
+    },
+    viewDetailsButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 6,
+      paddingHorizontal: 12,
+      backgroundColor: "rgba(132, 204, 22, 0.1)", // Light lime background
+      borderRadius: 6,
+      borderWidth: 1,
+      borderColor: "#84CC16", // Lime border
+    },
+    viewDetailsButtonText: {
+      fontSize: 11,
+      fontWeight: "600",
+      color: "#84CC16", // Lime green
+      marginRight: 4,
+    },
+    // Volume Card Styles
+    volumeCardOverlay: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      justifyContent: "center",
+      alignItems: "center",
+      pointerEvents: "none", // Allow touches to pass through the overlay
+    },
+    volumeCard: {
+      backgroundColor: "#1E293B", // Very dark slate for contrast
+      borderRadius: 12,
+      padding: 16,
+      marginHorizontal: 20,
+      shadowColor: "#000000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 8,
+      borderWidth: 1,
+      borderColor: "#84CC16", // Lime green border for accent
+      minWidth: 200,
+    },
+    volumeCardHeader: {
+      marginBottom: 8,
+    },
+    volumeCardWorkoutName: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: "#F1F5F9", // Light text
+      textAlign: "center",
+      marginBottom: 2,
+    },
+    volumeCardDate: {
+      fontSize: 12,
+      color: "#CBD5E1", // Light slate gray
+      textAlign: "center",
+    },
+    volumeCardContent: {
+      alignItems: "center",
+      paddingTop: 8,
+      borderTopWidth: 1,
+      borderTopColor: "#475569", // Medium slate
+    },
+    volumeCardVolumeLabel: {
+      fontSize: 11,
+      color: "#CBD5E1", // Light slate gray
+      textAlign: "center",
+      marginBottom: 4,
+    },
+    volumeCardVolumeValue: {
+      fontSize: 18,
+      fontWeight: "bold",
+      color: "#84CC16", // Lime green accent
       textAlign: "center",
     },
   });
