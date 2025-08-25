@@ -82,3 +82,104 @@ export interface User {
   created_at: string
   updated_at: string
 }
+
+// Social Types
+export interface UserProfile {
+  id: number
+  user_id: number
+  username: string
+  display_name?: string
+  bio?: string
+  is_public: boolean
+  total_workouts: number
+  created_at: string
+  updated_at: string
+}
+
+export interface Friendship {
+  id: number
+  requester_id: number
+  addressee_id: number
+  status: 'pending' | 'accepted'
+  created_at: string
+  requester?: UserProfile
+  addressee?: UserProfile
+}
+
+
+export interface Achievement {
+  id: number
+  name: string
+  description: string
+  category: 'workout' | 'social' | 'milestone'
+  criteria: any // JSON object with achievement criteria
+  created_at: string
+}
+
+export interface UserAchievement {
+  id: number
+  user_id: number
+  achievement_id: number
+  earned_at: string
+  achievement?: Achievement
+}
+
+export interface WorkoutPost {
+  id: number
+  user_id: number
+  session_id: number
+  caption?: string
+  visibility: 'private' | 'friends' | 'public'
+  likes_count: number
+  comments_count: number
+  created_at: string
+  updated_at: string
+  user?: UserProfile
+  session?: Session
+  is_liked_by_user?: boolean
+  comments?: WorkoutPostComment[]
+}
+
+export interface WorkoutPostLike {
+  id: number
+  post_id: number
+  user_id: number
+  created_at: string
+  user?: UserProfile
+}
+
+export interface WorkoutPostComment {
+  id: number
+  post_id: number
+  user_id: number
+  content: string
+  created_at: string
+  updated_at: string
+  user?: UserProfile
+}
+
+export interface LeaderboardEntry {
+  id: number
+  user_id: number
+  metric_type: 'weekly_volume' | 'monthly_volume' | 'weekly_workouts' | 'monthly_workouts' | 'current_streak'
+  value: number
+  period_start: string
+  period_end: string
+  rank_position?: number
+  created_at: string
+  updated_at: string
+  user?: UserProfile
+}
+
+export interface ActivityFeedItem {
+  id: number
+  user_id: number
+  actor_id: number
+  activity_type: 'workout_completed' | 'achievement_earned' | 'friend_added' | 'workout_liked' | 'workout_commented'
+  target_id?: number
+  target_type?: string
+  metadata?: any
+  created_at: string
+  actor?: UserProfile
+  user?: UserProfile
+}
