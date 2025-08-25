@@ -326,7 +326,7 @@ const getStyles = () => StyleSheet.create({
   deleteButton: {
     padding: 8,
     borderRadius: 8,
-    backgroundColor: "#7F1D1D", // Dark red background for delete
+    backgroundColor: "#64748B", // Muted slate background for delete
   },
   templateHeader: {
     marginBottom: 12,
