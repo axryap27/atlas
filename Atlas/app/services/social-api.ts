@@ -1,5 +1,6 @@
 // app/services/social-api.ts
 import { supabase } from '../../lib/supabase';
+import { authService } from './auth';
 import { 
   UserProfile, 
   Friendship, 
@@ -12,13 +13,55 @@ import {
   ActivityFeedItem 
 } from '../../lib/supabase';
 
+// Get current user ID or throw error if not authenticated
+const getCurrentUserId = (): string => {
+  const user = authService.getCurrentUser();
+  if (!user) {
+    throw new Error('User not authenticated');
+  }
+  return user.id;
+};
+
+// Helper function to get the integer user_id from auth_user_id
+const getIntegerUserId = async (authUserId?: string): Promise<number> => {
+  const authId = authUserId || getCurrentUserId();
+  
+  // First check if user exists in users table
+  const { data: userData, error: userError } = await supabase
+    .from('users')
+    .select('id')
+    .eq('email', authService.getCurrentUser()?.email)
+    .single();
+    
+  if (userError || !userData) {
+    // Create user in users table if doesn't exist
+    const { data: newUser, error: createError } = await supabase
+      .from('users')
+      .insert({
+        email: authService.getCurrentUser()?.email,
+        name: authService.getCurrentUsername() || 'User'
+      })
+      .select('id')
+      .single();
+      
+    if (createError) throw createError;
+    return newUser.id;
+  }
+  
+  return userData.id;
+};
+
 export class SocialApi {
   // User Profile Management
-  static async createUserProfile(userId: number, username: string, displayName?: string) {
+  static async createUserProfile(username: string, displayName?: string) {
+    const authUserId = getCurrentUserId();
+    const intUserId = await getIntegerUserId();
+    
     const { data, error } = await supabase
       .from('user_profiles')
       .insert({
-        user_id: userId,
+        user_id: intUserId,
+        auth_user_id: authUserId,
         username,
         display_name: displayName || username
       })
@@ -29,22 +72,39 @@ export class SocialApi {
     return data as UserProfile;
   }
 
-  static async getUserProfile(userId: number) {
+  static async getCurrentUserProfile() {
+    const authUserId = getCurrentUserId();
+    
     const { data, error } = await supabase
       .from('user_profiles')
       .select('*')
-      .eq('user_id', userId)
+      .eq('auth_user_id', authUserId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
+      throw error;
+    }
+    return data as UserProfile | null;
+  }
+
+  static async getUserProfile(intUserId: number) {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('user_id', intUserId)
       .single();
 
     if (error) throw error;
     return data as UserProfile;
   }
 
-  static async updateUserProfile(userId: number, updates: Partial<UserProfile>) {
+  static async updateUserProfile(updates: Partial<UserProfile>) {
+    const authUserId = getCurrentUserId();
+    
     const { data, error } = await supabase
       .from('user_profiles')
       .update(updates)
-      .eq('user_id', userId)
+      .eq('auth_user_id', authUserId)
       .select()
       .single();
 
@@ -65,7 +125,9 @@ export class SocialApi {
   }
 
   // Friend System
-  static async sendFriendRequest(requesterId: number, addresseeId: number) {
+  static async sendFriendRequest(addresseeId: number) {
+    const requesterId = await getIntegerUserId();
+    
     const { data, error } = await supabase
       .from('friendships')
       .insert({
@@ -101,7 +163,9 @@ export class SocialApi {
     if (error) throw error;
   }
 
-  static async getFriends(userId: number) {
+  static async getFriends() {
+    const userId = await getIntegerUserId();
+    
     const { data, error } = await supabase
       .from('friendships')
       .select(`
@@ -116,7 +180,9 @@ export class SocialApi {
     return data as Friendship[];
   }
 
-  static async getFriendRequests(userId: number) {
+  static async getFriendRequests() {
+    const userId = await getIntegerUserId();
+    
     const { data, error } = await supabase
       .from('friendships')
       .select(`
@@ -131,7 +197,9 @@ export class SocialApi {
     return data as Friendship[];
   }
 
-  static async removeFriend(userId: number, friendId: number) {
+  static async removeFriend(friendId: number) {
+    const userId = await getIntegerUserId();
+    
     const { error } = await supabase
       .from('friendships')
       .delete()

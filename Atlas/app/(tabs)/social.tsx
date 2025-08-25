@@ -17,6 +17,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { SocialApi } from '../services/social-api';
 import { UserProfile, Friendship, WorkoutPost, LeaderboardEntry } from '../../lib/supabase';
+import { authService } from '../services/auth';
 
 type SocialTab = 'feed' | 'friends' | 'leaderboard' | 'profile';
 
@@ -24,6 +25,12 @@ export default function SocialScreen() {
   const [activeTab, setActiveTab] = useState<SocialTab>('feed');
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [showProfileSetup, setShowProfileSetup] = useState(false);
+  const [profileSetupData, setProfileSetupData] = useState({
+    username: '',
+    displayName: ''
+  });
   
   // Feed data
   const [workoutFeed, setWorkoutFeed] = useState<WorkoutPost[]>([]);
@@ -40,14 +47,67 @@ export default function SocialScreen() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [leaderboardType, setLeaderboardType] = useState<'weekly_volume' | 'monthly_volume' | 'weekly_workouts'>('weekly_volume');
   
-  // User data (mock for now - would come from auth context)
-  const currentUserId = 1;
-
   const styles = getStyles();
 
   useEffect(() => {
-    loadTabData();
-  }, [activeTab]);
+    checkUserProfile();
+  }, []);
+
+  useEffect(() => {
+    if (userProfile && !showProfileSetup) {
+      loadTabData();
+    }
+  }, [activeTab, userProfile, showProfileSetup]);
+
+  const checkUserProfile = async () => {
+    try {
+      setLoading(true);
+      const profile = await SocialApi.getCurrentUserProfile();
+      
+      if (!profile) {
+        // User needs to set up profile
+        const currentUser = authService.getCurrentUser();
+        const username = authService.getCurrentUsername();
+        
+        setProfileSetupData({
+          username: username || '',
+          displayName: username || currentUser?.email?.split('@')[0] || ''
+        });
+        setShowProfileSetup(true);
+      } else {
+        setUserProfile(profile);
+      }
+    } catch (error) {
+      console.error('Error checking user profile:', error);
+      Alert.alert('Error', 'Failed to load user profile. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createUserProfile = async () => {
+    if (!profileSetupData.username.trim()) {
+      Alert.alert('Error', 'Please enter a username.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const profile = await SocialApi.createUserProfile(
+        profileSetupData.username.trim(),
+        profileSetupData.displayName.trim() || profileSetupData.username.trim()
+      );
+      
+      setUserProfile(profile);
+      setShowProfileSetup(false);
+      Alert.alert('Success', 'Profile created successfully!');
+    } catch (error) {
+      console.error('Error creating profile:', error);
+      Alert.alert('Error', 'Failed to create profile. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadTabData = async () => {
     setLoading(true);
@@ -81,14 +141,15 @@ export default function SocialScreen() {
   };
 
   const loadFeed = async () => {
-    const feed = await SocialApi.getFeed(currentUserId);
-    setWorkoutFeed(feed);
+    // const feed = await SocialApi.getFeed();
+    // setWorkoutFeed(feed);
+    setWorkoutFeed([]); // Placeholder for now
   };
 
   const loadFriends = async () => {
     const [friendsData, requestsData] = await Promise.all([
-      SocialApi.getFriends(currentUserId),
-      SocialApi.getFriendRequests(currentUserId)
+      SocialApi.getFriends(),
+      SocialApi.getFriendRequests()
     ]);
     setFriends(friendsData);
     setFriendRequests(requestsData);
@@ -116,7 +177,7 @@ export default function SocialScreen() {
 
   const sendFriendRequest = async (addresseeId: number) => {
     try {
-      await SocialApi.sendFriendRequest(currentUserId, addresseeId);
+      await SocialApi.sendFriendRequest(addresseeId);
       Alert.alert('Success', 'Friend request sent!');
       setSearchResults(prev => prev.filter(user => user.user_id !== addresseeId));
     } catch (error) {
@@ -453,6 +514,66 @@ export default function SocialScreen() {
           />
         </SafeAreaView>
       </Modal>
+
+      {/* Profile Setup Modal */}
+      <Modal
+        visible={showProfileSetup}
+        animationType="slide"
+        presentationStyle="fullScreen"
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.setupContainer}>
+            <View style={styles.setupHeader}>
+              <Ionicons name="people" size={64} color="#84CC16" />
+              <Text style={styles.setupTitle}>Welcome to Social!</Text>
+              <Text style={styles.setupSubtitle}>
+                Set up your profile to connect with friends
+              </Text>
+            </View>
+
+            <View style={styles.setupForm}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Username *</Text>
+                <TextInput
+                  style={styles.setupInput}
+                  placeholder="Enter username..."
+                  placeholderTextColor="#94A3B8"
+                  value={profileSetupData.username}
+                  onChangeText={(text) => 
+                    setProfileSetupData(prev => ({ ...prev, username: text }))
+                  }
+                  autoCapitalize="none"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Display Name</Text>
+                <TextInput
+                  style={styles.setupInput}
+                  placeholder="Enter display name..."
+                  placeholderTextColor="#94A3B8"
+                  value={profileSetupData.displayName}
+                  onChangeText={(text) => 
+                    setProfileSetupData(prev => ({ ...prev, displayName: text }))
+                  }
+                />
+              </View>
+            </View>
+
+            <TouchableOpacity 
+              style={styles.setupButton}
+              onPress={createUserProfile}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#1F2937" />
+              ) : (
+                <Text style={styles.setupButtonText}>Create Profile</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -787,5 +908,61 @@ const getStyles = () => StyleSheet.create({
   addFriendButtonText: {
     color: '#1F2937',
     fontWeight: '600',
+  },
+  // Profile Setup Styles
+  setupContainer: {
+    flex: 1,
+    padding: 20,
+    justifyContent: 'center',
+  },
+  setupHeader: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  setupTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#F1F5F9',
+    marginTop: 20,
+    marginBottom: 8,
+  },
+  setupSubtitle: {
+    fontSize: 16,
+    color: '#94A3B8',
+    textAlign: 'center',
+  },
+  setupForm: {
+    marginBottom: 40,
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 16,
+    color: '#F1F5F9',
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  setupInput: {
+    backgroundColor: '#475569',
+    borderRadius: 8,
+    padding: 16,
+    color: '#F1F5F9',
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#64748B',
+  },
+  setupButton: {
+    backgroundColor: '#84CC16',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 56,
+  },
+  setupButtonText: {
+    color: '#1F2937',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

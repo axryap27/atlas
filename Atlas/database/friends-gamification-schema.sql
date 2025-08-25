@@ -2,16 +2,19 @@
 -- Add to existing Supabase database
 
 -- User profiles (simple social profiles)
+-- Uses existing users table structure
 CREATE TABLE IF NOT EXISTS user_profiles (
   id SERIAL PRIMARY KEY,
   user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  auth_user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   username TEXT UNIQUE NOT NULL,
   display_name TEXT,
   bio TEXT,
   is_public BOOLEAN DEFAULT true,
   total_workouts INTEGER DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(auth_user_id)
 );
 
 -- Friends relationships
@@ -79,6 +82,7 @@ CREATE TABLE IF NOT EXISTS workout_post_comments (
 
 -- Indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_user_profiles_user_id ON user_profiles(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_profiles_auth_user_id ON user_profiles(auth_user_id);
 CREATE INDEX IF NOT EXISTS idx_user_profiles_username ON user_profiles(username);
 CREATE INDEX IF NOT EXISTS idx_friendships_requester_id ON friendships(requester_id);
 CREATE INDEX IF NOT EXISTS idx_friendships_addressee_id ON friendships(addressee_id);
