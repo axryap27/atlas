@@ -489,6 +489,7 @@ export default function ProgressScreen() {
 
       // Create datasets for each template/workout type
       const datasets = [];
+      const datasetMetadata = []; // Store metadata about each dataset
       const colors = ["#FF3B30", "#007AFF", "#34C759", "#FF9500", "#AF52DE"]; // Red, Blue, Green, Orange, Purple
       let colorIndex = 0;
 
@@ -563,6 +564,14 @@ export default function ProgressScreen() {
             },
             strokeWidth: 3,
           });
+
+          // Store metadata for this dataset
+          datasetMetadata.push({
+            key: key,
+            name: name,
+            templateData: templateData,
+            sampledDates: sampledDates
+          });
         }
 
         colorIndex++;
@@ -582,7 +591,8 @@ export default function ProgressScreen() {
           data: [0],
           color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
           strokeWidth: 3,
-        }]
+        }],
+        metadata: datasetMetadata
       };
     };
 
@@ -633,9 +643,19 @@ export default function ProgressScreen() {
           onDataPointClick={(data) => {
             console.log('Chart clicked:', data);
             
-            // Get the clicked date from the sampled dates
-            const sampledDates = sampleDates(allDates);
-            const clickedDateStr = sampledDates[data.index];
+            // Get dataset metadata to know which line was clicked
+            const datasetIndex = data.datasetIndex || 0;
+            const metadata = chartData.metadata?.[datasetIndex];
+            
+            if (!metadata) {
+              console.log('No metadata found for dataset index:', datasetIndex);
+              return;
+            }
+            
+            console.log('Clicked dataset metadata:', metadata);
+            
+            // Get the clicked date from the sampled dates for this specific dataset
+            const clickedDateStr = metadata.sampledDates[data.index];
             
             if (!clickedDateStr) {
               console.log('No date found for index:', data.index);
@@ -644,32 +664,35 @@ export default function ProgressScreen() {
             
             console.log('Clicked date string:', clickedDateStr);
             
-            // Find all workouts from that date (there might be multiple from different templates)
-            const workoutsForDate = volumeData.filter(workout => {
-              const workoutDateStr = workout.date.split('T')[0];
-              
-              // Check for exact match first
-              if (workoutDateStr === clickedDateStr) {
-                return true;
-              }
-              
-              // Check for close dates (within 3 days) as fallback
-              const workoutDate = new Date(workoutDateStr);
-              const clickedDate = new Date(clickedDateStr);
-              const diffInDays = Math.abs(workoutDate.getTime() - clickedDate.getTime()) / (1000 * 60 * 60 * 24);
-              
-              return diffInDays <= 3;
+            // Find the specific workout from this dataset's template data
+            let matchingWorkout = null;
+            
+            // First try exact date match
+            matchingWorkout = metadata.templateData.find(workout => {
+              return workout.date.split('T')[0] === clickedDateStr;
             });
             
-            console.log('Workouts for date:', workoutsForDate);
+            // If no exact match, find closest workout within 3 days
+            if (!matchingWorkout) {
+              const targetDate = new Date(clickedDateStr);
+              matchingWorkout = metadata.templateData.reduce((closest, current) => {
+                const currentDate = new Date(current.date.split('T')[0]);
+                const closestDate = closest ? new Date(closest.date.split('T')[0]) : null;
+                
+                if (!closest) return current;
+                
+                const currentDiff = Math.abs(targetDate.getTime() - currentDate.getTime());
+                const closestDiff = Math.abs(targetDate.getTime() - closestDate.getTime());
+                
+                // Only use if within 3 days and closer than current closest
+                const maxDiff = 3 * 24 * 60 * 60 * 1000; // 3 days in milliseconds
+                
+                return currentDiff < closestDiff && currentDiff <= maxDiff ? current : closest;
+              }, null);
+            }
             
-            if (workoutsForDate.length > 0) {
-              // If multiple workouts, pick the one with highest volume
-              const bestWorkout = workoutsForDate.reduce((best, current) => 
-                current.volume > best.volume ? current : best
-              );
-              
-              console.log('Showing volume card for:', bestWorkout);
+            if (matchingWorkout) {
+              console.log('Showing volume card for:', matchingWorkout);
               
               // Clear existing timer if any
               if (volumeCardTimer) {
@@ -678,9 +701,9 @@ export default function ProgressScreen() {
               
               // Set volume card data
               setVolumeCardData({
-                volume: bestWorkout.volume,
-                workoutName: bestWorkout.workoutName,
-                date: new Date(bestWorkout.date).toLocaleDateString('en-US', { 
+                volume: matchingWorkout.volume,
+                workoutName: matchingWorkout.workoutName,
+                date: new Date(matchingWorkout.date).toLocaleDateString('en-US', { 
                   weekday: 'short',
                   month: 'short', 
                   day: 'numeric' 
@@ -695,7 +718,7 @@ export default function ProgressScreen() {
               }, 5000);
               setVolumeCardTimer(timer);
             } else {
-              console.log('No matching workout found for date:', clickedDateStr);
+              console.log('No matching workout found for date:', clickedDateStr, 'in dataset:', metadata.name);
             }
           }}
         />
