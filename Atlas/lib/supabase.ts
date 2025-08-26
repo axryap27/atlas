@@ -86,7 +86,6 @@ export interface User {
 // Social Types
 export interface UserProfile {
   id: number
-  user_id: number
   auth_user_id: string
   username: string
   display_name?: string

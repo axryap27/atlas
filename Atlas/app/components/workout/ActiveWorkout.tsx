@@ -501,7 +501,7 @@ export default function ActiveWorkout({
       }
 
       // Create workout post
-      await SocialApi.createWorkoutPost(userProfile.user_id, sessionId, 
+      await SocialApi.createWorkoutPost(userProfile.id, sessionId, 
         "Just completed an awesome workout! 💪", "friends");
       
       Alert.alert(

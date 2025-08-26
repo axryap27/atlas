@@ -22,45 +22,38 @@ const getCurrentUserId = (): string => {
   return user.id;
 };
 
-// Helper function to get the integer user_id from auth_user_id
-const getIntegerUserId = async (authUserId?: string): Promise<number> => {
+// Helper function to get the profile ID for the current user
+const getProfileId = async (authUserId?: string): Promise<number> => {
   const authId = authUserId || getCurrentUserId();
   
-  // First check if user exists in users table
-  const { data: userData, error: userError } = await supabase
-    .from('users')
+  console.log('Getting profile ID for:', { authId });
+  
+  // Look up profile ID from user_profiles table
+  const { data: profileData, error: profileError } = await supabase
+    .from('user_profiles')
     .select('id')
-    .eq('email', authService.getCurrentUser()?.email)
+    .eq('auth_user_id', authId)
     .single();
     
-  if (userError || !userData) {
-    // Create user in users table if doesn't exist
-    const { data: newUser, error: createError } = await supabase
-      .from('users')
-      .insert({
-        email: authService.getCurrentUser()?.email,
-        name: authService.getCurrentUsername() || 'User'
-      })
-      .select('id')
-      .single();
-      
-    if (createError) throw createError;
-    return newUser.id;
+  console.log('Profile lookup result:', { profileData, profileError });
+    
+  if (profileError || !profileData) {
+    throw new Error('User profile not found. Please create a profile first.');
   }
   
-  return userData.id;
+  return profileData.id;
 };
 
 export class SocialApi {
   // User Profile Management
   static async createUserProfile(username: string, displayName?: string) {
     const authUserId = getCurrentUserId();
-    const intUserId = await getIntegerUserId();
+    
+    console.log('Creating user profile:', { authUserId, username, displayName });
     
     const { data, error } = await supabase
       .from('user_profiles')
       .insert({
-        user_id: intUserId,
         auth_user_id: authUserId,
         username,
         display_name: displayName || username
@@ -68,6 +61,7 @@ export class SocialApi {
       .select()
       .single();
 
+    console.log('User profile creation result:', { data, error });
     if (error) throw error;
     return data as UserProfile;
   }
@@ -87,11 +81,11 @@ export class SocialApi {
     return data as UserProfile | null;
   }
 
-  static async getUserProfile(intUserId: number) {
+  static async getUserProfile(profileId: number) {
     const { data, error } = await supabase
       .from('user_profiles')
       .select('*')
-      .eq('user_id', intUserId)
+      .eq('id', profileId)
       .single();
 
     if (error) throw error;
@@ -113,6 +107,8 @@ export class SocialApi {
   }
 
   static async searchUsers(query: string, limit: number = 20) {
+    console.log('Searching users with query:', query);
+    
     const { data, error } = await supabase
       .from('user_profiles')
       .select('*')
@@ -120,13 +116,16 @@ export class SocialApi {
       .eq('is_public', true)
       .limit(limit);
 
+    console.log('Search results:', { data, error });
     if (error) throw error;
     return data as UserProfile[];
   }
 
   // Friend System
   static async sendFriendRequest(addresseeId: number) {
-    const requesterId = await getIntegerUserId();
+    const requesterId = await getProfileId();
+    
+    console.log('Sending friend request:', { requesterId, addresseeId });
     
     const { data, error } = await supabase
       .from('friendships')
@@ -138,6 +137,7 @@ export class SocialApi {
       .select()
       .single();
 
+    console.log('Friend request result:', { data, error });
     if (error) throw error;
     return data as Friendship;
   }
@@ -164,7 +164,7 @@ export class SocialApi {
   }
 
   static async getFriends() {
-    const userId = await getIntegerUserId();
+    const userId = await getProfileId();
     
     const { data, error } = await supabase
       .from('friendships')
@@ -181,7 +181,7 @@ export class SocialApi {
   }
 
   static async getFriendRequests() {
-    const userId = await getIntegerUserId();
+    const userId = await getProfileId();
     
     const { data, error } = await supabase
       .from('friendships')
@@ -198,7 +198,7 @@ export class SocialApi {
   }
 
   static async removeFriend(friendId: number) {
-    const userId = await getIntegerUserId();
+    const userId = await getProfileId();
     
     const { error } = await supabase
       .from('friendships')

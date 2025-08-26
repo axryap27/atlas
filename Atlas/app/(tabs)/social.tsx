@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SocialApi } from '../services/social-api';
 import { UserProfile, Friendship, WorkoutPost, LeaderboardEntry } from '../../lib/supabase';
 import { authService } from '../services/auth';
+import { debugSocial } from '../services/debug-social';
 
 type SocialTab = 'feed' | 'friends' | 'leaderboard' | 'profile';
 
@@ -51,6 +52,11 @@ export default function SocialScreen() {
 
   useEffect(() => {
     checkUserProfile();
+    // Run diagnostics in development
+    if (__DEV__) {
+      debugSocial.runFullDiagnostic();
+      debugSocial.checkSpecificUsers();
+    }
   }, []);
 
   useEffect(() => {
@@ -179,7 +185,7 @@ export default function SocialScreen() {
     try {
       await SocialApi.sendFriendRequest(addresseeId);
       Alert.alert('Success', 'Friend request sent!');
-      setSearchResults(prev => prev.filter(user => user.user_id !== addresseeId));
+      setSearchResults(prev => prev.filter(user => user.id !== addresseeId));
     } catch (error) {
       console.error('Friend request error:', error);
       Alert.alert('Error', 'Failed to send friend request.');
@@ -204,7 +210,7 @@ export default function SocialScreen() {
   const likePost = async (postId: number) => {
     try {
       if (!userProfile) return;
-      await SocialApi.likeWorkoutPost(postId, userProfile.user_id);
+      await SocialApi.likeWorkoutPost(postId, userProfile.id);
       // Update local state
       setWorkoutFeed(prev => prev.map(post => 
         post.id === postId 
@@ -384,7 +390,7 @@ export default function SocialScreen() {
           </View>
         ) : (
           friends.map(friendship => {
-            const friend = friendship.requester_id === userProfile?.user_id 
+            const friend = friendship.requester_id === userProfile?.id 
               ? friendship.addressee 
               : friendship.requester;
             
