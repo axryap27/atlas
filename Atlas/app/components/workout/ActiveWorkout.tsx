@@ -492,7 +492,6 @@ export default function ActiveWorkout({
           [
             { text: "Cancel", style: "cancel" },
             { text: "Set Up Profile", onPress: () => {
-              // Navigate to social tab for profile setup
               Alert.alert("Navigate to Social", "Go to the Social tab to set up your profile.");
             }}
           ]
@@ -500,20 +499,58 @@ export default function ActiveWorkout({
         return;
       }
 
-      // Create workout post
-      await SocialApi.createWorkoutPost(userProfile.id, sessionId, 
-        "Just completed an awesome workout! 💪", "friends");
-      
-      Alert.alert(
-        "Workout Shared! 🎉",
-        "Your workout has been shared with your friends!",
-        [{ text: "Awesome!", onPress: () => onBack() }]
+      // Show custom caption input
+      Alert.prompt(
+        "Share Workout",
+        "Add a caption to share your workout with friends:",
+        [
+          { text: "Cancel", style: "cancel" },
+          { 
+            text: "Share", 
+            onPress: async (caption) => {
+              try {
+                const workoutCaption = caption || generateWorkoutCaption();
+                await SocialApi.createWorkoutPost(userProfile.id, sessionId, workoutCaption, "friends");
+                
+                Alert.alert(
+                  "Workout Shared!",
+                  "Your workout has been shared with your friends!",
+                  [{ text: "Great!", onPress: () => onBack() }]
+                );
+              } catch (error) {
+                console.error('Error creating workout post:', error);
+                Alert.alert("Error", "Failed to share workout. Please try again.");
+                onBack();
+              }
+            }
+          }
+        ],
+        "plain-text",
+        generateWorkoutCaption()
       );
     } catch (error) {
       console.error('Error sharing workout:', error);
       Alert.alert("Error", "Failed to share workout. Please try again.");
       onBack();
     }
+  };
+
+  const generateWorkoutCaption = () => {
+    const completedExercises = selectedExercises.filter((ex) => ex.completed);
+    const totalSets = selectedExercises.reduce((acc, ex) => 
+      acc + ex.sets.filter(set => set.completed).length, 0
+    );
+    const duration = Math.round(elapsedTime / 60);
+    
+    const captions = [
+      `Just crushed ${completedExercises.length} exercises in ${duration} minutes!`,
+      `${totalSets} sets complete! Feeling strong`,
+      `Another great workout in the books! ${completedExercises.length} exercises down`,
+      `${duration} minutes of pure dedication!`,
+      `Workout complete! ${completedExercises.length} exercises, ${totalSets} sets`
+    ];
+    
+    return captions[Math.floor(Math.random() * captions.length)];
   };
 
   const handleCompleteWorkout = async () => {
@@ -529,7 +566,7 @@ export default function ActiveWorkout({
       
       // Offer to share workout
       Alert.alert(
-        "Workout Complete! 🎉",
+        "Workout Complete!",
         `Great job! You completed ${completedExercises}/${selectedExercises.length} exercises in ${duration} minutes. Want to share your workout with friends?`,
         [
           { text: "Not Now", onPress: () => onBack() },
@@ -563,7 +600,7 @@ export default function ActiveWorkout({
               
               // Offer to share workout
               Alert.alert(
-                "Workout Complete! 🎉",
+                "Workout Complete!",
                 "Great job! Want to share your workout with friends?",
                 [
                   { text: "Not Now", onPress: () => onBack() },

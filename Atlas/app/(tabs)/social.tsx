@@ -20,6 +20,7 @@ import { UserProfile, Friendship, WorkoutPost, LeaderboardEntry } from '../../li
 import { authService } from '../services/auth';
 import { debugSocial } from '../services/debug-social';
 import { checkSchema } from '../services/schema-check';
+import WorkoutPostCard from '../components/social/WorkoutPostCard';
 
 type SocialTab = 'feed' | 'friends' | 'leaderboard' | 'profile';
 
@@ -215,6 +216,40 @@ export default function SocialScreen() {
     }
   };
 
+  const handlePostLike = async (postId: number) => {
+    try {
+      if (!userProfile) return;
+      await SocialApi.likeWorkoutPost(postId, userProfile.id);
+    } catch (error) {
+      console.error('Like error:', error);
+    }
+  };
+
+  const handlePostComment = async (postId: number) => {
+    Alert.prompt(
+      'Add Comment',
+      'Write a comment on this workout:',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Post',
+          onPress: async (comment) => {
+            if (!comment?.trim() || !userProfile) return;
+            try {
+              await SocialApi.addComment(postId, userProfile.id, comment.trim());
+              // Refresh feed to show new comment
+              await loadFeed();
+            } catch (error) {
+              console.error('Comment error:', error);
+              Alert.alert('Error', 'Failed to post comment.');
+            }
+          }
+        }
+      ],
+      'plain-text'
+    );
+  };
+
   const handleFriendRequest = async (requestId: number, accept: boolean) => {
     try {
       if (accept) {
@@ -288,65 +323,17 @@ export default function SocialScreen() {
         <View style={styles.emptyState}>
           <Ionicons name="fitness-outline" size={64} color="#94A3B8" />
           <Text style={styles.emptyStateTitle}>No workouts yet</Text>
-          <Text style={styles.emptyStateSubtext}>Follow friends to see their workouts!</Text>
+          <Text style={styles.emptyStateSubtext}>Complete workouts and share them with friends!</Text>
         </View>
       ) : (
         workoutFeed.map(post => (
-          <View key={post.id} style={styles.postCard}>
-            <View style={styles.postHeader}>
-              <View style={styles.postUserInfo}>
-                <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>
-                    {post.user?.display_name?.[0]?.toUpperCase() || 'U'}
-                  </Text>
-                </View>
-                <View>
-                  <Text style={styles.postUsername}>{post.user?.display_name || 'User'}</Text>
-                  <Text style={styles.postTime}>
-                    {new Date(post.created_at).toLocaleDateString()}
-                  </Text>
-                </View>
-              </View>
-            </View>
-            
-            {post.caption && (
-              <Text style={styles.postCaption}>{post.caption}</Text>
-            )}
-            
-            <View style={styles.workoutSummary}>
-              <Text style={styles.workoutTitle}>Workout Summary</Text>
-              <Text style={styles.workoutDetails}>
-                Duration: {post.session?.duration || 'N/A'} min • Volume: {
-                  post.session?.set_logs?.reduce((sum, log) => 
-                    sum + ((log.weight || 0) * (log.reps || 0)), 0
-                  )?.toLocaleString() || '0'
-                } lbs
-              </Text>
-            </View>
-            
-            <View style={styles.postActions}>
-              <TouchableOpacity 
-                style={styles.actionButton}
-                onPress={() => likePost(post.id)}
-              >
-                <Ionicons 
-                  name={post.is_liked_by_user ? "heart" : "heart-outline"} 
-                  size={20} 
-                  color={post.is_liked_by_user ? "#EF4444" : "#94A3B8"} 
-                />
-                <Text style={styles.actionText}>{post.likes_count}</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity style={styles.actionButton}>
-                <Ionicons name="chatbubble-outline" size={20} color="#94A3B8" />
-                <Text style={styles.actionText}>{post.comments_count}</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity style={styles.actionButton}>
-                <Ionicons name="share-outline" size={20} color="#94A3B8" />
-              </TouchableOpacity>
-            </View>
-          </View>
+          <WorkoutPostCard 
+            key={post.id}
+            post={post}
+            currentUserId={userProfile?.id || 0}
+            onLike={handlePostLike}
+            onComment={handlePostComment}
+          />
         ))
       )}
     </ScrollView>
@@ -534,7 +521,7 @@ export default function SocialScreen() {
                 </View>
                 <TouchableOpacity 
                   style={styles.addFriendButton}
-                  onPress={() => sendFriendRequest(item.user_id)}
+                  onPress={() => sendFriendRequest(item.id)}
                 >
                   <Text style={styles.addFriendButtonText}>Add</Text>
                 </TouchableOpacity>
