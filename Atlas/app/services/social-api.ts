@@ -275,27 +275,30 @@ export class SocialApi {
   }
 
   static async getFeed(userId: number, limit: number = 20) {
-    // Get posts from friends and public posts
-    const { data, error } = await supabase
-      .from('workout_posts')
-      .select(`
-        *,
-        user:user_profiles!workout_posts_user_id_fkey(*),
-        session:sessions(
+    try {
+      // Get posts from friends and public posts
+      const { data, error } = await supabase
+        .from('workout_posts')
+        .select(`
           *,
-          set_logs(
-            *,
-            exercise:exercises(*)
-          )
-        ),
-        is_liked_by_user:workout_post_likes!inner(user_id)
-      `)
-      .or('visibility.eq.public,user_id.eq.' + userId) // TODO: Add friend filtering
-      .order('created_at', { ascending: false })
-      .limit(limit);
+          user:user_profiles!workout_posts_user_id_fkey(*)
+        `)
+        .or('visibility.eq.public,user_id.eq.' + userId)
+        .order('created_at', { ascending: false })
+        .limit(limit);
 
-    if (error) throw error;
-    return data as WorkoutPost[];
+      if (error) {
+        console.log('Feed query error:', error.message);
+        if (error.code === '42P01' || error.message.includes('does not exist')) {
+          return [];
+        }
+        throw error;
+      }
+      return data as WorkoutPost[];
+    } catch (error) {
+      console.log('Feed error:', error);
+      return [];
+    }
   }
 
   static async likeWorkoutPost(postId: number, userId: number) {
@@ -352,18 +355,30 @@ export class SocialApi {
 
   // Leaderboards
   static async getLeaderboard(metricType: LeaderboardEntry['metric_type'], limit: number = 50) {
-    const { data, error } = await supabase
-      .from('leaderboard_entries')
-      .select(`
-        *,
-        user:user_profiles!leaderboard_entries_user_id_fkey(*)
-      `)
-      .eq('metric_type', metricType)
-      .order('rank_position', { ascending: true })
-      .limit(limit);
+    try {
+      const { data, error } = await supabase
+        .from('leaderboard_entries')
+        .select(`
+          *,
+          user:user_profiles!leaderboard_entries_user_id_fkey(*)
+        `)
+        .eq('metric_type', metricType)
+        .order('rank_position', { ascending: true })
+        .limit(limit);
 
-    if (error) throw error;
-    return data as LeaderboardEntry[];
+      if (error) {
+        console.log('Leaderboard query error:', error.message);
+        // Return empty array if table doesn't exist
+        if (error.code === '42P01' || error.message.includes('does not exist')) {
+          return [];
+        }
+        throw error;
+      }
+      return data as LeaderboardEntry[];
+    } catch (error) {
+      console.log('Leaderboard error:', error);
+      return [];
+    }
   }
 
   static async updateLeaderboard(userId: number, metricType: LeaderboardEntry['metric_type'], value: number, periodStart: string, periodEnd: string) {

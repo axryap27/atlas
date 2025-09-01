@@ -19,6 +19,7 @@ import { SocialApi } from '../services/social-api';
 import { UserProfile, Friendship, WorkoutPost, LeaderboardEntry } from '../../lib/supabase';
 import { authService } from '../services/auth';
 import { debugSocial } from '../services/debug-social';
+import { checkSchema } from '../services/schema-check';
 
 type SocialTab = 'feed' | 'friends' | 'leaderboard' | 'profile';
 
@@ -51,11 +52,13 @@ export default function SocialScreen() {
   const styles = getStyles();
 
   useEffect(() => {
-    checkUserProfile();
-    // Run diagnostics in development
+    // Check schema first, then user profile
     if (__DEV__) {
-      debugSocial.runFullDiagnostic();
-      debugSocial.checkSpecificUsers();
+      checkSchema().then(() => {
+        checkUserProfile();
+      });
+    } else {
+      checkUserProfile();
     }
   }, []);
 
@@ -85,7 +88,8 @@ export default function SocialScreen() {
       }
     } catch (error) {
       console.error('Error checking user profile:', error);
-      Alert.alert('Error', 'Failed to load user profile. Please try again.');
+      // Show profile setup instead of error for missing profile
+      setShowProfileSetup(true);
     } finally {
       setLoading(false);
     }
@@ -147,24 +151,43 @@ export default function SocialScreen() {
   };
 
   const loadFeed = async () => {
-    // const feed = await SocialApi.getFeed();
-    // setWorkoutFeed(feed);
-    setWorkoutFeed([]); // Placeholder for now
+    try {
+      if (!userProfile) {
+        setWorkoutFeed([]);
+        return;
+      }
+      const feed = await SocialApi.getFeed(userProfile.id);
+      setWorkoutFeed(feed);
+    } catch (error) {
+      console.log('Feed not available yet:', error);
+      setWorkoutFeed([]);
+    }
   };
 
   const loadFriends = async () => {
-    const [friendsData, requestsData] = await Promise.all([
-      SocialApi.getFriends(),
-      SocialApi.getFriendRequests()
-    ]);
-    setFriends(friendsData);
-    setFriendRequests(requestsData);
+    try {
+      const [friendsData, requestsData] = await Promise.all([
+        SocialApi.getFriends(),
+        SocialApi.getFriendRequests()
+      ]);
+      setFriends(friendsData);
+      setFriendRequests(requestsData);
+    } catch (error) {
+      console.log('Friends loading error:', error);
+      setFriends([]);
+      setFriendRequests([]);
+    }
   };
 
 
   const loadLeaderboard = async () => {
-    const leaderboardData = await SocialApi.getLeaderboard(leaderboardType);
-    setLeaderboard(leaderboardData);
+    try {
+      const leaderboardData = await SocialApi.getLeaderboard(leaderboardType);
+      setLeaderboard(leaderboardData);
+    } catch (error) {
+      console.log('Leaderboard not available yet:', error);
+      setLeaderboard([]);
+    }
   };
 
   const searchUsers = async (query: string) => {
