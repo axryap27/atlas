@@ -281,10 +281,10 @@ export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, 
       onMoveShouldSetPanResponder: (_, gestureState) => {
         const { dx, dy } = gestureState;
         
-        // More strict horizontal detection to prevent scroll interference
-        const isHorizontal = Math.abs(dx) > Math.abs(dy) * 2 && Math.abs(dx) > 15;
+        // Much more strict detection - require significant horizontal movement
+        const isStrongHorizontal = Math.abs(dx) > Math.abs(dy) * 4 && Math.abs(dx) > 30;
         
-        if (isHorizontal) {
+        if (isStrongHorizontal) {
           // Close any other open swipes
           if (swipedSession && swipedSession !== sessionId) {
             closeSwipe(swipedSession);
@@ -297,9 +297,9 @@ export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, 
       onMoveShouldSetPanResponderCapture: (_, gestureState) => {
         const { dx, dy } = gestureState;
         
-        // Capture the gesture early if it's clearly horizontal
-        const isDefinitelyHorizontal = Math.abs(dx) > Math.abs(dy) * 3 && Math.abs(dx) > 20;
-        return isDefinitelyHorizontal;
+        // Only capture if it's a very clear horizontal swipe
+        const isVeryDefinitelyHorizontal = Math.abs(dx) > Math.abs(dy) * 5 && Math.abs(dx) > 40;
+        return isVeryDefinitelyHorizontal;
       },
       onPanResponderGrant: () => {
         // Add haptic feedback for iOS
@@ -329,8 +329,8 @@ export default function RecentWorkouts({ onViewWorkout, showDebugTools = false, 
       onPanResponderRelease: (_, gestureState) => {
         const { dx, vx } = gestureState;
         
-        // Apple Mail style: simple threshold-based logic
-        const shouldShowActions = dx < -60 || (dx < -20 && vx < -0.5);
+        // Much higher threshold - require strong intentional swipe
+        const shouldShowActions = dx < -100 || (dx < -50 && vx < -1.0);
         
         if (shouldShowActions) {
           // Show action buttons
