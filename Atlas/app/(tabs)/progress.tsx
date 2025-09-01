@@ -147,11 +147,21 @@ export default function ProgressScreen() {
       // Get all sessions for selected templates
       const sessions = await supabaseApi.getUserSessions(undefined, 50); // Get last 50 sessions
 
+      console.log('Total sessions found:', sessions.length);
+      console.log('Selected templates:', selectedTemplates);
 
       // Filter sessions by selected templates and calculate volume
 
       const filteredSessions = sessions.filter((session) => {
         const isCompleted = !!session.end_time;
+
+        console.log(`Session ${session.id}:`, {
+          workout_day_id: session.workout_day_id,
+          end_time: session.end_time,
+          isCompleted,
+          start_time: session.start_time,
+          setLogsCount: session.set_logs?.length || 0
+        });
 
         // If no templates are selected, show no data
         if (selectedTemplates.length === 0) {
@@ -160,6 +170,7 @@ export default function ProgressScreen() {
 
         // If session has no template (Quick Workout), don't show it when filtering by templates
         if (!session.workout_day_id) {
+          console.log(`Session ${session.id} filtered out: no workout_day_id`);
           return false;
         }
 
@@ -167,6 +178,13 @@ export default function ProgressScreen() {
         const isSelectedTemplate = selectedTemplates.includes(
           session.workout_day_id
         );
+
+        if (!isSelectedTemplate) {
+          console.log(`Session ${session.id} filtered out: template not selected`);
+        }
+        if (!isCompleted) {
+          console.log(`Session ${session.id} filtered out: not completed`);
+        }
 
         return isSelectedTemplate && isCompleted;
       });
@@ -191,6 +209,15 @@ export default function ProgressScreen() {
               return total;
             }, 0) || 0;
 
+          console.log(`Session ${session.id} volume calculation:`, {
+            setLogsCount: session.set_logs?.length || 0,
+            volume,
+            templateName: session.workout_day_id
+              ? templates.find((t) => t.id === session.workout_day_id)?.name ||
+                `Template ${session.workout_day_id}`
+              : "Custom Workout"
+          });
+
           // Look up template name manually using workout_day_id
           const templateName = session.workout_day_id
             ? templates.find((t) => t.id === session.workout_day_id)?.name ||
@@ -206,11 +233,18 @@ export default function ProgressScreen() {
             workoutDayId: session.workout_day_id,
           } as VolumeData;
         })
-        .filter(data => data.volume > 0) // Filter out sessions with 0 volume
+        .filter(data => {
+          const hasVolume = data.volume > 0;
+          if (!hasVolume) {
+            console.log(`Session ${data.sessionId} filtered out: zero volume`);
+          }
+          return hasVolume;
+        })
         .sort(
           (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
         );
 
+      console.log('Final volume data:', volumeData.length, 'sessions');
       setVolumeData(volumeData);
     } catch (error) {
       console.error("Error loading volume data:", error);
