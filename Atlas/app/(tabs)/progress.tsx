@@ -154,27 +154,28 @@ export default function ProgressScreen() {
 
       const filteredSessions = sessions.filter((session) => {
         const isCompleted = !!session.end_time;
+        const hasSetLogs = (session.set_logs?.length || 0) > 0;
+        const isTrackable = isCompleted || hasSetLogs;
 
         console.log(`Session ${session.id}:`, {
           workout_day_id: session.workout_day_id,
           end_time: session.end_time,
           isCompleted,
+          hasSetLogs,
+          isTrackable,
           start_time: session.start_time,
           setLogsCount: session.set_logs?.length || 0
         });
 
-        // If no templates are selected, show no data
         if (selectedTemplates.length === 0) {
           return false;
         }
 
-        // If session has no template (Quick Workout), don't show it when filtering by templates
         if (!session.workout_day_id) {
           console.log(`Session ${session.id} filtered out: no workout_day_id`);
           return false;
         }
 
-        // Only show sessions from selected templates
         const isSelectedTemplate = selectedTemplates.includes(
           session.workout_day_id
         );
@@ -182,11 +183,11 @@ export default function ProgressScreen() {
         if (!isSelectedTemplate) {
           console.log(`Session ${session.id} filtered out: template not selected`);
         }
-        if (!isCompleted) {
-          console.log(`Session ${session.id} filtered out: not completed`);
+        if (!isTrackable) {
+          console.log(`Session ${session.id} filtered out: not trackable`);
         }
 
-        return isSelectedTemplate && isCompleted;
+        return isSelectedTemplate && isTrackable;
       });
 
       const volumeData: VolumeData[] = filteredSessions
@@ -465,7 +466,7 @@ export default function ProgressScreen() {
     const allDates = [...new Set(sortedData.map(d => d.date.split('T')[0]))].sort();
 
     // Intelligently sample data points based on total data density
-    const sampleDates = (dates) => {
+    const sampleDates = (dates: string[]) => {
       const totalDates = dates.length;
       let sampledDates;
       
@@ -474,13 +475,13 @@ export default function ProgressScreen() {
         sampledDates = dates;
       } else if (totalDates <= 30) {
         // Show every other day for medium datasets (2 weeks to 1 month)
-        sampledDates = dates.filter((_, index) => index % 2 === 0 || index === dates.length - 1);
+        sampledDates = dates.filter((_: string, index: number) => index % 2 === 0 || index === dates.length - 1);
       } else if (totalDates <= 90) {
         // Show weekly for larger datasets (1-3 months)
-        sampledDates = dates.filter((_, index) => index % 7 === 0 || index === dates.length - 1);
+        sampledDates = dates.filter((_: string, index: number) => index % 7 === 0 || index === dates.length - 1);
       } else {
         // Show biweekly for very large datasets (3+ months)
-        sampledDates = dates.filter((_, index) => index % 14 === 0 || index === dates.length - 1);
+        sampledDates = dates.filter((_: string, index: number) => index % 14 === 0 || index === dates.length - 1);
       }
       
       // Always include the first and last dates
@@ -522,14 +523,14 @@ export default function ProgressScreen() {
       const sampledDates = sampleDates(allDates);
 
       // Create datasets for each template/workout type
-      const datasets = [];
-      const datasetMetadata = []; // Store metadata about each dataset
+      const datasets: any[] = [];
+      const datasetMetadata: any[] = []; // Store metadata about each dataset
       const colors = ["#FF3B30", "#007AFF", "#34C759", "#FF9500", "#AF52DE"]; // Red, Blue, Green, Orange, Purple
       let colorIndex = 0;
 
       groupedData.forEach((templateData, key) => {
         // Sort by date within each template
-        templateData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        templateData.sort((a: VolumeData, b: VolumeData) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
         let color, name;
         if (typeof key === "number") {
@@ -558,19 +559,19 @@ export default function ProgressScreen() {
         // Create data points only for sampled dates - use closest actual workout data
         const dataPoints = sampledDates.map(date => {
           // First try to find exact match
-          let workout = templateData.find(w => w.date.split('T')[0] === date);
+          let workout = templateData.find((w: VolumeData) => w.date.split('T')[0] === date);
           
           // If no exact match, find the closest workout within a reasonable range
           if (!workout) {
             const targetDate = new Date(date);
-            const closestWorkout = templateData.reduce((closest, current) => {
+            const closestWorkout = templateData.reduce((closest: VolumeData | null, current: VolumeData) => {
               const currentDate = new Date(current.date.split('T')[0]);
               const closestDate = closest ? new Date(closest.date.split('T')[0]) : null;
               
               if (!closest) return current;
               
               const currentDiff = Math.abs(targetDate.getTime() - currentDate.getTime());
-              const closestDiff = Math.abs(targetDate.getTime() - closestDate.getTime());
+              const closestDiff = closestDate ? Math.abs(targetDate.getTime() - closestDate.getTime()) : Infinity;
               
               // Only use if within 3 days and closer than current closest
               const maxDiff = 3 * 24 * 60 * 60 * 1000; // 3 days in milliseconds
@@ -678,7 +679,7 @@ export default function ProgressScreen() {
             console.log('Chart clicked:', data);
             
             // Get dataset metadata to know which line was clicked
-            const datasetIndex = data.datasetIndex || 0;
+            const datasetIndex = (data as any).datasetIndex || 0;
             const metadata = chartData.metadata?.[datasetIndex];
             
             if (!metadata) {
@@ -702,21 +703,21 @@ export default function ProgressScreen() {
             let matchingWorkout = null;
             
             // First try exact date match
-            matchingWorkout = metadata.templateData.find(workout => {
+            matchingWorkout = metadata.templateData.find((workout: VolumeData) => {
               return workout.date.split('T')[0] === clickedDateStr;
             });
             
             // If no exact match, find closest workout within 3 days
             if (!matchingWorkout) {
               const targetDate = new Date(clickedDateStr);
-              matchingWorkout = metadata.templateData.reduce((closest, current) => {
+              matchingWorkout = metadata.templateData.reduce((closest: VolumeData | null, current: VolumeData) => {
                 const currentDate = new Date(current.date.split('T')[0]);
                 const closestDate = closest ? new Date(closest.date.split('T')[0]) : null;
                 
                 if (!closest) return current;
                 
                 const currentDiff = Math.abs(targetDate.getTime() - currentDate.getTime());
-                const closestDiff = Math.abs(targetDate.getTime() - closestDate.getTime());
+                const closestDiff = closestDate ? Math.abs(targetDate.getTime() - closestDate.getTime()) : Infinity;
                 
                 // Only use if within 3 days and closer than current closest
                 const maxDiff = 3 * 24 * 60 * 60 * 1000; // 3 days in milliseconds

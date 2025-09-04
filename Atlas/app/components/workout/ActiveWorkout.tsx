@@ -138,9 +138,15 @@ export default function ActiveWorkout({
   }, []);
 
   const initializeSession = async () => {
-    // Don't create a session until the user adds exercises or sets
-    // Sessions will be created when needed
-    setCurrentSession(null);
+    // Create session immediately for templated workouts
+    if (templateId) {
+      const session = await apiService.createSession(templateId);
+      if (session) {
+        setCurrentSession(session);
+      }
+    } else {
+      setCurrentSession(null);
+    }
   };
 
   const ensureSession = async () => {
@@ -560,11 +566,10 @@ export default function ActiveWorkout({
     );
     const duration = Math.round((new Date().getTime() - workoutStartTime.getTime()) / (1000 * 60));
     
-    // Only create/finish session if there are actually completed sets
-    if (totalCompletedSets > 0 && currentSession) {
-      await apiService.finishSession(currentSession.id);
-      
-      // Offer to share workout
+    const session = currentSession || await ensureSession();
+    
+    if (session && totalCompletedSets > 0) {
+      await apiService.finishSession(session.id);
       Alert.alert(
         "Workout Complete!",
         `Great job! You completed ${completedExercises}/${selectedExercises.length} exercises in ${duration} minutes. Want to share your workout with friends?`,
@@ -572,50 +577,62 @@ export default function ActiveWorkout({
           { text: "Not Now", onPress: () => onBack() },
           { 
             text: "Share", 
-            onPress: () => shareWorkout(currentSession.id)
+            onPress: () => shareWorkout(session.id)
           }
         ]
       );
-    } else if (totalCompletedSets === 0) {
-      // No completed sets, don't save anything
+    } else if (session && totalCompletedSets === 0) {
+      await apiService.finishSession(session.id);
+      Alert.alert(
+        "Workout Ended",
+        "Your workout has been saved. Keep going next time!",
+        [{ text: "OK", onPress: () => onBack() }]
+      );
+    } else {
       onBack();
-      return;
     }
   };
 
   const handleEndWorkout = async () => {
     const hasCompletedSets = selectedExercises.some(ex => ex.sets.some(set => set.completed));
+    const session = currentSession || await ensureSession();
     
-    if (hasCompletedSets && currentSession) {
+    if (session) {
+      const message = hasCompletedSets 
+        ? "Are you sure you want to end this workout? Your progress will be saved."
+        : "Are you sure you want to end this workout? It will be saved as incomplete.";
+      
       Alert.alert(
         "End Workout",
-        "Are you sure you want to end this workout? Your progress will be saved.",
+        message,
         [
           { text: "Cancel", style: "cancel" },
           { 
             text: "End Workout", 
             style: "destructive",
             onPress: async () => {
-              await apiService.finishSession(currentSession.id);
+              await apiService.finishSession(session.id);
               
-              // Offer to share workout
-              Alert.alert(
-                "Workout Complete!",
-                "Great job! Want to share your workout with friends?",
-                [
-                  { text: "Not Now", onPress: () => onBack() },
-                  { 
-                    text: "Share", 
-                    onPress: () => shareWorkout(currentSession.id)
-                  }
-                ]
-              );
+              if (hasCompletedSets) {
+                Alert.alert(
+                  "Workout Complete!",
+                  "Great job! Want to share your workout with friends?",
+                  [
+                    { text: "Not Now", onPress: () => onBack() },
+                    { 
+                      text: "Share", 
+                      onPress: () => shareWorkout(session.id)
+                    }
+                  ]
+                );
+              } else {
+                onBack();
+              }
             }
           }
         ]
       );
     } else {
-      // No completed sets or no session created, just exit without saving
       onBack();
     }
   };
