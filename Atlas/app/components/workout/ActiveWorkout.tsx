@@ -17,7 +17,6 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { WorkoutScreen, Exercise, Set } from "../../(tabs)/workout";
 import { supabaseApi } from "../../services/supabase-api";
-import { SocialApi } from "../../services/social-api";
 
 interface ExerciseData {
   id: number;
@@ -487,77 +486,6 @@ export default function ActiveWorkout({
     );
   };
 
-  const shareWorkout = async (sessionId: number) => {
-    try {
-      // Get current user profile
-      const userProfile = await SocialApi.getCurrentUserProfile();
-      if (!userProfile) {
-        Alert.alert(
-          "Profile Required",
-          "Please set up your social profile first to share workouts.",
-          [
-            { text: "Cancel", style: "cancel" },
-            { text: "Set Up Profile", onPress: () => {
-              Alert.alert("Navigate to Social", "Go to the Social tab to set up your profile.");
-            }}
-          ]
-        );
-        return;
-      }
-
-      // Show custom caption input
-      Alert.prompt(
-        "Share Workout",
-        "Add a caption to share your workout with friends:",
-        [
-          { text: "Cancel", style: "cancel" },
-          { 
-            text: "Share", 
-            onPress: async (caption) => {
-              try {
-                const workoutCaption = caption || generateWorkoutCaption();
-                await SocialApi.createWorkoutPost(userProfile.id, sessionId, workoutCaption, "friends");
-                
-                Alert.alert(
-                  "Workout Shared!",
-                  "Your workout has been shared with your friends!",
-                  [{ text: "Great!", onPress: () => onBack() }]
-                );
-              } catch (error) {
-                console.error('Error creating workout post:', error);
-                Alert.alert("Error", "Failed to share workout. Please try again.");
-                onBack();
-              }
-            }
-          }
-        ],
-        "plain-text",
-        generateWorkoutCaption()
-      );
-    } catch (error) {
-      console.error('Error sharing workout:', error);
-      Alert.alert("Error", "Failed to share workout. Please try again.");
-      onBack();
-    }
-  };
-
-  const generateWorkoutCaption = () => {
-    const completedExercises = selectedExercises.filter((ex) => ex.completed);
-    const totalSets = selectedExercises.reduce((acc, ex) => 
-      acc + ex.sets.filter(set => set.completed).length, 0
-    );
-    const duration = Math.round(elapsedTime / 60);
-    
-    const captions = [
-      `Just crushed ${completedExercises.length} exercises in ${duration} minutes!`,
-      `${totalSets} sets complete! Feeling strong`,
-      `Another great workout in the books! ${completedExercises.length} exercises down`,
-      `${duration} minutes of pure dedication!`,
-      `Workout complete! ${completedExercises.length} exercises, ${totalSets} sets`
-    ];
-    
-    return captions[Math.floor(Math.random() * captions.length)];
-  };
 
   const handleCompleteWorkout = async () => {
     const completedExercises = selectedExercises.filter((ex) => ex.completed).length;
@@ -572,14 +500,8 @@ export default function ActiveWorkout({
       await apiService.finishSession(session.id);
       Alert.alert(
         "Workout Complete!",
-        `Great job! You completed ${completedExercises}/${selectedExercises.length} exercises in ${duration} minutes. Want to share your workout with friends?`,
-        [
-          { text: "Not Now", onPress: () => onBack() },
-          { 
-            text: "Share", 
-            onPress: () => shareWorkout(session.id)
-          }
-        ]
+        `Great job! You completed ${completedExercises}/${selectedExercises.length} exercises in ${duration} minutes.`,
+        [{ text: "Done", onPress: () => onBack() }]
       );
     } else if (session && totalCompletedSets === 0) {
       await apiService.finishSession(session.id);
@@ -616,14 +538,8 @@ export default function ActiveWorkout({
               if (hasCompletedSets) {
                 Alert.alert(
                   "Workout Complete!",
-                  "Great job! Want to share your workout with friends?",
-                  [
-                    { text: "Not Now", onPress: () => onBack() },
-                    { 
-                      text: "Share", 
-                      onPress: () => shareWorkout(session.id)
-                    }
-                  ]
+                  "Great job!",
+                  [{ text: "Done", onPress: () => onBack() }]
                 );
               } else {
                 onBack();

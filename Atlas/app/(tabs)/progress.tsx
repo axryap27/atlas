@@ -85,29 +85,45 @@ export default function ProgressScreen() {
     React.useCallback(() => {
       const refreshData = async () => {
         try {
+          console.log('Progress screen focused - refreshing data...');
           const templatesData = await supabaseApi.getTemplates();
           setTemplates(templatesData);
+          console.log('Templates loaded:', templatesData.length);
 
-          // Remove deleted templates from selectedTemplates
+          // Remove deleted templates from selectedTemplates, but keep all if none selected
           const currentTemplateIds = templatesData.map(t => t.id);
-          setSelectedTemplates(prev => prev.filter(id => currentTemplateIds.includes(id)));
+          setSelectedTemplates(prev => {
+            // If no templates were previously selected, select all
+            if (prev.length === 0) {
+              console.log('No templates selected, auto-selecting all:', currentTemplateIds);
+              return currentTemplateIds;
+            }
+            // Otherwise, filter out deleted templates
+            const filtered = prev.filter(id => currentTemplateIds.includes(id));
+            console.log('Selected templates after filter:', filtered);
+            return filtered;
+          });
 
-          // Also refresh volume data if templates are selected
-          if (selectedTemplates.length > 0) {
-            loadVolumeData();
-          }
+          // Always refresh volume data to pick up new sessions
+          console.log('Loading volume data...');
+          loadVolumeData();
         } catch (error) {
           console.error("Error refreshing data:", error);
         }
       };
 
       refreshData();
-    }, [selectedTemplates])
+    }, [])
   );
 
   useEffect(() => {
+    console.log('selectedTemplates changed:', selectedTemplates);
     if (selectedTemplates.length > 0) {
+      console.log('Loading volume data for selected templates');
       loadVolumeData();
+    } else {
+      console.log('No templates selected, clearing volume data');
+      setVolumeData([]);
     }
   }, [selectedTemplates]);
 
@@ -129,10 +145,12 @@ export default function ProgressScreen() {
 
       // Load templates
       const templatesData = await supabaseApi.getTemplates();
+      console.log('📊 Progress: Loaded templates:', templatesData.length);
       setTemplates(templatesData);
 
       // Select all templates by default
       const allTemplateIds = templatesData.map((t) => t.id);
+      console.log('📊 Progress: Auto-selecting templates:', allTemplateIds);
       setSelectedTemplates(allTemplateIds);
     } catch (error) {
       console.error("Error loading progress data:", error);
@@ -147,8 +165,18 @@ export default function ProgressScreen() {
       // Get all sessions for selected templates
       const sessions = await supabaseApi.getUserSessions(undefined, 50); // Get last 50 sessions
 
-      console.log('Total sessions found:', sessions.length);
-      console.log('Selected templates:', selectedTemplates);
+      console.log('📊 Progress: Total sessions found:', sessions.length);
+      console.log('📊 Progress: Selected templates:', selectedTemplates);
+      
+      // Log each session for debugging
+      sessions.forEach(session => {
+        console.log(`📊 Session ${session.id}:`, {
+          workout_day_id: session.workout_day_id,
+          end_time: session.end_time,
+          start_time: session.start_time,
+          set_logs_count: session.set_logs?.length || 0
+        });
+      });
 
       // Filter sessions by selected templates and calculate volume
 

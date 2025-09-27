@@ -376,7 +376,7 @@ export const supabaseApi = {
     const { data, error } = await supabase
       .from('sessions')
       .update(updates)
-      .eq('id', id)
+      .eq('id', String(id))
       .select()
       .single()
     
@@ -389,13 +389,18 @@ export const supabaseApi = {
   },
 
   async completeSession(id: number, notes?: string): Promise<Session> {
+    console.log('🔍 completeSession params:', {
+      id: typeof id + ' = ' + id,
+      notes: typeof notes + ' = ' + notes
+    });
+    
     const endTime = new Date().toISOString()
     
     // Get session start time to calculate duration
     const { data: session } = await supabase
       .from('sessions')
       .select('start_time')
-      .eq('id', id)
+      .eq('id', String(id))
       .single()
     
     let duration: number | undefined
@@ -491,11 +496,28 @@ export const supabaseApi = {
       throw new Error(`Exercise ID ${setData.exercise_id} not found`)
     }
     
+    // Debug the data types being passed
+    console.log('🔍 logSet params:', {
+      sessionId: typeof sessionId + ' = ' + sessionId,
+      exercise_id: typeof setData.exercise_id + ' = ' + setData.exercise_id,
+      set_number: typeof setData.set_number + ' = ' + setData.set_number,
+      reps: typeof setData.reps + ' = ' + setData.reps,
+      weight: typeof setData.weight + ' = ' + setData.weight
+    });
+    
     const { data, error } = await supabase
       .from('set_logs')
       .insert([{
-        session_id: sessionId,
-        ...setData
+        session_id: String(sessionId),
+        exercise_id: String(setData.exercise_id),
+        set_number: String(setData.set_number),
+        reps: setData.reps ? String(setData.reps) : null,
+        weight: setData.weight ? String(setData.weight) : null,
+        duration: setData.duration ? String(setData.duration) : null,
+        distance: setData.distance ? String(setData.distance) : null,
+        rest_time: setData.rest_time ? String(setData.rest_time) : null,
+        rpe: setData.rpe ? String(setData.rpe) : null,
+        notes: setData.notes || null
       }])
       .select()
       .single()

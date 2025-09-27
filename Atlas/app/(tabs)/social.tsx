@@ -22,7 +22,7 @@ import { debugSocial } from '../services/debug-social';
 import { checkSchema } from '../services/schema-check';
 import WorkoutPostCard from '../components/social/WorkoutPostCard';
 
-type SocialTab = 'feed' | 'friends' | 'leaderboard' | 'profile';
+type SocialTab = 'feed' | 'friends' | 'profile';
 
 export default function SocialScreen() {
   const [activeTab, setActiveTab] = useState<SocialTab>('feed');
@@ -46,9 +46,6 @@ export default function SocialScreen() {
   const [showSearch, setShowSearch] = useState(false);
   
   
-  // Leaderboard data
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [leaderboardType, setLeaderboardType] = useState<'weekly_volume' | 'monthly_volume' | 'weekly_workouts'>('weekly_volume');
   
   const styles = getStyles();
 
@@ -130,9 +127,6 @@ export default function SocialScreen() {
         case 'friends':
           await loadFriends();
           break;
-        case 'leaderboard':
-          await loadLeaderboard();
-          break;
         case 'profile':
           // Load user profile data
           break;
@@ -181,15 +175,6 @@ export default function SocialScreen() {
   };
 
 
-  const loadLeaderboard = async () => {
-    try {
-      const leaderboardData = await SocialApi.getLeaderboard(leaderboardType);
-      setLeaderboard(leaderboardData);
-    } catch (error) {
-      console.log('Leaderboard not available yet:', error);
-      setLeaderboard([]);
-    }
-  };
 
   const searchUsers = async (query: string) => {
     if (query.length < 2) {
@@ -285,7 +270,6 @@ export default function SocialScreen() {
       {[
         { key: 'feed', icon: 'home-outline', label: 'Feed' },
         { key: 'friends', icon: 'people-outline', label: 'Friends' },
-        { key: 'leaderboard', icon: 'podium-outline', label: 'Rankings' },
         { key: 'profile', icon: 'person-outline', label: 'Profile' }
       ].map(tab => (
         <TouchableOpacity
@@ -446,12 +430,6 @@ export default function SocialScreen() {
         return renderFeed();
       case 'friends':
         return renderFriends();
-      case 'leaderboard':
-        return (
-          <View style={styles.content}>
-            <Text style={styles.sectionTitle}>Coming Soon: Leaderboards</Text>
-          </View>
-        );
       case 'profile':
         return (
           <View style={styles.content}>
