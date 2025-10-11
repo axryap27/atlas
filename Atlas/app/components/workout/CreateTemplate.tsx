@@ -192,7 +192,7 @@ export default function CreateTemplate({ onBack, onTemplateCreated }: CreateTemp
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <TouchableOpacity onPress={onBack} style={styles.backButton}>
-            <Ionicons name="chevron-back" size={24} color="#007AFF" />
+            <Ionicons name="chevron-back" size={24} color="#84CC16" />
             <Text style={styles.backText}>Back</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -247,7 +247,7 @@ export default function CreateTemplate({ onBack, onTemplateCreated }: CreateTemp
               onPress={() => setShowExerciseModal(true)}
               style={styles.addButton}
             >
-              <Ionicons name="add" size={20} color="#007AFF" />
+              <Ionicons name="add" size={20} color="#84CC16" />
               <Text style={styles.addButtonText}>Add Exercise</Text>
             </TouchableOpacity>
           </View>
@@ -294,11 +294,11 @@ export default function CreateTemplate({ onBack, onTemplateCreated }: CreateTemp
                   <View style={styles.exerciseInputGroup}>
                     <Text style={styles.exerciseInputLabel}>Reps</Text>
                     <View style={styles.inputWithButtons}>
-                      <TouchableOpacity 
-                        style={[styles.incrementButton, styles.incrementButtonLeft]} 
+                      <TouchableOpacity
+                        style={[styles.incrementButton, styles.incrementButtonLeft]}
                         onPress={() => decrementReps(templateExercise.exerciseId)}
                       >
-                        <Ionicons name="remove" size={16} color="#007AFF" />
+                        <Ionicons name="remove" size={16} color="#84CC16" />
                       </TouchableOpacity>
                       
                       <TextInput
@@ -316,11 +316,11 @@ export default function CreateTemplate({ onBack, onTemplateCreated }: CreateTemp
                         placeholderTextColor="#8E8E93"
                       />
                       
-                      <TouchableOpacity 
-                        style={[styles.incrementButton, styles.incrementButtonRight]} 
+                      <TouchableOpacity
+                        style={[styles.incrementButton, styles.incrementButtonRight]}
                         onPress={() => incrementReps(templateExercise.exerciseId)}
                       >
-                        <Ionicons name="add" size={16} color="#007AFF" />
+                        <Ionicons name="add" size={16} color="#84CC16" />
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -398,7 +398,7 @@ const getStyles = () =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: "#F1F5F9",
+      backgroundColor: "#334155", // Dark slate background
     },
     header: {
       padding: 16,
@@ -415,11 +415,11 @@ const getStyles = () =>
     },
     backText: {
       fontSize: 16,
-      color: "#007AFF",
+      color: "#84CC16", // Lime green accent
       marginLeft: 4,
     },
     saveButton: {
-      backgroundColor: "#007AFF",
+      backgroundColor: "#84CC16", // Lime green accent
       paddingHorizontal: 16,
       paddingVertical: 8,
       borderRadius: 8,
@@ -430,17 +430,17 @@ const getStyles = () =>
     saveButtonText: {
       fontSize: 16,
       fontWeight: "600",
-      color: "#FFFFFF",
+      color: "#1F2937", // Dark text on lime background
     },
     title: {
       fontSize: 28,
       fontWeight: "bold",
-      color: "#000000",
+      color: "#F1F5F9", // Light text for dark background
       marginBottom: 8,
     },
     subtitle: {
       fontSize: 16,
-      color: "#6D6D70",
+      color: "#CBD5E1", // Light slate gray
     },
     scrollView: {
       flex: 1,
@@ -458,7 +458,7 @@ const getStyles = () =>
     sectionTitle: {
       fontSize: 20,
       fontWeight: "bold",
-      color: "#000000",
+      color: "#F1F5F9", // Light text for dark background
       marginBottom: 16,
     },
     inputContainer: {
@@ -467,65 +467,67 @@ const getStyles = () =>
     inputLabel: {
       fontSize: 14,
       fontWeight: "600",
-      color: "#000000",
+      color: "#F1F5F9", // Light text for dark background
       marginBottom: 8,
     },
     textInput: {
-      backgroundColor: "#FFFFFF",
+      backgroundColor: "#475569", // Medium slate background
       borderRadius: 8,
       padding: 12,
       fontSize: 16,
-      color: "#000000",
+      color: "#F1F5F9", // Light text
       borderWidth: 1,
-      borderColor: "#E5E5EA",
+      borderColor: "#64748B", // Darker border
     },
     addButton: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: "#FFFFFF",
+      backgroundColor: "#475569", // Medium slate background
       paddingHorizontal: 12,
       paddingVertical: 8,
       borderRadius: 8,
       borderWidth: 1,
-      borderColor: "#007AFF",
+      borderColor: "#84CC16", // Lime green border
     },
     addButtonText: {
       fontSize: 14,
-      color: "#007AFF",
+      color: "#84CC16", // Lime green accent
       fontWeight: "600",
       marginLeft: 4,
     },
     emptyState: {
       alignItems: "center",
       padding: 32,
-      backgroundColor: "#FFFFFF",
+      backgroundColor: "#475569", // Medium slate background
       borderRadius: 12,
-      borderWidth: 1,
-      borderColor: "#E5E5EA",
+      borderWidth: 2,
+      borderColor: "#84CC16", // Lime green border
       borderStyle: "dashed",
     },
     emptyStateText: {
       fontSize: 16,
       fontWeight: "600",
-      color: "#000000",
+      color: "#F1F5F9", // Light text for dark background
       marginTop: 12,
       marginBottom: 4,
     },
     emptyStateSubtext: {
       fontSize: 14,
-      color: "#8E8E93",
+      color: "#CBD5E1", // Light slate gray
       textAlign: "center",
     },
     exerciseCard: {
-      backgroundColor: "#FFFFFF",
+      backgroundColor: "#475569", // Medium slate background
       borderRadius: 12,
       padding: 16,
       marginBottom: 12,
       shadowColor: "#000000",
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.05,
-      shadowRadius: 2,
-      elevation: 1,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 4,
+      elevation: 3,
+      borderWidth: 1,
+      borderColor: "#64748B", // Subtle border
     },
     exerciseHeader: {
       flexDirection: "row",
@@ -536,7 +538,7 @@ const getStyles = () =>
     exerciseName: {
       fontSize: 16,
       fontWeight: "600",
-      color: "#000000",
+      color: "#F1F5F9", // Light text for dark background
       flex: 1,
     },
     exerciseInputRow: {
@@ -549,18 +551,18 @@ const getStyles = () =>
     exerciseInputLabel: {
       fontSize: 12,
       fontWeight: "600",
-      color: "#8E8E93",
+      color: "#CBD5E1", // Light slate gray
       marginBottom: 4,
     },
     exerciseInput: {
-      backgroundColor: "#F8F8F8",
+      backgroundColor: "#334155", // Dark slate background
       borderRadius: 6,
       padding: 8,
       fontSize: 14,
-      color: "#000000",
+      color: "#F1F5F9", // Light text
       textAlign: "center",
       borderWidth: 1,
-      borderColor: "#E5E5EA",
+      borderColor: "#64748B", // Darker border
     },
     inputWithButtons: {
       flexDirection: "row",
@@ -578,8 +580,8 @@ const getStyles = () =>
       justifyContent: "center",
       alignItems: "center",
       borderWidth: 1,
-      borderColor: "#E5E5EA",
-      backgroundColor: "#F8F8F8",
+      borderColor: "#64748B", // Darker border
+      backgroundColor: "#334155", // Dark slate background
     },
     incrementButtonLeft: {
       borderTopLeftRadius: 6,
@@ -594,7 +596,7 @@ const getStyles = () =>
     // Modal styles
     modalContainer: {
       flex: 1,
-      backgroundColor: "#F1F5F9",
+      backgroundColor: "#334155", // Dark slate background
     },
     modalHeader: {
       flexDirection: "row",
@@ -602,28 +604,28 @@ const getStyles = () =>
       alignItems: "center",
       padding: 16,
       borderBottomWidth: 1,
-      borderBottomColor: "#E5E5EA",
+      borderBottomColor: "#64748B", // Darker border
     },
     modalTitle: {
       fontSize: 20,
       fontWeight: "bold",
-      color: "#000000",
+      color: "#F1F5F9", // Light text for dark background
     },
     searchContainer: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: "#FFFFFF",
+      backgroundColor: "#475569", // Medium slate background
       margin: 16,
       paddingHorizontal: 12,
       borderRadius: 8,
       borderWidth: 1,
-      borderColor: "#E5E5EA",
+      borderColor: "#64748B", // Darker border
     },
     searchInput: {
       flex: 1,
       padding: 12,
       fontSize: 16,
-      color: "#000000",
+      color: "#F1F5F9", // Light text
       marginLeft: 8,
     },
     loadingContainer: {
@@ -633,7 +635,7 @@ const getStyles = () =>
     },
     loadingText: {
       fontSize: 16,
-      color: "#8E8E93",
+      color: "#CBD5E1", // Light slate gray
       marginTop: 12,
     },
     exerciseList: {
@@ -642,16 +644,18 @@ const getStyles = () =>
     exerciseListItem: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: "#FFFFFF",
+      backgroundColor: "#475569", // Medium slate background
       padding: 16,
       marginHorizontal: 16,
       marginBottom: 8,
       borderRadius: 8,
       shadowColor: "#000000",
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.05,
-      shadowRadius: 2,
-      elevation: 1,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 4,
+      elevation: 3,
+      borderWidth: 1,
+      borderColor: "#64748B", // Subtle border
     },
     exerciseListItemContent: {
       flex: 1,
@@ -659,12 +663,12 @@ const getStyles = () =>
     exerciseListItemName: {
       fontSize: 16,
       fontWeight: "600",
-      color: "#000000",
+      color: "#F1F5F9", // Light text for dark background
       marginBottom: 4,
     },
     exerciseListItemDetails: {
       fontSize: 14,
-      color: "#8E8E93",
+      color: "#CBD5E1", // Light slate gray
       textTransform: "capitalize",
     },
   });
