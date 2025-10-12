@@ -78,6 +78,14 @@ const apiService = {
     }
   },
 
+  deleteSession: async (sessionId: number) => {
+    try {
+      await supabaseApi.deleteSession(sessionId);
+    } catch (error) {
+      console.error('Error deleting session:', error);
+    }
+  },
+
   logSet: async (sessionId: number, exerciseId: number, setNumber: number, reps: number, weight: number) => {
     try {
       const setData = {
@@ -368,25 +376,48 @@ export default function ActiveWorkout({
 
     // Create session and log set if completed
     if (newCompleted && set.weight && set.reps) {
-      const session = await ensureSession();
-      if (session) {
-        const setNumber = exercise.sets.findIndex(s => s.id === setId) + 1;
-        
-        // Handle bodyweight exercises - convert "bodyweight" to 0 for logging
-        let weightValue: number;
-        if (set.weight.toLowerCase() === "bodyweight") {
-          weightValue = 0; // 0 indicates bodyweight in database
-        } else {
-          weightValue = parseFloat(set.weight);
+      try {
+        const session = await ensureSession();
+        if (session) {
+          const setNumber = exercise.sets.findIndex(s => s.id === setId) + 1;
+
+          // Handle bodyweight exercises - convert "bodyweight" to 0 for logging
+          let weightValue: number;
+          if (set.weight.toLowerCase() === "bodyweight") {
+            weightValue = 0; // 0 indicates bodyweight in database
+          } else {
+            weightValue = parseFloat(set.weight) || 0;
+          }
+
+          // Validate data before logging
+          const exerciseIdNum = parseInt(exerciseId);
+          const repsNum = parseInt(set.reps) || 0;
+
+          if (isNaN(exerciseIdNum) || exerciseIdNum <= 0) {
+            console.error('Invalid exercise ID:', exerciseId);
+            return;
+          }
+
+          console.log('🔍 Logging set:', {
+            sessionId: session.id,
+            exerciseId: exerciseIdNum,
+            setNumber,
+            reps: repsNum,
+            weight: weightValue
+          });
+
+          await apiService.logSet(
+            session.id,
+            exerciseIdNum,
+            setNumber,
+            repsNum,
+            weightValue
+          );
         }
-        
-        await apiService.logSet(
-          session.id,
-          parseInt(exerciseId),
-          setNumber,
-          parseInt(set.reps),
-          weightValue
-        );
+      } catch (error) {
+        console.error('Error logging set:', error);
+        // Optionally show user-friendly error message
+        // Alert.alert('Error', 'Failed to log set. Please try again.');
       }
     }
   };
@@ -489,14 +520,15 @@ export default function ActiveWorkout({
 
   const handleCompleteWorkout = async () => {
     const completedExercises = selectedExercises.filter((ex) => ex.completed).length;
-    const totalCompletedSets = selectedExercises.reduce((acc, ex) => 
+    const totalCompletedSets = selectedExercises.reduce((acc, ex) =>
       acc + ex.sets.filter(set => set.completed).length, 0
     );
     const duration = Math.round((new Date().getTime() - workoutStartTime.getTime()) / (1000 * 60));
-    
+
     const session = currentSession || await ensureSession();
-    
+
     if (session && totalCompletedSets > 0) {
+      // Save workout with completed sets
       await apiService.finishSession(session.id);
       Alert.alert(
         "Workout Complete!",
@@ -504,10 +536,11 @@ export default function ActiveWorkout({
         [{ text: "Done", onPress: () => onBack() }]
       );
     } else if (session && totalCompletedSets === 0) {
-      await apiService.finishSession(session.id);
+      // Delete empty workout - don't save to recent workouts
+      await apiService.deleteSession(session.id);
       Alert.alert(
         "Workout Ended",
-        "Your workout has been saved. Keep going next time!",
+        "No sets were completed. Workout not saved.",
         [{ text: "OK", onPress: () => onBack() }]
       );
     } else {
@@ -518,30 +551,32 @@ export default function ActiveWorkout({
   const handleEndWorkout = async () => {
     const hasCompletedSets = selectedExercises.some(ex => ex.sets.some(set => set.completed));
     const session = currentSession || await ensureSession();
-    
+
     if (session) {
-      const message = hasCompletedSets 
+      const message = hasCompletedSets
         ? "Are you sure you want to end this workout? Your progress will be saved."
-        : "Are you sure you want to end this workout? It will be saved as incomplete.";
-      
+        : "Are you sure you want to end this workout? No progress will be saved.";
+
       Alert.alert(
         "End Workout",
         message,
         [
           { text: "Cancel", style: "cancel" },
-          { 
-            text: "End Workout", 
+          {
+            text: "End Workout",
             style: "destructive",
             onPress: async () => {
-              await apiService.finishSession(session.id);
-              
               if (hasCompletedSets) {
+                // Save the session if there are completed sets
+                await apiService.finishSession(session.id);
                 Alert.alert(
                   "Workout Complete!",
                   "Great job!",
                   [{ text: "Done", onPress: () => onBack() }]
                 );
               } else {
+                // Delete the session if no sets were completed
+                await apiService.deleteSession(session.id);
                 onBack();
               }
             }
