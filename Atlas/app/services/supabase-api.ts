@@ -376,15 +376,15 @@ export const supabaseApi = {
     const { data, error } = await supabase
       .from('sessions')
       .update(updates)
-      .eq('id', String(id))
+      .eq('id', id)  // Remove String() conversion - let Supabase handle the type
       .select()
       .single()
-    
+
     if (error) {
       console.error('Error updating session:', error)
       throw error
     }
-    
+
     return data
   },
 
@@ -393,23 +393,31 @@ export const supabaseApi = {
       id: typeof id + ' = ' + id,
       notes: typeof notes + ' = ' + notes
     });
-    
+
     const endTime = new Date().toISOString()
-    
+
     // Get session start time to calculate duration
-    const { data: session } = await supabase
+    const { data: session, error: fetchError } = await supabase
       .from('sessions')
       .select('start_time')
-      .eq('id', String(id))
+      .eq('id', id)
       .single()
-    
+
+    if (fetchError) {
+      console.error('Error fetching session for completion:', fetchError)
+      throw fetchError
+    }
+
     let duration: number | undefined
     if (session) {
       const startTime = new Date(session.start_time)
       const endTimeDate = new Date(endTime)
       duration = Math.round((endTimeDate.getTime() - startTime.getTime()) / (1000 * 60)) // minutes
+      console.log('🔍 Calculated duration:', duration, 'minutes');
     }
-    
+
+    console.log('🔍 Updating session with:', { end_time: endTime, duration, notes });
+
     return this.updateSession(id, {
       end_time: endTime,
       duration,
@@ -419,34 +427,43 @@ export const supabaseApi = {
 
   async deleteSession(id: number): Promise<void> {
     const userId = getCurrentUserId()
-    
-    // Get the session being deleted to find its start_time
-    const { data: sessionToDelete } = await supabase
+    console.log('🔍 deleteSession params:', { id, userId });
+
+    // Get the session being deleted to verify ownership
+    const { data: sessionToDelete, error: fetchError } = await supabase
       .from('sessions')
       .select('start_time, user_id')
       .eq('id', id)
       .single()
-    
+
+    if (fetchError) {
+      console.error('Error fetching session to delete:', fetchError)
+      throw fetchError
+    }
+
     if (!sessionToDelete) {
       throw new Error('Session not found')
     }
-    
+
+    console.log('🔍 Session data:', { sessionUserId: sessionToDelete.user_id, currentUserId: userId });
+
     // Verify user owns this session
     if (sessionToDelete.user_id !== userId) {
       throw new Error('Unauthorized: Cannot delete session belonging to another user')
     }
-    
+
     // Delete the session (cascade will handle set_logs)
     const { error: deleteError } = await supabase
       .from('sessions')
       .delete()
       .eq('id', id)
-    
+
     if (deleteError) {
       console.error('Error deleting session:', deleteError)
       throw deleteError
     }
-    
+
+    console.log('✅ Session deleted successfully');
   },
 
   async deleteAllSessions(userId?: string): Promise<void> {
@@ -478,47 +495,55 @@ export const supabaseApi = {
     rpe?: number
     notes?: string
   }): Promise<SetLog> {
-    
+
+    // Check if session exists and is active
+    const { data: sessionExists, error: sessionError } = await supabase
+      .from('sessions')
+      .select('id, user_id, start_time')
+      .eq('id', sessionId)
+      .single()
+
+    if (sessionError || !sessionExists) {
+      console.error(`Session ID ${sessionId} not found:`, sessionError)
+      throw new Error(`Session ID ${sessionId} not found`)
+    }
+
     // Check if exercise exists
-    const { data: exerciseExists } = await supabase
+    const { data: exerciseExists, error: exerciseError } = await supabase
       .from('exercises')
       .select('id, name')
       .eq('id', setData.exercise_id)
       .single()
-    
-    
-    if (!exerciseExists) {
-      console.error(`Exercise ID ${setData.exercise_id} not found in database`)
+
+    if (exerciseError || !exerciseExists) {
+      console.error(`Exercise ID ${setData.exercise_id} not found:`, exerciseError)
       // Get all exercises to help debug
       const { data: allExercises } = await supabase
         .from('exercises')
         .select('id, name')
+      console.error('Available exercises:', allExercises?.map(ex => `${ex.id}: ${ex.name}`).join(', '))
       throw new Error(`Exercise ID ${setData.exercise_id} not found`)
     }
     
-    // Debug the data types being passed
-    console.log('🔍 logSet params:', {
-      sessionId: typeof sessionId + ' = ' + sessionId,
-      exercise_id: typeof setData.exercise_id + ' = ' + setData.exercise_id,
-      set_number: typeof setData.set_number + ' = ' + setData.set_number,
-      reps: typeof setData.reps + ' = ' + setData.reps,
-      weight: typeof setData.weight + ' = ' + setData.weight
-    });
-    
+    // Validate and prepare data for insertion
+    const insertData = {
+      session_id: sessionId,
+      exercise_id: setData.exercise_id,
+      set_number: setData.set_number,
+      reps: setData.reps || null,
+      weight: setData.weight || null,
+      duration: setData.duration || null,
+      distance: setData.distance || null,
+      rest_time: setData.rest_time || null,
+      rpe: setData.rpe || null,
+      notes: setData.notes || null
+    };
+
+    console.log('🔍 logSet inserting data:', insertData);
+
     const { data, error } = await supabase
       .from('set_logs')
-      .insert([{
-        session_id: String(sessionId),
-        exercise_id: String(setData.exercise_id),
-        set_number: String(setData.set_number),
-        reps: setData.reps ? String(setData.reps) : null,
-        weight: setData.weight ? String(setData.weight) : null,
-        duration: setData.duration ? String(setData.duration) : null,
-        distance: setData.distance ? String(setData.distance) : null,
-        rest_time: setData.rest_time ? String(setData.rest_time) : null,
-        rpe: setData.rpe ? String(setData.rpe) : null,
-        notes: setData.notes || null
-      }])
+      .insert([insertData])
       .select()
       .single()
     
