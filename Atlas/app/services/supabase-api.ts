@@ -376,7 +376,7 @@ export const supabaseApi = {
     const { data, error } = await supabase
       .from('sessions')
       .update(updates)
-      .eq('id', id)  // Remove String() conversion - let Supabase handle the type
+      .eq('id', id.toString())  // Ensure string comparison for database
       .select()
       .single()
 
@@ -400,7 +400,7 @@ export const supabaseApi = {
     const { data: session, error: fetchError } = await supabase
       .from('sessions')
       .select('start_time')
-      .eq('id', id)
+      .eq('id', id.toString())  // Ensure string comparison
       .single()
 
     if (fetchError) {
@@ -433,7 +433,7 @@ export const supabaseApi = {
     const { data: sessionToDelete, error: fetchError } = await supabase
       .from('sessions')
       .select('start_time, user_id')
-      .eq('id', id)
+      .eq('id', id.toString())  // Ensure string comparison
       .single()
 
     if (fetchError) {
@@ -456,7 +456,7 @@ export const supabaseApi = {
     const { error: deleteError } = await supabase
       .from('sessions')
       .delete()
-      .eq('id', id)
+      .eq('id', id.toString())  // Ensure string comparison
 
     if (deleteError) {
       console.error('Error deleting session:', deleteError)
@@ -500,7 +500,7 @@ export const supabaseApi = {
     const { data: sessionExists, error: sessionError } = await supabase
       .from('sessions')
       .select('id, user_id, start_time')
-      .eq('id', sessionId)
+      .eq('id', sessionId.toString())  // Ensure string comparison
       .single()
 
     if (sessionError || !sessionExists) {
@@ -512,7 +512,7 @@ export const supabaseApi = {
     const { data: exerciseExists, error: exerciseError } = await supabase
       .from('exercises')
       .select('id, name')
-      .eq('id', setData.exercise_id)
+      .eq('id', setData.exercise_id.toString())  // Ensure string comparison
       .single()
 
     if (exerciseError || !exerciseExists) {
@@ -526,16 +526,17 @@ export const supabaseApi = {
     }
     
     // Validate and prepare data for insertion
+    // Convert numbers to strings since database columns appear to be TEXT
     const insertData = {
-      session_id: sessionId,
-      exercise_id: setData.exercise_id,
-      set_number: setData.set_number,
-      reps: setData.reps || null,
-      weight: setData.weight || null,
-      duration: setData.duration || null,
-      distance: setData.distance || null,
-      rest_time: setData.rest_time || null,
-      rpe: setData.rpe || null,
+      session_id: sessionId.toString(),
+      exercise_id: setData.exercise_id.toString(),
+      set_number: setData.set_number.toString(),
+      reps: setData.reps ? setData.reps.toString() : null,
+      weight: setData.weight ? setData.weight.toString() : null,
+      duration: setData.duration ? setData.duration.toString() : null,
+      distance: setData.distance ? setData.distance.toString() : null,
+      rest_time: setData.rest_time ? setData.rest_time.toString() : null,
+      rpe: setData.rpe ? setData.rpe.toString() : null,
       notes: setData.notes || null
     };
 
