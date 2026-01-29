@@ -101,12 +101,9 @@ export default function ProgressScreen() {
             // Otherwise, filter out deleted templates
             const filtered = prev.filter(id => currentTemplateIds.includes(id));
             console.log('Selected templates after filter:', filtered);
-            return filtered;
+            // Always return a new array to ensure useEffect fires and reloads volume data
+            return [...filtered];
           });
-
-          // Always refresh volume data to pick up new sessions
-          console.log('Loading volume data...');
-          loadVolumeData();
         } catch (error) {
           console.error("Error refreshing data:", error);
         }
