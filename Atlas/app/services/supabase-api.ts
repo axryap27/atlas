@@ -526,17 +526,18 @@ export const supabaseApi = {
     }
     
     // Validate and prepare data for insertion
-    // Convert numbers to strings since database columns appear to be TEXT
+    // Use explicit null checks (not falsy checks) so that 0 values are preserved
+    // (e.g., weight=0 for bodyweight exercises)
     const insertData = {
-      session_id: sessionId.toString(),
-      exercise_id: setData.exercise_id.toString(),
-      set_number: setData.set_number.toString(),
-      reps: setData.reps ? setData.reps.toString() : null,
-      weight: setData.weight ? setData.weight.toString() : null,
-      duration: setData.duration ? setData.duration.toString() : null,
-      distance: setData.distance ? setData.distance.toString() : null,
-      rest_time: setData.rest_time ? setData.rest_time.toString() : null,
-      rpe: setData.rpe ? setData.rpe.toString() : null,
+      session_id: sessionId,
+      exercise_id: setData.exercise_id,
+      set_number: setData.set_number,
+      reps: setData.reps != null ? setData.reps : null,
+      weight: setData.weight != null ? setData.weight : null,
+      duration: setData.duration != null ? setData.duration : null,
+      distance: setData.distance != null ? setData.distance : null,
+      rest_time: setData.rest_time != null ? setData.rest_time : null,
+      rpe: setData.rpe != null ? setData.rpe : null,
       notes: setData.notes || null
     };
 
